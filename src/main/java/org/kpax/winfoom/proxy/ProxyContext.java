@@ -19,6 +19,7 @@ import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthSchemeProvider;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
@@ -27,17 +28,14 @@ import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.auth.BasicSchemeFactory;
 import org.apache.http.impl.auth.DigestSchemeFactory;
+import org.apache.http.impl.auth.win.WindowsCredentialsProvider;
 import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+import org.apache.http.impl.client.*;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.kpax.winfoom.auth.Authentication;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.slf4j.Logger;
@@ -62,16 +60,15 @@ import java.util.concurrent.*;
 @Component
 public class ProxyContext implements Closeable {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProxyContext.class);
+    private final Logger logger = LoggerFactory.getLogger(ProxyContext.class);
 
     @Autowired
     private SystemConfig systemConfig;
 
     @Autowired
-    private UserConfig userConfig;
+    private HttpConfig httpConfig;
 
-    @Autowired
-    private Authentication authentication;
+    private CredentialsProvider credentialsProvider;
 
     private ThreadPoolExecutor threadPool;
 
@@ -90,10 +87,10 @@ public class ProxyContext implements Closeable {
         // All threads are daemons!
         threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
                 new ThreadFactory() {
-                    public Thread newThread(Runnable r) {
-                        Thread t = Executors.defaultThreadFactory().newThread(r);
-                        t.setDaemon(true);
-                        return t;
+                    public Thread newThread(Runnable runnable) {
+                        Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+                        thread.setDaemon(true);
+                        return thread;
                     }
                 });
 
@@ -108,6 +105,12 @@ public class ProxyContext implements Closeable {
             connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
         }
 
+        logger.info("Create connection eviction timer");
+        connectionEvictionTimer = new Timer();
+
+        logger.info("Create Windows credentials provider");
+        credentialsProvider = new WindowsCredentialsProvider(new SystemDefaultCredentialsProvider());
+
         logger.info("Done proxy context's initialization");
     }
 
@@ -117,8 +120,7 @@ public class ProxyContext implements Closeable {
      */
     public void start() {
         if (systemConfig.isEvictionEnabled()) {
-            logger.info("Create connection eviction timer");
-            connectionEvictionTimer = new Timer();
+            logger.info("Start connection eviction task");
             connectionEvictionTimer.schedule(new EvictionTask(), 0, systemConfig.getEvictionPeriod() * 1000);
         }
         logger.info("Proxy context is ready");
@@ -131,13 +133,13 @@ public class ProxyContext implements Closeable {
                 .register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(null))
                 .register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(null))
                 .build();
-        HttpClientBuilder builder = HttpClients.custom().useSystemProperties()
-                .setDefaultCredentialsProvider(authentication.getCredentialsProvider())
+        HttpClientBuilder builder = WinHttpClients.custom()/*.useSystemProperties()*/
+                .setDefaultCredentialsProvider(credentialsProvider)
                 .setDefaultAuthSchemeRegistry(authSchemeRegistry)
                 .setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy())
-                .setProxy(getProxyRequestConfig().getProxy())
-                .setDefaultRequestConfig(getProxyRequestConfig())
-                .setDefaultSocketConfig(getSocketConfig())
+                .setProxy(httpConfig.getProxyRequestConfig().getProxy())
+                .setDefaultRequestConfig(httpConfig.getProxyRequestConfig())
+                .setDefaultSocketConfig(httpConfig.getSocketConfig())
                 .setConnectionManager(connectionManager)
                 .setConnectionManagerShared(true)
                 .setKeepAliveStrategy(new CustomConnectionKeepAliveStrategy())
@@ -161,42 +163,8 @@ public class ProxyContext implements Closeable {
         return threadPool.submit(callable);
     }
 
-    public RequestConfig getProxyRequestConfig() {
-        if (proxyRequestConfig == null) {
-            synchronized (this) {
-                if (proxyRequestConfig == null) {
-                    logger.info("Create proxy request config");
-                    HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-                    List<String> proxyPreferredAuthSchemes = new ArrayList<>();
-                    proxyPreferredAuthSchemes.add(AuthSchemes.NTLM);
-                    proxyPreferredAuthSchemes.add(AuthSchemes.BASIC);
-                    proxyPreferredAuthSchemes.add(AuthSchemes.DIGEST);
-                    proxyPreferredAuthSchemes.add(AuthSchemes.SPNEGO);
-                    proxyRequestConfig = RequestConfig.custom()
-                            .setProxy(proxy)
-                            .setProxyPreferredAuthSchemes(proxyPreferredAuthSchemes)
-                            .setCircularRedirectsAllowed(true)
-                            .build();
-                }
-            }
-        }
-        return proxyRequestConfig;
-    }
-
-    public SocketConfig getSocketConfig() {
-        if (socketConfig == null) {
-            synchronized (this) {
-                if (socketConfig == null) {
-                    logger.info("Create socket config");
-                    socketConfig = SocketConfig.custom()
-                            .setTcpNoDelay(true)
-                            .setSndBufSize(systemConfig.getSocketBufferSize())
-                            .setRcvBufSize(systemConfig.getSocketBufferSize())
-                            .build();
-                }
-            }
-        }
-        return socketConfig;
+    public CredentialsProvider getCredentialsProvider() {
+        return credentialsProvider;
     }
 
     @Override
@@ -256,11 +224,9 @@ public class ProxyContext implements Closeable {
             // Close expired connections
             connectionManager.closeExpiredConnections();
 
-            // Close connections
-            // that have been idle
+            // Close connections that have been idle
             // longer than MAX_CONNECTION_IDLE seconds
             connectionManager.closeIdleConnections(systemConfig.getMaxConnectionIdle(), TimeUnit.SECONDS);
-
         }
     }
 

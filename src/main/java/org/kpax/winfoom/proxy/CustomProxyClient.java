@@ -34,7 +34,6 @@ import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.auth.BasicSchemeFactory;
 import org.apache.http.impl.auth.DigestSchemeFactory;
 import org.apache.http.impl.auth.HttpAuthenticator;
-import org.apache.http.impl.auth.NTLMSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
 import org.apache.http.impl.client.ProxyAuthenticationStrategy;
@@ -44,11 +43,10 @@ import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.protocol.*;
 import org.apache.http.util.Args;
 import org.apache.http.util.EntityUtils;
+import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
-import org.kpax.winfoom.auth.Authentication;
-import org.kpax.winfoom.config.SystemConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +74,7 @@ class CustomProxyClient {
     private SystemConfig systemConfig;
 
     @Autowired
-    private Authentication authentication;
+    private ProxyContext proxyContext;
 
     private HttpProcessor httpProcessor;
     private HttpRequestExecutor requestExec;
@@ -125,7 +123,7 @@ class CustomProxyClient {
         context.setAttribute(HttpCoreContext.HTTP_REQUEST, connect);
         context.setAttribute(HttpClientContext.HTTP_ROUTE, route);
         context.setAttribute(HttpClientContext.PROXY_AUTH_STATE, this.proxyAuthState);
-        context.setAttribute(HttpClientContext.CREDS_PROVIDER, authentication.getCredentialsProvider());
+        context.setAttribute(HttpClientContext.CREDS_PROVIDER, proxyContext.getCredentialsProvider());
         context.setAttribute(HttpClientContext.REQUEST_CONFIG, RequestConfig.DEFAULT);
         context.setAttribute(HttpClientContext.AUTHSCHEME_REGISTRY, this.authSchemeRegistry);
 

@@ -27,6 +27,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.config.UserConfig;
@@ -118,11 +119,7 @@ public final class HttpUtils {
 
     public static void testProxyConfig(UserConfig userConfig)
             throws IOException, CredentialException {
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY,
-                new NTCredentials(userConfig.getUsername(), userConfig.getPassword(), null, userConfig.getDomain()));
-        try (CloseableHttpClient httpClient = HttpClients.custom().useSystemProperties()
-                .setDefaultCredentialsProvider(credentialsProvider).build()) {
+        try (CloseableHttpClient httpClient = WinHttpClients.createDefault()) {
             HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
             HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
 

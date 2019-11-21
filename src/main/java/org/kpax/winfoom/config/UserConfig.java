@@ -19,12 +19,16 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.kpax.winfoom.exception.CommandExecutionException;
+import org.kpax.winfoom.util.CommandExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * @author Eugen Covaci
@@ -41,32 +45,35 @@ public class UserConfig {
 
     private String password;
 
-    @Value("${proxy.domain}")
-    private String domain;
 
     @Value("${local.port:3129}")
     private int localPort;
 
-    @Value("${proxy.host:localhost}")
+    @Value("${proxy.host}")
     private String proxyHost;
 
     @Value("${proxy.test.url}")
     private String proxyTestUrl;
 
-    @Value("${proxy.port:80}")
+    @Value("${proxy.port:0}")
     private int proxyPort;
 
     @PostConstruct
     public void init() {
-        if (StringUtils.isEmpty(username)) {
-            username = System.getProperty("user.name");
-        }
-        if (StringUtils.isEmpty(domain)) {
-            boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
-            if (isWindows) {
-                domain = System.getenv("USERDOMAIN");
+        if (StringUtils.isEmpty(proxyHost)) {
+            try {
+                CommandExecutor.getSystemProxy().ifPresent((s) -> {
+                    System.out.println("proxyLine: " + s);
+                    String[] split = s.split("\\:");
+                    proxyHost = split[0];
+                    proxyPort = Integer.parseInt(split[1]);
+                });
+            } catch (CommandExecutionException e) {
+                e.printStackTrace();
             }
+
         }
+
 
     }
 
@@ -76,14 +83,6 @@ public class UserConfig {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getDomain() {
-        return domain;
-    }
-
-    public void setDomain(String domain) {
-        this.domain = domain;
     }
 
     public String getPassword() {
@@ -122,20 +121,22 @@ public class UserConfig {
         return proxyTestUrl;
     }
 
+    public void setProxyTestUrl(String proxyTestUrl) {
+        this.proxyTestUrl = proxyTestUrl;
+    }
+
     public void save() throws ConfigurationException {
         Configuration config = propertiesBuilder.getConfiguration();
-        config.setProperty("proxy.domain", this.domain);
         config.setProperty("local.port", this.localPort);
         config.setProperty("proxy.host", this.proxyHost);
         config.setProperty("proxy.port", this.proxyPort);
-        config.setProperty("proxy.username", this.username);
         config.setProperty("proxy.test.url", this.proxyTestUrl);
         propertiesBuilder.save();
     }
 
     @Override
     public String toString() {
-        return "UserConfig [username=" + username + ", domain=" + domain + ", localPort=" + localPort
+        return "UserConfig [username=" + username + ", localPort=" + localPort
                 + ", proxyHost=" + proxyHost + ", proxyPort=" + proxyPort + "]";
     }
 

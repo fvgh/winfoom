@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 public class FoomApplication {
 
 	public static void main(String[] args) {
+		System.setProperty("java.awt.headless", "false");
 		Application.launch(JavafxApplication.class, args);
 	}
 
