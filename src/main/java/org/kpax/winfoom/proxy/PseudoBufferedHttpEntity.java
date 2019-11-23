@@ -38,7 +38,7 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
     private static final Logger logger = LoggerFactory.getLogger(PseudoBufferedHttpEntity.class);
 
-    private static final int INTERNAL_BUFFER_LENGTH = 100 * 1024;// FIXME Should  be a config parameter
+    private final int internalBufferLength;
 
     private final SessionInputBufferImpl inputBuffer;
 
@@ -52,21 +52,22 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
     private boolean repeatable;
 
-    PseudoBufferedHttpEntity(SessionInputBufferImpl inputBuffer, HttpRequest request)
+    PseudoBufferedHttpEntity(SessionInputBufferImpl inputBuffer, HttpRequest request, int internalBufferLength)
             throws IOException {
         this.inputBuffer = inputBuffer;
+        this.internalBufferLength = internalBufferLength;
         this.contentType = request.getFirstHeader(HttpHeaders.CONTENT_TYPE);
         this.contentEncoding = request.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
         this.contentLength = HttpUtils.getContentLength(request);
 
         // Set buffer and repeatable
-        if (contentLength > INTERNAL_BUFFER_LENGTH) {
+        if (contentLength > internalBufferLength) {
             this.bufferedBytes = new byte[0];
             this.repeatable = false;
         } else {
             logger.debug("Read buffered bytes");
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            writeTo(out, contentLength < 0 ? INTERNAL_BUFFER_LENGTH : contentLength);
+            writeTo(out, contentLength < 0 ? internalBufferLength : contentLength);
             this.bufferedBytes = out.toByteArray();
             this.repeatable = !(contentLength < 0 && LocalIOUtils.isAvailable(this.inputBuffer));
         }

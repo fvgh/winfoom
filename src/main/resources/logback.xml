@@ -8,8 +8,8 @@
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/archived/winfoom_%d{dd-MM-yyyy}.log</fileNamePattern>
-            <maxHistory>10</maxHistory>
-            <totalSizeCap>100MB</totalSizeCap>
+            <maxHistory>3</maxHistory>
+            <totalSizeCap>10MB</totalSizeCap>
         </rollingPolicy>
     </appender>
     <root level="info">

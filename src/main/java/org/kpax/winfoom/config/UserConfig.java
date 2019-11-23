@@ -40,12 +40,6 @@ public class UserConfig {
     @Autowired
     private FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder;
 
-    @Value("${proxy.username}")
-    private String username;
-
-    private String password;
-
-
     @Value("${local.port:3129}")
     private int localPort;
 
@@ -75,22 +69,6 @@ public class UserConfig {
         }
 
 
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public int getLocalPort() {
@@ -136,7 +114,7 @@ public class UserConfig {
 
     @Override
     public String toString() {
-        return "UserConfig [username=" + username + ", localPort=" + localPort
+        return "UserConfig [localPort=" + localPort
                 + ", proxyHost=" + proxyHost + ", proxyPort=" + proxyPort + "]";
     }
 

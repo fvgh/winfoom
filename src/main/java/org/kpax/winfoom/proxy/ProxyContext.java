@@ -133,7 +133,7 @@ public class ProxyContext implements Closeable {
                 .register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(null))
                 .register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(null))
                 .build();
-        HttpClientBuilder builder = WinHttpClients.custom()/*.useSystemProperties()*/
+        HttpClientBuilder builder = WinHttpClients.custom()
                 .setDefaultCredentialsProvider(credentialsProvider)
                 .setDefaultAuthSchemeRegistry(authSchemeRegistry)
                 .setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy())
@@ -148,19 +148,14 @@ public class ProxyContext implements Closeable {
         if (!retries) {
             builder.disableAutomaticRetries();
         }
+        if (systemConfig.isUseSystemProperties()) {
+            builder.useSystemProperties();
+        }
         return builder.build();
     }
 
     public void executeAsync(Runnable runnable) {
         threadPool.execute(runnable);
-    }
-
-    public Future<?> submitAsync(Runnable runnable) {
-        return threadPool.submit(runnable);
-    }
-
-    public <T> Future<T> submitAsync(Callable<T> callable) {
-        return threadPool.submit(callable);
     }
 
     public CredentialsProvider getCredentialsProvider() {

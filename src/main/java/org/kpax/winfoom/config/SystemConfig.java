@@ -55,8 +55,14 @@ public class SystemConfig {
     @Value("${repeats.on.failure}")
     private Integer repeatsOnFailure;
 
+    @Value("${internal.buffer.length}")
+    private Integer internalBufferLength;
+
     @Value("${eviction.enabled}")
     private boolean evictionEnabled;
+
+    @Value("${use.system.properties}")
+    private boolean useSystemProperties;
 
     private String releaseVersion;
 
@@ -110,4 +116,11 @@ public class SystemConfig {
         return releaseVersion;
     }
 
+    public boolean isUseSystemProperties() {
+        return useSystemProperties;
+    }
+
+    public Integer getInternalBufferLength() {
+        return internalBufferLength;
+    }
 }

@@ -173,7 +173,7 @@ public class SocketHandler {
         // Set our streaming entity
         if (request instanceof BasicHttpEntityEnclosingRequest) {
             logger.debug("Create and set PseudoBufferedHttpEntity instance");
-            HttpEntity entity = new PseudoBufferedHttpEntity(inputBuffer, request);
+            HttpEntity entity = new PseudoBufferedHttpEntity(inputBuffer, request, systemConfig.getInternalBufferLength());
             ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
         } else if (logger.isDebugEnabled()) {
             logger.debug("No enclosing entity");
