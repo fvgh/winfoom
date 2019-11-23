@@ -27,8 +27,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.Arrays;
-import java.util.Optional;
 
 /**
  * @author Eugen Covaci

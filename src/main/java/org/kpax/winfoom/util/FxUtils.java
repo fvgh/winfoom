@@ -13,20 +13,6 @@ import java.util.function.UnaryOperator;
  */
 public class FxUtils {
 
-    public static enum MessageType {
-        DLG_ERR_TITLE("Error"), DLG_INFO_TITLE("Info"), DLG_WARN_TITLE("Warning");
-
-        private String label;
-
-        MessageType(String label) {
-            this.label = label;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-    }
-
     public static TextFormatter<String> createDecimalOnlyTextFormatter() {
         UnaryOperator<TextFormatter.Change> filter = change -> {
             String text = change.getText();
@@ -47,6 +33,20 @@ public class FxUtils {
 
     public static void showMessage(MessageType messageType, String message) {
         showMessage(messageType.getLabel(), message);
+    }
+
+    public static enum MessageType {
+        DLG_ERR_TITLE("Error"), DLG_INFO_TITLE("Info"), DLG_WARN_TITLE("Warning");
+
+        private String label;
+
+        MessageType(String label) {
+            this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
+        }
     }
 
 }
