@@ -29,6 +29,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class JavafxApplication extends Application {
 
@@ -39,15 +40,12 @@ public class JavafxApplication extends Application {
     private Stage primaryStage;
 
     @Override
-    public void init() throws Exception {
-        ApplicationContextInitializer<GenericApplicationContext> initializer = new ApplicationContextInitializer<GenericApplicationContext>() {
-            @Override
-            public void initialize(GenericApplicationContext genericApplicationContext) {
-                genericApplicationContext.registerBean(JavafxApplication.class, () -> JavafxApplication.this);
-                genericApplicationContext.registerBean(FileBasedConfigurationBuilder.class, () -> new Configurations()
-                        .propertiesBuilder(LocalIOUtils.toPath(System.getProperty("user.dir"), "config",
-                                "user.properties")));
-            }
+    public void init() {
+        ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
+            genericApplicationContext.registerBean(JavafxApplication.class, () -> JavafxApplication.this);
+            genericApplicationContext.registerBean(FileBasedConfigurationBuilder.class, () -> new Configurations()
+                    .propertiesBuilder(LocalIOUtils.toPath(System.getProperty("user.dir"), "config",
+                            "user.properties")));
         };
 
         SpringApplication springApplication = new SpringApplication(FoomApplication.class);
@@ -92,9 +90,7 @@ public class JavafxApplication extends Application {
                     if (newVal) {
                         try {
                             tray.add(trayIcon);
-                            Platform.runLater(() -> {
-                                primaryStage.hide();
-                            });
+                            Platform.runLater(primaryStage::hide);
                         } catch (AWTException ex) {
                             logger.error("Cannot add icon to tray", ex);
                         }
@@ -106,6 +102,9 @@ public class JavafxApplication extends Application {
         } else {
             logger.warn("Icon tray not supported!");
         }
+
+
+        Stream.of(java.awt.Window.getWindows()).forEach(Window::dispose);// FIXME Error case would hang!
 
         this.primaryStage.show();
 
@@ -136,7 +135,7 @@ public class JavafxApplication extends Application {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         logger.info("Close the Spring context");
         this.applicationContext.close();
     }

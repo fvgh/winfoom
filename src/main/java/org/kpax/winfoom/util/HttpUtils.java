@@ -90,7 +90,7 @@ public final class HttpUtils {
     }
 
     public static Optional<String> getFirstHeaderValue(HttpRequest request, String name) {
-        return getFirstHeader(request, name).map(h -> h.getValue());
+        return getFirstHeader(request, name).map(NameValuePair::getValue);
     }
 
     public static long getContentLength(HttpRequest request) {
@@ -124,9 +124,10 @@ public final class HttpUtils {
             HttpGet request = new HttpGet("/");
             request.setConfig(config);
             logger.info("Executing request " + request.getRequestLine() + " to " + target + " via " + proxy);
-            try (CloseableHttpResponse response = httpClient.execute(target, request);) {
+            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 logger.info("Test response status {}", response.getStatusLine());
                 if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                    logger.info("Test OK");
                 } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
                     throw new CredentialException();
                 }

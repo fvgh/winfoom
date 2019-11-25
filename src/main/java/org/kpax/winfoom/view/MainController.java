@@ -32,7 +32,7 @@ import java.net.UnknownHostException;
  */
 @Component
 public class MainController {
-    Logger logger = LoggerFactory.getLogger(MainController.class);
+    final Logger logger = LoggerFactory.getLogger(MainController.class);
 
     @Autowired
     private LocalProxyServer localProxyServer;
@@ -74,29 +74,21 @@ public class MainController {
     private VBox centerBox;
 
     @FXML
-    public void initialize() throws Exception {
+    public void initialize() {
         proxyHost.setText(userConfig.getProxyHost());
-        proxyHost.textProperty().addListener((obs, oldValue, newValue) -> {
-            userConfig.setProxyHost(newValue);
-        });
+        proxyHost.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setProxyHost(newValue));
 
         proxyPort.setTextFormatter(FxUtils.createDecimalOnlyTextFormatter());
         proxyPort.setText("" + userConfig.getProxyPort());
 
-        proxyPort.textProperty().addListener((obs, oldValue, newValue) -> {
-            userConfig.setProxyPort(Integer.parseInt(newValue));
-        });
+        proxyPort.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setProxyPort(Integer.parseInt(newValue)));
 
         localProxyPort.setTextFormatter(FxUtils.createDecimalOnlyTextFormatter());
         localProxyPort.setText("" + userConfig.getLocalPort());
-        localProxyPort.textProperty().addListener((obs, oldValue, newValue) -> {
-            userConfig.setLocalPort(Integer.parseInt(newValue));
-        });
+        localProxyPort.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setLocalPort(Integer.parseInt(newValue)));
 
         testUrl.setText(userConfig.getProxyTestUrl());
-        testUrl.textProperty().addListener((obs, oldValue, newValue) -> {
-            userConfig.setProxyTestUrl(newValue);
-        });
+        testUrl.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setProxyTestUrl(newValue));
     }
 
     public void start(ActionEvent actionEvent) {

@@ -45,7 +45,10 @@ import javax.annotation.PostConstruct;
 import java.io.Closeable;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * It provides a thread pool, a HTTP connection manager etc. mostly for the {@link SocketHandler} instance.<br/>
@@ -82,12 +85,10 @@ public class ProxyContext implements Closeable {
 
         // All threads are daemons!
         threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
-                new ThreadFactory() {
-                    public Thread newThread(Runnable runnable) {
-                        Thread thread = Executors.defaultThreadFactory().newThread(runnable);
-                        thread.setDaemon(true);
-                        return thread;
-                    }
+                runnable -> {
+                    Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+                    thread.setDaemon(true);
+                    return thread;
                 });
 
         logger.info("Create pooling connection manager");

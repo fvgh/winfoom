@@ -38,8 +38,6 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
     private static final Logger logger = LoggerFactory.getLogger(PseudoBufferedHttpEntity.class);
 
-    private final int internalBufferLength;
-
     private final SessionInputBufferImpl inputBuffer;
 
     private final long contentLength;
@@ -55,7 +53,6 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
     PseudoBufferedHttpEntity(SessionInputBufferImpl inputBuffer, HttpRequest request, int internalBufferLength)
             throws IOException {
         this.inputBuffer = inputBuffer;
-        this.internalBufferLength = internalBufferLength;
         this.contentType = request.getFirstHeader(HttpHeaders.CONTENT_TYPE);
         this.contentEncoding = request.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
         this.contentLength = HttpUtils.getContentLength(request);

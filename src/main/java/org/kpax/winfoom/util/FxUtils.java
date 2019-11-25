@@ -35,10 +35,10 @@ public class FxUtils {
         showMessage(messageType.getLabel(), message);
     }
 
-    public static enum MessageType {
+    public enum MessageType {
         DLG_ERR_TITLE("Error"), DLG_INFO_TITLE("Info"), DLG_WARN_TITLE("Warning");
 
-        private String label;
+        private final String label;
 
         MessageType(String label) {
             this.label = label;

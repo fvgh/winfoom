@@ -56,17 +56,14 @@ public class UserConfig {
             try {
                 CommandExecutor.getSystemProxy().ifPresent((s) -> {
                     System.out.println("proxyLine: " + s);
-                    String[] split = s.split("\\:");
+                    String[] split = s.split(":");
                     proxyHost = split[0];
                     proxyPort = Integer.parseInt(split[1]);
                 });
             } catch (CommandExecutionException e) {
                 e.printStackTrace();
             }
-
         }
-
-
     }
 
     public int getLocalPort() {

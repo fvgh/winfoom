@@ -29,9 +29,9 @@ public class HttpConfig {
     @Autowired
     private SystemConfig systemConfig;
 
-    private SocketConfig socketConfig;
+    private volatile SocketConfig socketConfig;
 
-    private RequestConfig proxyRequestConfig;
+    private volatile RequestConfig proxyRequestConfig;
 
     public RequestConfig getProxyRequestConfig() {
         if (proxyRequestConfig == null) {
