@@ -41,16 +41,20 @@ public class JavafxApplication extends Application {
 
     @Override
     public void init() {
-        ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
-            genericApplicationContext.registerBean(JavafxApplication.class, () -> JavafxApplication.this);
-            genericApplicationContext.registerBean(FileBasedConfigurationBuilder.class, () -> new Configurations()
-                    .propertiesBuilder(LocalIOUtils.toPath(System.getProperty("user.dir"), "config",
-                            "user.properties")));
-        };
+        try {
+            ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
+                genericApplicationContext.registerBean(JavafxApplication.class, () -> JavafxApplication.this);
+                genericApplicationContext.registerBean(FileBasedConfigurationBuilder.class, () -> new Configurations()
+                        .propertiesBuilder(LocalIOUtils.toPath(System.getProperty("user.dir"), "config",
+                                "user.properties")));
+            };
 
-        SpringApplication springApplication = new SpringApplication(FoomApplication.class);
-        springApplication.addInitializers(initializer);
-        this.applicationContext = springApplication.run(getParameters().getRaw().toArray(new String[0]));
+            SpringApplication springApplication = new SpringApplication(FoomApplication.class);
+            springApplication.addInitializers(initializer);
+            this.applicationContext = springApplication.run(getParameters().getRaw().toArray(new String[0]));
+        } finally {
+            Stream.of(java.awt.Window.getWindows()).forEach(Window::dispose);
+        }
 
     }
 
@@ -60,51 +64,53 @@ public class JavafxApplication extends Application {
 
         Platform.setImplicitExit(false);
 
-        Resource fxml = this.applicationContext.getResource("classpath:/view/main.fxml");
-        FXMLLoader fxmlLoader = new FXMLLoader(fxml.getURL());
-        fxmlLoader.setControllerFactory(this.applicationContext::getBean);
-        Parent root = fxmlLoader.load();
+        Scene scene;
+        try {
+            Resource fxml = this.applicationContext.getResource("classpath:/view/main.fxml");
+            FXMLLoader fxmlLoader = new FXMLLoader(fxml.getURL());
+            fxmlLoader.setControllerFactory(this.applicationContext::getBean);
+            Parent root = fxmlLoader.load();
 
-        Scene scene = new Scene(root);
-        this.primaryStage.setScene(scene);
-        this.primaryStage.setTitle("WinFoom");
-        this.primaryStage.getIcons().add(
-                new javafx.scene.image.Image(new File("./config/img/icon.png").toURI().toURL().toExternalForm()));
+            scene = new Scene(root);
+            this.primaryStage.setScene(scene);
+            this.primaryStage.setTitle("WinFoom");
+            this.primaryStage.getIcons().add(
+                    new javafx.scene.image.Image(new File("./config/img/icon.png").toURI().toURL().toExternalForm()));
 
-        if (SystemTray.isSupported()) {
-            Image iconImage = Toolkit.getDefaultToolkit().getImage("config/img/icon.png");
-            final TrayIcon trayIcon = new TrayIcon(iconImage, "Basic Proxy Facade");
-            trayIcon.setImageAutoSize(true);
-            trayIcon.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    Platform.runLater(() -> {
-                        primaryStage.setIconified(false);
-                        primaryStage.show();
-                    });
-                }
-            });
-            final SystemTray tray = SystemTray.getSystemTray();
-            this.primaryStage.iconifiedProperty().addListener((observableValue, oldVal, newVal) -> {
-                if (newVal != null) {
-                    if (newVal) {
-                        try {
-                            tray.add(trayIcon);
-                            Platform.runLater(primaryStage::hide);
-                        } catch (AWTException ex) {
-                            logger.error("Cannot add icon to tray", ex);
-                        }
-                    } else {
-                        tray.remove(trayIcon);
+            if (SystemTray.isSupported()) {
+                Image iconImage = Toolkit.getDefaultToolkit().getImage("config/img/icon.png");
+                final TrayIcon trayIcon = new TrayIcon(iconImage, "Basic Proxy Facade");
+                trayIcon.setImageAutoSize(true);
+                trayIcon.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        Platform.runLater(() -> {
+                            primaryStage.setIconified(false);
+                            primaryStage.show();
+                        });
                     }
-                }
-            });
-        } else {
-            logger.warn("Icon tray not supported!");
+                });
+                final SystemTray tray = SystemTray.getSystemTray();
+                this.primaryStage.iconifiedProperty().addListener((observableValue, oldVal, newVal) -> {
+                    if (newVal != null) {
+                        if (newVal) {
+                            try {
+                                tray.add(trayIcon);
+                                Platform.runLater(primaryStage::hide);
+                            } catch (AWTException ex) {
+                                logger.error("Cannot add icon to tray", ex);
+                            }
+                        } else {
+                            tray.remove(trayIcon);
+                        }
+                    }
+                });
+            } else {
+                logger.warn("Icon tray not supported!");
+            }
+        } finally {
+            Stream.of(java.awt.Window.getWindows()).forEach(Window::dispose);
         }
-
-
-        Stream.of(java.awt.Window.getWindows()).forEach(Window::dispose);// FIXME Error case would hang!
 
         this.primaryStage.show();
 
