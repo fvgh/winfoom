@@ -28,6 +28,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -45,8 +46,8 @@ public class JavafxApplication extends Application {
             ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
                 genericApplicationContext.registerBean(JavafxApplication.class, () -> JavafxApplication.this);
                 genericApplicationContext.registerBean(FileBasedConfigurationBuilder.class, () -> new Configurations()
-                        .propertiesBuilder(LocalIOUtils.toPath(System.getProperty("user.dir"), "config",
-                                "user.properties")));
+                        .propertiesBuilder(Paths.get(System.getProperty("user.dir"), "config",
+                                "user.properties").toFile()));
             };
 
             SpringApplication springApplication = new SpringApplication(FoomApplication.class);
@@ -75,7 +76,7 @@ public class JavafxApplication extends Application {
             this.primaryStage.setScene(scene);
             this.primaryStage.setTitle("WinFoom");
             this.primaryStage.getIcons().add(
-                    new javafx.scene.image.Image(new File("./config/img/icon.png").toURI().toURL().toExternalForm()));
+                    new javafx.scene.image.Image(Paths.get("./config/img/icon.png").toUri().toURL().toExternalForm()));
 
             if (SystemTray.isSupported()) {
                 Image iconImage = Toolkit.getDefaultToolkit().getImage("config/img/icon.png");
