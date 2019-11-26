@@ -87,7 +87,8 @@ class CustomProxyClient {
 
     @PostConstruct
     public void init() {
-        this.httpProcessor = new ImmutableHttpProcessor(new RequestTargetHost(), new RequestClientConnControl(), new RequestUserAgent());
+        this.httpProcessor = new ImmutableHttpProcessor(new RequestTargetHost(),
+                new RequestClientConnControl(), new RequestUserAgent());
         this.requestExec = new HttpRequestExecutor();
         this.proxyAuthStrategy = new ProxyAuthenticationStrategy();
         this.authenticator = new HttpAuthenticator();
@@ -113,7 +114,8 @@ class CustomProxyClient {
         }
         final HttpRoute route = new HttpRoute(host, RequestConfig.DEFAULT.getLocalAddress(),
                 proxy, false, TunnelType.TUNNELLED, LayerType.PLAIN);
-        final ManagedHttpClientConnection connection = ManagedHttpClientConnectionFactory.INSTANCE.create(route, ConnectionConfig.DEFAULT);
+        final ManagedHttpClientConnection connection = ManagedHttpClientConnectionFactory.INSTANCE.create(route,
+                ConnectionConfig.DEFAULT);
         final HttpContext context = new BasicHttpContext();
         final HttpRequest connect = new BasicHttpRequest(HttpUtils.HTTP_CONNECT, host.toHostString(), protocolVersion);
 
@@ -146,8 +148,10 @@ class CustomProxyClient {
                 throw new HttpException("Unexpected response to CONNECT request: " + response.getStatusLine());
             }
 
-            if (this.authenticator.isAuthenticationRequested(proxy, response, this.proxyAuthStrategy, this.proxyAuthState, context)) {
-                if (this.authenticator.handleAuthChallenge(proxy, response, this.proxyAuthStrategy, this.proxyAuthState, context)) {
+            if (this.authenticator.isAuthenticationRequested(
+                    proxy, response, this.proxyAuthStrategy, this.proxyAuthState, context)) {
+                if (this.authenticator.handleAuthChallenge(
+                        proxy, response, this.proxyAuthStrategy, this.proxyAuthState, context)) {
                     // Retry request
                     if (this.reuseStrategy.keepAlive(response, context)) {
                         // Consume response content

@@ -123,7 +123,7 @@ public class ProxyContext implements Closeable {
         logger.info("Proxy context is ready");
     }
 
-    public CloseableHttpClient getHttpClientBuilder(boolean retries) {
+    public CloseableHttpClient createHttpClientBuilder(boolean retries) {
         final Registry<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
                 .register(AuthSchemes.BASIC, new BasicSchemeFactory())
                 .register(AuthSchemes.DIGEST, new DigestSchemeFactory())

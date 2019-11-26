@@ -39,14 +39,8 @@ public class HttpConfig {
                 if (proxyRequestConfig == null) {
                     logger.debug("Create proxy request config");
                     HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-                    List<String> proxyPreferredAuthSchemes = new ArrayList<>();
-                    proxyPreferredAuthSchemes.add(AuthSchemes.NTLM);
-                    proxyPreferredAuthSchemes.add(AuthSchemes.BASIC);
-                    proxyPreferredAuthSchemes.add(AuthSchemes.DIGEST);
-                    proxyPreferredAuthSchemes.add(AuthSchemes.SPNEGO);
                     proxyRequestConfig = RequestConfig.custom()
                             .setProxy(proxy)
-                            .setProxyPreferredAuthSchemes(proxyPreferredAuthSchemes)
                             .setCircularRedirectsAllowed(true)
                             .build();
                 }

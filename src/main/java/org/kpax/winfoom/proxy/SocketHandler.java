@@ -184,7 +184,7 @@ public class SocketHandler {
         logger.debug("retryRequest {} ", retryRequest);
 
         URI uri = HttpUtils.parseUri(requestLine.getUri());
-        CloseableHttpClient httpClient = proxyContext.getHttpClientBuilder(retryRequest);
+        CloseableHttpClient httpClient = proxyContext.createHttpClientBuilder(retryRequest);
 
         try {
             List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?
@@ -208,9 +208,11 @@ public class SocketHandler {
                 HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
                 CloseableHttpResponse response;
                 if (retryRequest) {
-                    response = new CloseableRepeater<CloseableHttpResponse>().repeat(() -> httpClient.execute(target, request),
-                            (t) -> t.getStatusLine().getStatusCode() != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
-                            systemConfig.getRepeatsOnFailure());
+                    response = new CloseableRepeater<CloseableHttpResponse>()
+                            .repeat(() -> httpClient.execute(target, request),
+                                    (t) -> t.getStatusLine().getStatusCode()
+                                            != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
+                                    systemConfig.getRepeatsOnFailure());
                 } else {
                     response = httpClient.execute(target, request);
                 }
@@ -228,7 +230,9 @@ public class SocketHandler {
                             // Strip 'chunked' from Transfer-Encoding header's value
                             String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
                             if (nonChunkedTransferEncoding != null && !nonChunkedTransferEncoding.isEmpty()) {
-                                outputStream.write(CrlfFormat.format(HttpUtils.createHttpHeaderAsString(HttpHeaders.TRANSFER_ENCODING,
+                                outputStream.write(
+                                        CrlfFormat.format(
+                                                HttpUtils.createHttpHeaderAsString(HttpHeaders.TRANSFER_ENCODING,
                                         nonChunkedTransferEncoding)));
                                 logger.debug("Add chunk-striped header response");
                             } else {

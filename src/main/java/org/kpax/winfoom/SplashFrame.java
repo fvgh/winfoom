@@ -6,6 +6,8 @@ import java.awt.*;
 
 public class SplashFrame extends JFrame {
 
+    private static final double SCALE = 0.75;
+
     private final JPanel contentPane;
     private JLabel label;
     private JProgressBar progressBar;
@@ -16,7 +18,7 @@ public class SplashFrame extends JFrame {
     public SplashFrame() {
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(305, 455);
+        setSize(scale(305, 455));
         setLocationRelativeTo(null);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -43,7 +45,8 @@ public class SplashFrame extends JFrame {
     private JLabel getLabel() {
         if (label == null) {
             Image image = Toolkit.getDefaultToolkit().getImage("config/img/splash.jpg");
-            Image scaledImage = image.getScaledInstance(305, 455, Image.SCALE_SMOOTH);
+            Dimension dimension = scale(305, 455);
+            Image scaledImage = image.getScaledInstance(dimension.width, dimension.height, Image.SCALE_SMOOTH);
             ImageIcon imageIcon = new ImageIcon(scaledImage);
             label = new JLabel(imageIcon);
         }
@@ -53,9 +56,13 @@ public class SplashFrame extends JFrame {
     private JProgressBar getProgressBar() {
         if (progressBar == null) {
             progressBar = new JProgressBar();
-            progressBar.setPreferredSize(new Dimension(146, 20));
+            progressBar.setPreferredSize(new Dimension(146, 10));
             progressBar.setIndeterminate(true);
         }
         return progressBar;
+    }
+
+    private Dimension scale(int width, int height) {
+        return new Dimension((int) (width * SCALE), (int) (height * SCALE));
     }
 }
