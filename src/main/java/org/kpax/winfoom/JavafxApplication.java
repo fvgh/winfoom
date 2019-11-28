@@ -15,6 +15,7 @@ import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.LocalProxyServer;
+import org.kpax.winfoom.util.GuiUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +55,7 @@ public class JavafxApplication extends Application {
             springApplication.addInitializers(initializer);
             this.applicationContext = springApplication.run(getParameters().getRaw().toArray(new String[0]));
         } finally {
-            Stream.of(java.awt.Window.getWindows()).forEach(Window::dispose);
+            GuiUtils.closeAllAwtWindows();
         }
 
     }
@@ -63,6 +64,7 @@ public class JavafxApplication extends Application {
     public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
 
+        // Preventing exit on close
         Platform.setImplicitExit(false);
 
         Scene scene;
@@ -110,7 +112,7 @@ public class JavafxApplication extends Application {
                 logger.warn("Icon tray not supported!");
             }
         } finally {
-            Stream.of(java.awt.Window.getWindows()).forEach(Window::dispose);
+            GuiUtils.closeAllAwtWindows();
         }
 
         this.primaryStage.show();

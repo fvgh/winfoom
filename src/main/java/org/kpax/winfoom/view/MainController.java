@@ -15,7 +15,7 @@ import org.kpax.winfoom.JavafxApplication;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.LocalProxyServer;
-import org.kpax.winfoom.util.FxUtils;
+import org.kpax.winfoom.util.GuiUtils;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,12 +78,12 @@ public class MainController {
         proxyHost.setText(userConfig.getProxyHost());
         proxyHost.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setProxyHost(newValue));
 
-        proxyPort.setTextFormatter(FxUtils.createDecimalOnlyTextFormatter());
+        proxyPort.setTextFormatter(GuiUtils.createDecimalOnlyTextFormatter());
         proxyPort.setText("" + userConfig.getProxyPort());
 
         proxyPort.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setProxyPort(Integer.parseInt(newValue)));
 
-        localProxyPort.setTextFormatter(FxUtils.createDecimalOnlyTextFormatter());
+        localProxyPort.setTextFormatter(GuiUtils.createDecimalOnlyTextFormatter());
         localProxyPort.setText("" + userConfig.getLocalPort());
         localProxyPort.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setLocalPort(Integer.parseInt(newValue)));
 
@@ -99,7 +99,7 @@ public class MainController {
                 buttonsBox.setDisable(true);
             } catch (Exception e) {
                 logger.error("Error on starting proxy server", e);
-                FxUtils.showMessage(FxUtils.MessageType.DLG_ERR_TITLE,
+                GuiUtils.showMessage(GuiUtils.MessageType.DLG_ERR_TITLE,
                         "Error on starting proxy server.\nSee the application's log for details.");
             }
         }
@@ -107,19 +107,19 @@ public class MainController {
 
     private boolean isValidInput() {
         if (StringUtils.isBlank(userConfig.getProxyHost())) {
-            FxUtils.showMessage("Validation Error", "Fill in the proxy address!");
+            GuiUtils.showMessage("Validation Error", "Fill in the proxy address!");
             return false;
         }
         if (userConfig.getProxyPort() < 1) {
-            FxUtils.showMessage("Validation Error", "Fill in a valid proxy port!");
+            GuiUtils.showMessage("Validation Error", "Fill in a valid proxy port!");
             return false;
         }
         if (userConfig.getLocalPort() < 1024) {
-            FxUtils.showMessage("Validation Error", "Fill in a valid proxy port!");
+            GuiUtils.showMessage("Validation Error", "Fill in a valid proxy port!");
             return false;
         }
         if (StringUtils.isBlank(userConfig.getProxyTestUrl())) {
-            FxUtils.showMessage("Validation Error", "Fill in the test URL!");
+            GuiUtils.showMessage("Validation Error", "Fill in the test URL!");
             return false;
         }
 
@@ -127,23 +127,23 @@ public class MainController {
         try {
             HttpUtils.testProxyConfig(userConfig);
         } catch (CredentialException e) {
-            FxUtils.showMessage("Test Connection Error", "Wrong user/password!");
+            GuiUtils.showMessage("Test Connection Error", "Wrong user/password!");
             return false;
         } catch (UnknownHostException e) {
-            FxUtils.showMessage("Test Connection Error", "Wrong proxy host!");
+            GuiUtils.showMessage("Test Connection Error", "Wrong proxy host!");
             return false;
         } catch (HttpHostConnectException e) {
-            FxUtils.showMessage("Test Connection Error", "Wrong proxy port!");
+            GuiUtils.showMessage("Test Connection Error", "Wrong proxy port!");
             return false;
         } catch (IOException e) {
-            FxUtils.showMessage("Test Connection Error", e.getMessage());
+            GuiUtils.showMessage("Test Connection Error", e.getMessage());
             return false;
         }
         return true;
     }
 
     public void about(ActionEvent actionEvent) {
-        FxUtils.showMessage("About", "Winfoom - Basic Proxy Facade" +
+        GuiUtils.showMessage("About", "Winfoom - Basic Proxy Facade" +
                 "\nVersion: " + systemConfig.getReleaseVersion()
                 + "\nProject home page: https://github.com/ecovaci/winfoom"
                 + "\nLicense: Apache 2.0");

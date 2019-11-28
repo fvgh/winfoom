@@ -5,13 +5,15 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.Region;
 
+import java.awt.*;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 11/21/2019
  */
-public class FxUtils {
+public class GuiUtils {
 
     public static TextFormatter<String> createDecimalOnlyTextFormatter() {
         UnaryOperator<TextFormatter.Change> filter = change -> {
@@ -33,6 +35,10 @@ public class FxUtils {
 
     public static void showMessage(MessageType messageType, String message) {
         showMessage(messageType.getLabel(), message);
+    }
+
+    public static void closeAllAwtWindows () {
+        Stream.of(java.awt.Window.getWindows()).forEach(Window::dispose);
     }
 
     public enum MessageType {

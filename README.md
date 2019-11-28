@@ -1,5 +1,5 @@
 # winfoom
-### Basic Proxy Facade for NTLM and Kerberos
+### Basic Proxy Facade for NTLM and Kerberos proxies
 
 Winfoom is a HTTP(s) proxy server facade that allows applications to authenticate through a NTML/Kerberos authenticated proxy server, typically used in corporate environments, 
 without having to deal with the actual handshake.
@@ -10,8 +10,10 @@ An example of such facade for NTLM proxies is [CNTLM](http://cntlm.sourceforge.n
 
 ### Instalation
 
+**Winfoom only works on Windows OS!**
+
 Winfoom is a Java application and comes with a release that includes a Java environment [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.5%2B10/OpenJDK11U-jdk_x64_windows_hotspot_11.0.5_10.msi),
-so you don't have to install anything.
+so you don't have to install anything. If you download the release version without JRE you'll need a JRE v.11 (at least).
 
 The installation is pretty basic, just unzip the content of the released archive then, double click on `launch.bat` file.
 
@@ -27,8 +29,7 @@ Now you should be able to access any URL without Firefox asking for credentials.
 
 ### TODO
 
-   - ~~Get the domain automaticaly.~~
-   - Debug mode.
+   - Testing.
 
 ### Feedback
 
