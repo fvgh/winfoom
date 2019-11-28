@@ -29,7 +29,7 @@ Now you should be able to access any URL without Firefox asking for credentials.
 
 ### TODO
 
-   - Testing.
+   - Unit testing.
 
 ### Feedback
 
