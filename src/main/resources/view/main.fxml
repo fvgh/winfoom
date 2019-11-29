@@ -76,7 +76,7 @@
                 </HBox>
                 <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
                     <children>
-                        <Label minWidth="90.0" text="Local proxy port:">
+                        <Label minWidth="90.0" text="Test URL:">
                             <HBox.margin>
                                 <Insets top="5.0"/>
                             </HBox.margin>

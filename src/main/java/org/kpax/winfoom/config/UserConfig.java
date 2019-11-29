@@ -21,6 +21,8 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.kpax.winfoom.exception.CommandExecutionException;
 import org.kpax.winfoom.util.CommandExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -34,6 +36,7 @@ import javax.annotation.PostConstruct;
 @Component
 @PropertySource(value = "file:${user.dir}/config/user.properties", name = "userProperties")
 public class UserConfig {
+    private static final Logger logger = LoggerFactory.getLogger(UserConfig.class);
 
     @Autowired
     private FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder;
@@ -61,7 +64,7 @@ public class UserConfig {
                     proxyPort = Integer.parseInt(split[1]);
                 });
             } catch (CommandExecutionException e) {
-                e.printStackTrace();
+                logger.error("Error on getting system proxy", e);
             }
         }
     }

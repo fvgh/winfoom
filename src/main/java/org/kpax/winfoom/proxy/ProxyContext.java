@@ -51,7 +51,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * It provides a thread pool, a HTTP connection manager etc. mostly for the {@link SocketHandler} instance.<br/>
+ * It provides a thread pool, a HTTP connection manager etc.
+ * mostly for the {@link SocketHandler} instance.<br/>
  * We rely on the Spring context to close this instance!
  *
  * @author Eugen Covaci

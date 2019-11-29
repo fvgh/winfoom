@@ -43,8 +43,7 @@ public class CommandExecutor {
         logger.info("Execute command: {}", String.join(" ", command));
         List<String> output = CommandExecutor.execute(command);
         logger.info("Output: {}", String.join("\n", output));
-        String tag = "ProxyServer";
-        return output.stream().filter((item) -> item.trim().startsWith(tag))
+        return output.stream().filter((item) -> item.trim().startsWith("ProxyServer"))
                 .map((item) -> {
                     String[] split = item.trim().split("\\s");
                     return split[split.length - 1];
