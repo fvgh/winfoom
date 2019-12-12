@@ -32,7 +32,7 @@ import java.util.jar.Manifest;
 @PropertySource("file:${user.dir}/config/system.properties")
 public class SystemConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(SystemConfig.class);
+    private final Logger logger = LoggerFactory.getLogger(SystemConfig.class);
 
     @Value("${max.connections.per.route}")
     private Integer maxConnectionsPerRoute;

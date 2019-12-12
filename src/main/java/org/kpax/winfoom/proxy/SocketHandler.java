@@ -53,8 +53,11 @@ public class SocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
 
-    private static final List<String> ENTITY_BANNED_HEADERS = Arrays.asList(HttpHeaders.CONTENT_LENGTH, HttpHeaders.CONTENT_TYPE,
-            HttpHeaders.CONTENT_ENCODING, HttpHeaders.PROXY_AUTHORIZATION);
+    private static final List<String> ENTITY_BANNED_HEADERS = Arrays.asList(
+            HttpHeaders.CONTENT_LENGTH,
+            HttpHeaders.CONTENT_TYPE,
+            HttpHeaders.CONTENT_ENCODING,
+            HttpHeaders.PROXY_AUTHORIZATION);
 
     private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(HttpHeaders.PROXY_AUTHORIZATION);
 
@@ -126,9 +129,11 @@ public class SocketHandler {
         Socket socket = null;
         try {
             // Creates a tunnel through proxy.
-            socket = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(), localSocketChannel.getOutputStream());
+            socket = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(),
+                    localSocketChannel.getOutputStream());
             final OutputStream socketOutputStream = socket.getOutputStream();
-            proxyContext.executeAsync(() -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(), socketOutputStream));
+            proxyContext.executeAsync(() -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
+                    socketOutputStream));
             LocalIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
         } catch (org.apache.http.impl.execchain.TunnelRefusedException tre) {
             try {
@@ -173,7 +178,8 @@ public class SocketHandler {
         // Set our streaming entity
         if (request instanceof BasicHttpEntityEnclosingRequest) {
             logger.debug("Create and set PseudoBufferedHttpEntity instance");
-            HttpEntity entity = new PseudoBufferedHttpEntity(inputBuffer, request, systemConfig.getInternalBufferLength());
+            HttpEntity entity = new PseudoBufferedHttpEntity(inputBuffer, request,
+                    systemConfig.getInternalBufferLength());
             ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
         } else if (logger.isDebugEnabled()) {
             logger.debug("No enclosing entity");
