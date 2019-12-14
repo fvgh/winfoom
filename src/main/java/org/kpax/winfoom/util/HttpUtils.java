@@ -82,7 +82,9 @@ public final class HttpUtils {
     }
 
     public static String stripChunked(String value) {
-        return Arrays.stream(value.split(",")).filter((item) -> !HTTP.CHUNK_CODING.equalsIgnoreCase(item)).collect(Collectors.joining(","));
+        return Arrays.stream(value.split(","))
+                .filter((item) -> !HTTP.CHUNK_CODING.equalsIgnoreCase(item))
+                .collect(Collectors.joining(","));
     }
 
     public static Optional<Header> getFirstHeader(HttpRequest request, String name) {

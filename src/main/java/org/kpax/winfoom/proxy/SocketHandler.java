@@ -59,7 +59,8 @@ public class SocketHandler {
             HttpHeaders.CONTENT_ENCODING,
             HttpHeaders.PROXY_AUTHORIZATION);
 
-    private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(HttpHeaders.PROXY_AUTHORIZATION);
+    private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(
+            HttpHeaders.PROXY_AUTHORIZATION);
 
     @Autowired
     private SystemConfig systemConfig;
