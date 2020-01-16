@@ -107,14 +107,14 @@ public final class HttpUtils {
         return createHttpHeader(name, value).toString();
     }
 
-    public static Socket tuneSocket(Socket socket, int bufferSize) throws SocketException {
+    public static Socket tuneSocket(final Socket socket, int bufferSize) throws SocketException {
         socket.setTcpNoDelay(true);
         socket.setReceiveBufferSize(bufferSize);
         socket.setSendBufferSize(bufferSize);
         return socket;
     }
 
-    public static void testProxyConfig(UserConfig userConfig)
+    public static void testProxyConfig(final UserConfig userConfig)
             throws IOException, CredentialException {
         try (CloseableHttpClient httpClient = WinHttpClients.createDefault()) {
             HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());

@@ -219,7 +219,7 @@ public class SocketHandler {
                             .repeat(() -> httpClient.execute(target, request),
                                     (t) -> t.getStatusLine().getStatusCode()
                                             != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
-                                    systemConfig.getRepeatsOnFailure());
+                                    systemConfig.getRepeatsOnFailure()).get();
                 } else {
                     response = httpClient.execute(target, request);
                 }

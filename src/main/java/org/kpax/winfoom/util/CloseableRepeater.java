@@ -15,10 +15,12 @@
 package org.kpax.winfoom.util;
 
 import java.io.Closeable;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
 /**
- * Repeats a {@link Supplier#get()} until a condition is fulfilled.
+ * Repeats an action until a condition is fulfilled.
  *
  * @param <R>
  * @author Eugen Covaci
@@ -26,25 +28,25 @@ import java.util.function.Predicate;
 public class CloseableRepeater<R extends Closeable> {
 
     /**
-     * Repeats the {@link Supplier#get()} until the stop condition becomes <code>true</code>.
+     * Repeats the action until the stop condition becomes <code>true</code>.
      *
-     * @param action The supplier to be repeated.
+     * @param action The action to be repeated.
      * @param until  The stop condition.
      * @param times  The maximum repeat times.
      * @return The result.
      * @throws Exception
      */
-    public R repeat(Supplier<R> action, Predicate<R> until, int times) throws Exception {
+    public Optional<R> repeat(Callable<R> action, Predicate<R> until, int times) throws Exception {
         R r = null;
         for (int i = 0; i < times; i++) {
-            r = action.get();
+            r = action.call();
             if (until.test(r)) {
                 break;
             } else {
                 LocalIOUtils.close(r);
             }
         }
-        return r;
+        return Optional.of(r);
     }
 
 }
