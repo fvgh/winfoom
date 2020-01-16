@@ -20,12 +20,10 @@ import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
 /**
- * Repeats an action until a condition is fulfilled.
  *
- * @param <R>
  * @author Eugen Covaci
  */
-public class CloseableRepeater<R extends Closeable> {
+public class Functions {
 
     /**
      * Repeats the action until the stop condition becomes <code>true</code>.
@@ -36,7 +34,7 @@ public class CloseableRepeater<R extends Closeable> {
      * @return The result.
      * @throws Exception
      */
-    public Optional<R> repeat(Callable<R> action, Predicate<R> until, int times) throws Exception {
+    public static <R extends Closeable> Optional<R> repeat(Callable<R> action, Predicate<R> until, int times) throws Exception {
         R r = null;
         for (int i = 0; i < times; i++) {
             r = action.call();

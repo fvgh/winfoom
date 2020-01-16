@@ -25,7 +25,7 @@ import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.util.CloseableRepeater;
+import org.kpax.winfoom.util.Functions;
 import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
@@ -215,7 +215,7 @@ public class SocketHandler {
                 HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
                 CloseableHttpResponse response;
                 if (retryRequest) {
-                    response = new CloseableRepeater<CloseableHttpResponse>()
+                    response = Functions
                             .repeat(() -> httpClient.execute(target, request),
                                     (t) -> t.getStatusLine().getStatusCode()
                                             != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
