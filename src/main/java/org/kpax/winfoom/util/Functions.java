@@ -20,7 +20,6 @@ import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
 /**
- *
  * @author Eugen Covaci
  */
 public class Functions {
@@ -34,7 +33,8 @@ public class Functions {
      * @return The result.
      * @throws Exception
      */
-    public static <R extends Closeable> Optional<R> repeat(Callable<R> action, Predicate<R> until, int times) throws Exception {
+    public static <R extends Closeable> Optional<R> repeat(Callable<R> action, Predicate<R> until, int times)
+            throws Exception {
         R r = null;
         for (int i = 0; i < times; i++) {
             r = action.call();
