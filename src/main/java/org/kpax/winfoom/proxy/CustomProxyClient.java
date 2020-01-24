@@ -18,6 +18,7 @@ import org.apache.http.*;
 import org.apache.http.auth.AUTH;
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.auth.AuthState;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -74,7 +75,7 @@ class CustomProxyClient {
     private SystemConfig systemConfig;
 
     @Autowired
-    private ProxyContext proxyContext;
+    private CredentialsProvider credentialsProvider;
 
     private HttpProcessor httpProcessor;
     private HttpRequestExecutor requestExec;
@@ -125,7 +126,7 @@ class CustomProxyClient {
         context.setAttribute(HttpCoreContext.HTTP_REQUEST, connect);
         context.setAttribute(HttpClientContext.HTTP_ROUTE, route);
         context.setAttribute(HttpClientContext.PROXY_AUTH_STATE, this.proxyAuthState);
-        context.setAttribute(HttpClientContext.CREDS_PROVIDER, proxyContext.getCredentialsProvider());
+        context.setAttribute(HttpClientContext.CREDS_PROVIDER, credentialsProvider);
         context.setAttribute(HttpClientContext.REQUEST_CONFIG, RequestConfig.DEFAULT);
         context.setAttribute(HttpClientContext.AUTHSCHEME_REGISTRY, this.authSchemeRegistry);
 

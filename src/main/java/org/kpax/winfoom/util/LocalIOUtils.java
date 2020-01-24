@@ -20,7 +20,10 @@ import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 
 /**
@@ -91,14 +94,6 @@ public final class LocalIOUtils extends IOUtils {
                 }
             }
         }
-    }
-
-    public static String toPath(String root, String... more) {
-        StringBuilder buffer = new StringBuilder(root);
-        for (String segment : more) {
-            buffer.append(File.separator).append(segment);
-        }
-        return buffer.toString();
     }
 
     public static void mergeProperties(PropertiesConfiguration from, PropertiesConfiguration to) {
