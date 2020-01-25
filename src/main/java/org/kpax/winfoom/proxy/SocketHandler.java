@@ -49,7 +49,7 @@ import java.util.List;
  */
 @Component
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class SocketHandler {
+class SocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
 

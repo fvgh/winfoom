@@ -59,7 +59,7 @@ import java.util.concurrent.TimeUnit;
  * @author Eugen Covaci
  */
 @Component
-public class ProxyContextImpl implements ProxyContext {
+class ProxyContextImpl implements ProxyContext {
 
     private final Logger logger = LoggerFactory.getLogger(ProxyContextImpl.class);
 

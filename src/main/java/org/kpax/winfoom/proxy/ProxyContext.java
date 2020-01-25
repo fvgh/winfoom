@@ -8,7 +8,7 @@ import java.io.Closeable;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 1/22/2020
  */
-public interface ProxyContext extends Closeable {
+interface ProxyContext extends Closeable {
     /**
      * After this method call, the proxy should be ready
      * for handling HTTP(s) requests.
