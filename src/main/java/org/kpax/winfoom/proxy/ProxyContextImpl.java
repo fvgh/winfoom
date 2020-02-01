@@ -120,7 +120,7 @@ class ProxyContextImpl implements ProxyContext {
     }
 
     @Override
-    public CloseableHttpClient createHttpClientBuilder(boolean retries) {
+    public CloseableHttpClient createHttpClientBuilder(boolean retry) {
         final Registry<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
                 .register(AuthSchemes.BASIC, new BasicSchemeFactory())
                 .register(AuthSchemes.DIGEST, new DigestSchemeFactory())
@@ -139,7 +139,7 @@ class ProxyContextImpl implements ProxyContext {
                 .setKeepAliveStrategy(new CustomConnectionKeepAliveStrategy())
                 .disableRedirectHandling()
                 .disableCookieManagement();
-        if (!retries) {
+        if (!retry) {
             builder.disableAutomaticRetries();
         }
         if (systemConfig.isUseSystemProperties()) {

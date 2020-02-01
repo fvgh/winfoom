@@ -15,7 +15,7 @@ interface ProxyContext extends Closeable {
      */
     void start();
 
-    CloseableHttpClient createHttpClientBuilder(boolean retries);
+    CloseableHttpClient createHttpClientBuilder(boolean retry);
 
     void executeAsync(Runnable runnable);
 

@@ -14,6 +14,7 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -236,7 +237,7 @@ class SocketHandler {
 
                             // Strip 'chunked' from Transfer-Encoding header's value
                             String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
-                            if (nonChunkedTransferEncoding != null && !nonChunkedTransferEncoding.isEmpty()) {
+                            if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
                                 outputStream.write(
                                         CrlfFormat.format(
                                                 HttpUtils.createHttpHeaderAsString(HttpHeaders.TRANSFER_ENCODING,
