@@ -1,11 +1,30 @@
+/*
+ * Copyright (c) 2020. Eugen Covaci
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and limitations under the License.
+ */
+
 package org.kpax.winfoom;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+/**
+ * This is the frame containing the splash image.
+ * Should only be visible while the application is bootstrapped.
+ */
 public class SplashFrame extends JFrame {
 
+    /**
+     * The image scale.
+     */
     private static final double SCALE = 0.75;
 
     private final JPanel contentPane;
@@ -26,20 +45,6 @@ public class SplashFrame extends JFrame {
         setContentPane(contentPane);
         contentPane.add(getLabel(), BorderLayout.CENTER);
         contentPane.add(getProgressBar(), BorderLayout.SOUTH);
-    }
-
-    /**
-     * Launch the application.
-     */
-    public static void main(String[] args) {
-        EventQueue.invokeLater(() -> {
-            try {
-                SplashFrame frame = new SplashFrame();
-                frame.setVisible(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
     }
 
     private JLabel getLabel() {
@@ -65,4 +70,19 @@ public class SplashFrame extends JFrame {
     private Dimension scale(int width, int height) {
         return new Dimension((int) (width * SCALE), (int) (height * SCALE));
     }
+
+    /**
+     * Launch the application (for testing).
+     */
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+                SplashFrame frame = new SplashFrame();
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
 }
