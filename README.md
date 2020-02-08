@@ -21,7 +21,7 @@ The installation is pretty basic, just unzip the content of the released archive
 
 To test it, open a browser, let's say Firefox and configure proxy like this:
 
-![firefox](https://drive.google.com/file/d/1T18McN2oy4NPrIMtwS9CHlsYXz4KJi7T/view?usp=sharing)
+![firefox](https://drive.google.com/uc?export=view&id=1T18McN2oy4NPrIMtwS9CHlsYXz4KJi7T)
 
 Now you should be able to access any URL without Firefox asking for credentials.
 
