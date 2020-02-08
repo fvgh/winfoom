@@ -37,7 +37,7 @@ public class SplashFrame extends JFrame {
     public SplashFrame() {
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(scale(305, 455));
+        setSize(scale());
         setLocationRelativeTo(null);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -50,7 +50,7 @@ public class SplashFrame extends JFrame {
     private JLabel getLabel() {
         if (label == null) {
             Image image = Toolkit.getDefaultToolkit().getImage("config/img/splash.jpg");
-            Dimension dimension = scale(305, 455);
+            Dimension dimension = scale();
             Image scaledImage = image.getScaledInstance(dimension.width, dimension.height, Image.SCALE_SMOOTH);
             ImageIcon imageIcon = new ImageIcon(scaledImage);
             label = new JLabel(imageIcon);
@@ -67,8 +67,8 @@ public class SplashFrame extends JFrame {
         return progressBar;
     }
 
-    private Dimension scale(int width, int height) {
-        return new Dimension((int) (width * SCALE), (int) (height * SCALE));
+    private Dimension scale() {
+        return new Dimension((int) (305 * SCALE), (int) (455 * SCALE));
     }
 
     /**
