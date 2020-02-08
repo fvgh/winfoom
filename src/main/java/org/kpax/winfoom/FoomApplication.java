@@ -19,6 +19,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.awt.*;
 
+/**
+ *  The entry point for Winfoom application.
+ */
 @SpringBootApplication
 public class FoomApplication {
 

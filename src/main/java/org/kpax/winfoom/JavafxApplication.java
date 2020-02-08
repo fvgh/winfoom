@@ -43,7 +43,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 /**
- * The entry point for Winfoom application. This will configure and launch Spring's context.
+ * The entry point for Javafx. It will configure and launch Spring's context.
  */
 public class JavafxApplication extends Application {
 
