@@ -10,7 +10,7 @@ An example of such facade for NTLM proxies is [CNTLM](http://cntlm.sourceforge.n
 
 ### Instalation
 
-**Winfoom only works on Windows OS!**
+> 👉 Note: Winfoom only works on Windows OS!
 
 Winfoom is a Java application and comes with a release that includes a Java environment [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.5%2B10/OpenJDK11U-jdk_x64_windows_hotspot_11.0.5_10.msi),
 so you don't have to install anything. If you download the release version without JRE you'll need a JRE v.11 (at least).
@@ -19,17 +19,24 @@ The installation is pretty basic, just unzip the content of the released archive
 
 ### Configuration
 
-
 To test it, open a browser, let's say Firefox and configure proxy like this:
 
 ![firefox](https://docs.google.com/uc?export=download&id=1T18McN2oy4NPrIMtwS9CHlsYXz4KJi7T)
 
 Now you should be able to access any URL without Firefox asking for credentials.
 
+> 👉 Note: Winfoom uses the current user credentials to authenticate to the remote proxy!
 
 ### TODO
 
    - Unit testing.
+   
+### Coding Guidance
+
+Please review these docs below about coding practices.
+
+* [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)
+* [Java Code Conventions](https://www.oracle.com/technetwork/java/codeconventions-150003.pdf)   
 
 ### Feedback
 
