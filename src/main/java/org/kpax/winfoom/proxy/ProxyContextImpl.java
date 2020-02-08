@@ -118,7 +118,7 @@ class ProxyContextImpl implements ProxyContext {
     }
 
     @Override
-    public CloseableHttpClient createHttpClientBuilder(boolean retry) {
+    public CloseableHttpClient createHttpClient(boolean retry) {
         final Registry<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
                 .register(AuthSchemes.BASIC, new BasicSchemeFactory())
                 .register(AuthSchemes.DIGEST, new DigestSchemeFactory())

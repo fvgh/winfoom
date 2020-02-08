@@ -171,6 +171,12 @@ class SocketHandler {
         }
     }
 
+    /**
+     * Handle a non CONNECT request.
+     * @param request The request to handle.
+     * @param inputBuffer It buffers input data in an internal byte array for optimal input performance.
+     * @throws Exception
+     */
     private void handleRequest(HttpRequest request, SessionInputBufferImpl inputBuffer) throws Exception {
         RequestLine requestLine = request.getRequestLine();
         logger.debug("Handle non-connect request {}", requestLine);
@@ -190,7 +196,7 @@ class SocketHandler {
         logger.debug("retryRequest {} ", retryRequest);
 
         URI uri = HttpUtils.parseUri(requestLine.getUri());
-        CloseableHttpClient httpClient = proxyContext.createHttpClientBuilder(retryRequest);
+        CloseableHttpClient httpClient = proxyContext.createHttpClient(retryRequest);
 
         try {
             List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?

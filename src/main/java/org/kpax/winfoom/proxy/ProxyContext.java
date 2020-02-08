@@ -27,7 +27,12 @@ interface ProxyContext extends Closeable {
      */
     void start();
 
-    CloseableHttpClient createHttpClientBuilder(boolean retry);
+    /**
+     * Configures and create a {@link org.apache.http.impl.client.CloseableHttpClient} .
+     * @param retry whether retries will be performed on failure.
+     * @return an instance of {@link org.apache.http.impl.client.CloseableHttpClient}.
+     */
+    CloseableHttpClient createHttpClient(boolean retry);
 
     void executeAsync(Runnable runnable);
 
