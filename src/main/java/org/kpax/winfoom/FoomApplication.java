@@ -32,7 +32,8 @@ public class FoomApplication {
         // Necessary for tray icon
         System.setProperty("java.awt.headless", "false");
 
-        // Show splash screen
+        // Show splash screen.
+        // It will be closed after Spring's context is fully initialized.
         EventQueue.invokeLater(() -> {
             try {
                 new SplashFrame().setVisible(true);
