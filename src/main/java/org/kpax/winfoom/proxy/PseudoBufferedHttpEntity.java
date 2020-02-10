@@ -38,15 +38,23 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
     private final SessionInputBufferImpl inputBuffer;
 
+    /**
+     * The value of Content-Length header.
+     */
     private final long contentLength;
 
     /**
      * Pre-write into this buffer to determine whether the entity
      * should be declared repeatable or not.
      */
-    private byte[] bufferedBytes;
+    private final byte[] bufferedBytes;
 
-    private boolean repeatable;
+    /**
+     * Whether this entity is repeatable or not.<br>
+     * If the {@link #contentLength} is bigger than <code>internalBufferLength</code> then is not repeatable.<br>
+     * Otherwise is repeatable only if {@link #contentLength} is non-negative or there is no available data.
+     */
+    private final boolean repeatable;
 
     PseudoBufferedHttpEntity(SessionInputBufferImpl inputBuffer,
                              HttpRequest request, int internalBufferLength)
@@ -102,8 +110,7 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
     @Override
     public void writeTo(OutputStream outputStream) throws IOException {
 
-        // Write the initial buffer
-        // This is the repeatable case
+        // Write the initial buffer, regardless of repeatability
         if (bufferedBytes.length > 0) {
             logger.debug("Write initial buffer");
             outputStream.write(bufferedBytes);

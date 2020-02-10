@@ -34,6 +34,10 @@ interface ProxyContext extends Closeable {
      */
     CloseableHttpClient createHttpClient(boolean retry);
 
+    /**
+     * Submit to the internal executor a {@link Runnable} instance.
+     * @param runnable The instance to be submitted for execution.
+     */
     void executeAsync(Runnable runnable);
 
 }

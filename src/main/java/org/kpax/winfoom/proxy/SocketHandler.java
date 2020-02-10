@@ -44,6 +44,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * This class handles the communication client <-> proxy facade <-> remote proxy <br>
+ * <font style="color:red"><b>Note</b> Necessary improvement: now, on non-response errors<br>
+ * (that can happen when the communication between the client and the remote proxy is broken)<br>
+ * client receives no response (relying on the client's timeout mechanism) instead of receiving some generic error response.</font>
  * @author Eugen Covaci
  */
 @Component
@@ -240,6 +244,7 @@ class SocketHandler {
                         if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
 
                             // Strip 'chunked' from Transfer-Encoding header's value
+                            // since the response is not chunked
                             String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
                             if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
                                 outputStream.write(
