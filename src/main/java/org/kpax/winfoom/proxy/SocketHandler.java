@@ -82,7 +82,7 @@ class SocketHandler {
 
     public SocketHandler bind(AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already binded!");
-        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
+        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel, systemConfig.getSocketChannelTimeout());
         return this;
     }
 

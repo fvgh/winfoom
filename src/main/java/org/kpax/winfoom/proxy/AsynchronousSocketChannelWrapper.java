@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A helper class that wraps an {@link AsynchronousSocketChannel}.
@@ -36,9 +37,12 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     private final OutputStream outputStream;
 
-    public AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel) {
+    private int timeout;
+
+    public AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel, int timeout) {
         Validate.notNull(socketChannel, "socketChannel cannot be null");
         this.socketChannel = socketChannel;
+        this.timeout = timeout;
         inputStream = new SocketChannelInputStream();
         outputStream = new SocketChannelOutputStream();
     }
@@ -71,7 +75,7 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         public int read(byte[] b, int off, int len) throws IOException {
             ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
             try {
-                return socketChannel.read(buffer).get();
+                return socketChannel.read(buffer).get(timeout, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());
             } catch (Exception e) {
@@ -92,7 +96,7 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         public void write(byte[] b, int off, int len) throws IOException {
             ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
             try {
-                socketChannel.write(buffer).get();
+                socketChannel.write(buffer).get(timeout, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());
             } catch (Exception e) {

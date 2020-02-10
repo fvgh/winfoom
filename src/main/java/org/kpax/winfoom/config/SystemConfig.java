@@ -56,6 +56,9 @@ public class SystemConfig {
     @Value("${internal.buffer.length}")
     private Integer internalBufferLength;
 
+    @Value("${socket.channel.timeout}")
+    private Integer socketChannelTimeout;
+
     @Value("${eviction.enabled}")
     private boolean evictionEnabled;
 
@@ -120,5 +123,9 @@ public class SystemConfig {
 
     public Integer getInternalBufferLength() {
         return internalBufferLength;
+    }
+
+    public Integer getSocketChannelTimeout() {
+        return socketChannelTimeout;
     }
 }
