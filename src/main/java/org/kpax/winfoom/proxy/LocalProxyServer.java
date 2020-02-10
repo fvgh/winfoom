@@ -97,6 +97,7 @@ public class LocalProxyServer implements Closeable {
                 public void failed(Throwable exc, Void att) {
 
                     // Ignore java.nio.channels.AsynchronousCloseException error
+                    // since it uselessly pollutes the log file
                     if (!(exc instanceof AsynchronousCloseException)) {
                         logger.warn("SocketServer failed", exc);
                     }
