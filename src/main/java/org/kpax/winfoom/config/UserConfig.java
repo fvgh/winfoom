@@ -61,7 +61,7 @@ public class UserConfig {
                     proxyHost = split[0];
                     proxyPort = Integer.parseInt(split[1]);
                 });
-            } catch (CommandExecutionException e) {
+            } catch (Exception e) {
                 logger.error("Error on getting system proxy", e);
             }
         }

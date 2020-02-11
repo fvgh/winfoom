@@ -138,6 +138,7 @@ public class JavafxApplication extends Application {
                 Optional<ButtonType> result = alert.showAndWait();
                 if (result.get() == ButtonType.OK) {
                     try {
+                        // Save the user properties before close
                         applicationContext.getBean(UserConfig.class).save();
                     } catch (Exception e) {
                         logger.error("Error on saving user configuration", e);

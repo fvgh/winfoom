@@ -89,7 +89,7 @@ class SocketHandler {
     public void handleRequest() {
         logger.debug("Connection received");
         try {
-            // Prepare request parsing
+            // Prepare request parsing (this is the client's request)
             HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
             SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics, LocalIOUtils.DEFAULT_BUFFER_SIZE);
             inputBuffer.bind(localSocketChannel.getInputStream());
