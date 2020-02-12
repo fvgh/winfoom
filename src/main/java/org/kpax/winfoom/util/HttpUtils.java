@@ -44,15 +44,13 @@ import java.util.stream.Collectors;
  */
 public final class HttpUtils {
 
-    public static final String STATUS_LINE_CONNECTION_ESTABLISHED = "200 Connection established";
+    public static final String CONNECTION_ESTABLISHED = "200 Connection established";
 
-    public static final String CONNECTION_ESTABLISHED = "Connection established";
+    public static final String BAD_REQUEST = "400 Bad Request";
+
+    public static final String INTERNAL_SERVER_ERROR = "500 Internal Server Error";
 
     public static final String HTTP_CONNECT = "CONNECT";
-
-    public static final String PROXY_CONNECTION = "Proxy-Connection";
-
-    public static final int MAX_PORT_VALUE = 65535;
 
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
@@ -75,8 +73,24 @@ public final class HttpUtils {
         return new URIBuilder(url).build();
     }
 
-    public static String connectionEstablished(ProtocolVersion version) {
-        return version.toString() + StringUtils.SPACE + STATUS_LINE_CONNECTION_ESTABLISHED;
+    public static String statusLine(ProtocolVersion version, String line) {
+        return version.toString() + StringUtils.SPACE + line;
+    }
+
+    public static String connectionEstablishedStatusLine(ProtocolVersion version) {
+        return statusLine(version, CONNECTION_ESTABLISHED);
+    }
+
+    public static String badRequestErrorStatusLine() {
+        return statusLine(HttpVersion.HTTP_1_1, BAD_REQUEST);
+    }
+
+    public static String internalServerErrorStatusLine(ProtocolVersion version) {
+        return statusLine(version, INTERNAL_SERVER_ERROR);
+    }
+
+    public static String internalServerErrorStatusLine() {
+        return statusLine(HttpVersion.HTTP_1_1, INTERNAL_SERVER_ERROR);
     }
 
     public static String stripChunked(String value) {

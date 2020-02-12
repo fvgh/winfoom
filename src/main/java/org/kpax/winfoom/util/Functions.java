@@ -42,7 +42,7 @@ public class Functions {
                 LocalIOUtils.close(r);
             }
         }
-        return Optional.of(r);
+        return Optional.ofNullable(r);
     }
 
 }

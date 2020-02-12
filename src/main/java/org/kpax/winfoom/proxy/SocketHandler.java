@@ -36,6 +36,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
@@ -49,6 +50,7 @@ import java.util.List;
  * <font style="color:red"><b>Note</b> Necessary improvement: now, on non-response errors<br>
  * (that can happen when the communication between the client and the remote proxy is broken)<br>
  * client receives no response (relying on the client's timeout mechanism) instead of receiving some generic error response.</font>
+ *
  * @author Eugen Covaci
  */
 @Component
@@ -96,7 +98,20 @@ class SocketHandler {
 
             // Parse the request (all but the message body )
             HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
-            HttpRequest request = requestParser.parse();
+            HttpRequest request;
+            try {
+                request = requestParser.parse();
+            } catch (IOException | HttpException e) {
+                OutputStream localOutputStream = localSocketChannel.getOutputStream();
+                String errorStatusLine;
+                if (e instanceof HttpException) {
+                    errorStatusLine = HttpUtils.badRequestErrorStatusLine();
+                } else {
+                    errorStatusLine = HttpUtils.internalServerErrorStatusLine();
+                }
+                localOutputStream.write(CrlfFormat.format(errorStatusLine));
+                throw e;
+            }
             RequestLine requestLine = request.getRequestLine();
             logger.debug("Start processing request line {}", requestLine);
 
@@ -106,9 +121,12 @@ class SocketHandler {
                 handleRequest(request, inputBuffer);
             }
 
-            logger.debug("End processing request line {}", requestLine);
-        } catch (ConnectionClosedException e) {// The connection has been closed unexpectedly.
-                                               // Not a real error, therefore we only debug it.
+            if (logger.isDebugEnabled()) {
+                logger.debug("End processing request line {}", requestLine);
+            }
+        } catch (ConnectionClosedException e) {
+            // The connection has been closed unexpectedly.
+            // Not a real error, therefore we only debug it.
             logger.debug(e.getMessage(), e);
         } catch (Throwable e) {
             logger.error("Error on handling local socket connection", e);
@@ -166,6 +184,12 @@ class SocketHandler {
                         logger.debug("End writing error entity content");
                     }
                     EntityUtils.consume(entity);
+                } else {
+                    // Since we have no response,
+                    // we return Internal Server Error
+                    // to the client
+                    localSocketChannel.getOutputStream().write(CrlfFormat.format(
+                            HttpUtils.internalServerErrorStatusLine(requestLine.getProtocolVersion())));
                 }
             } catch (Exception e) {
                 logger.error("Error on sending error response", e);
@@ -179,7 +203,8 @@ class SocketHandler {
 
     /**
      * Handle a non CONNECT request.
-     * @param request The request to handle.
+     *
+     * @param request     The request to handle.
      * @param inputBuffer It buffers input data in an internal byte array for optimal input performance.
      * @throws Exception
      */
@@ -224,21 +249,30 @@ class SocketHandler {
             // Execute the request
             try {
                 HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+                OutputStream outputStream = localSocketChannel.getOutputStream();
                 CloseableHttpResponse response;
-                if (retryRequest) {
-                    response = Functions
-                            .repeat(() -> httpClient.execute(target, request),
-                                    (t) -> t.getStatusLine().getStatusCode()
-                                            != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
-                                    systemConfig.getRepeatsOnFailure()).get();
-                } else {
-                    response = httpClient.execute(target, request);
+                try {
+                    if (retryRequest) {
+                        response = Functions
+                                .repeat(() -> httpClient.execute(target, request),
+                                        (t) -> t.getStatusLine().getStatusCode()
+                                                != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
+                                        systemConfig.getRepeatsOnFailure()).orElseThrow();
+                    } else {
+                        response = httpClient.execute(target, request);
+                    }
+                } catch (Exception e) {
+                    // Since we have no response,
+                    // we return Internal Server Error
+                    // to the client
+                    outputStream.write(CrlfFormat.format(
+                            HttpUtils.internalServerErrorStatusLine(requestLine.getProtocolVersion())));
+                    throw e;
                 }
                 try {
                     String statusLine = response.getStatusLine().toString();
                     logger.debug("Response status line: {}", statusLine);
 
-                    OutputStream outputStream = localSocketChannel.getOutputStream();
                     outputStream.write(CrlfFormat.format(statusLine));
 
                     logger.debug("Start writing response headers");
@@ -252,7 +286,7 @@ class SocketHandler {
                                 outputStream.write(
                                         CrlfFormat.format(
                                                 HttpUtils.createHttpHeaderAsString(HttpHeaders.TRANSFER_ENCODING,
-                                        nonChunkedTransferEncoding)));
+                                                        nonChunkedTransferEncoding)));
                                 logger.debug("Add chunk-striped header response");
                             } else {
                                 logger.debug("Remove transfer encoding chunked header response");
