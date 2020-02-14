@@ -89,7 +89,8 @@ class SocketHandler {
 
     SocketHandler bind(AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already binded!");
-        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel, systemConfig.getSocketChannelTimeout());
+        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel,
+                systemConfig.getSocketChannelTimeout());
         return this;
     }
 
@@ -98,7 +99,8 @@ class SocketHandler {
         try {
             // Prepare request parsing (this is the client's request)
             HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
-            SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics, LocalIOUtils.DEFAULT_BUFFER_SIZE);
+            SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics,
+                    LocalIOUtils.DEFAULT_BUFFER_SIZE);
             inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
@@ -107,12 +109,14 @@ class SocketHandler {
             try {
                 request = requestParser.parse();
             } catch (HttpException e) {
-                localSocketChannel.getOutputStream().write(CrlfFormat.format(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST)));
+                localSocketChannel.getOutputStream().write(
+                        CrlfFormat.format(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST)));
                 throw e;
             } catch (ConnectionClosedException e) {
                 throw e;
             } catch (Exception e) {
-                localSocketChannel.getOutputStream().write(CrlfFormat.format(HttpUtils.toInternalServerErrorStatusLine()));
+                localSocketChannel.getOutputStream().write(
+                        CrlfFormat.format(HttpUtils.toInternalServerErrorStatusLine()));
                 throw e;
             }
 
