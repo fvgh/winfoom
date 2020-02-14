@@ -22,7 +22,7 @@ public final class CrlfFormat {
     private CrlfFormat() {
     }
 
-    public static byte[] format(String input) {
+    public static byte[] format(Object input) {
         if (input != null) {
             return (input + CRLF).getBytes();
         }

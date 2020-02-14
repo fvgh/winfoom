@@ -64,6 +64,10 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         socketChannel.close();
     }
 
+    public boolean isOpen () {
+        return socketChannel.isOpen();
+    }
+
     private class SocketChannelInputStream extends InputStream {
 
         @Override

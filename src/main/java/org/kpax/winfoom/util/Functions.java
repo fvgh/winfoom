@@ -38,9 +38,10 @@ public class Functions {
             r = action.call();
             if (until.test(r)) {
                 break;
-            } else {
+            } else if (i < times - 1) {
                 LocalIOUtils.close(r);
             }
+
         }
         return Optional.ofNullable(r);
     }

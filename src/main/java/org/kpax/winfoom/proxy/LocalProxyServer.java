@@ -103,7 +103,7 @@ public class LocalProxyServer implements Closeable {
                     }
                 }
             });
-            proxyContext.start();
+            ((WinFoomProxyContext)proxyContext).start();
             started = true;
             logger.info("Server started, listening on port: " + userConfig.getLocalPort());
         } catch (Exception e) {

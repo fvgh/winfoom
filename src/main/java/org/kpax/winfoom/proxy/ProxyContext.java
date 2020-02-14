@@ -15,17 +15,13 @@ package org.kpax.winfoom.proxy;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.Closeable;
+import java.util.concurrent.Future;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 1/22/2020
  */
 interface ProxyContext extends Closeable {
-    /**
-     * After this method call, the proxy should be ready
-     * for handling HTTP(s) requests.
-     */
-    void start();
 
     /**
      * Configures and create a {@link org.apache.http.impl.client.CloseableHttpClient} .
@@ -35,9 +31,10 @@ interface ProxyContext extends Closeable {
     CloseableHttpClient createHttpClient(boolean retry);
 
     /**
-     * Submit to the internal executor a {@link Runnable} instance.
+     * Submit to the internal executor a {@link Runnable} instance for asynchronous execution.
      * @param runnable The instance to be submitted for execution.
+     * @return The <code>Future</code> instance.
      */
-    void executeAsync(Runnable runnable);
+    Future<?> executeAsync(Runnable runnable);
 
 }

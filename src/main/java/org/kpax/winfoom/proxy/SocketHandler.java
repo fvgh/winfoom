@@ -36,13 +36,14 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -59,12 +60,20 @@ class SocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
 
+    /**
+     * These headers will be removed from client's response if there is an enclosing
+     * entity.
+     */
     private static final List<String> ENTITY_BANNED_HEADERS = Arrays.asList(
             HttpHeaders.CONTENT_LENGTH,
             HttpHeaders.CONTENT_TYPE,
             HttpHeaders.CONTENT_ENCODING,
             HttpHeaders.PROXY_AUTHORIZATION);
 
+    /**
+     * These headers will be removed from client's response if there is no enclosing
+     * entity (it means the response has no body).
+     */
     private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(
             HttpHeaders.PROXY_AUTHORIZATION);
 
@@ -82,13 +91,13 @@ class SocketHandler {
 
     private AsynchronousSocketChannelWrapper localSocketChannel;
 
-    public SocketHandler bind(AsynchronousSocketChannel socketChannel) {
+    SocketHandler bind(AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already binded!");
         this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel, systemConfig.getSocketChannelTimeout());
         return this;
     }
 
-    public void handleRequest() {
+    void handleRequest() {
         logger.debug("Connection received");
         try {
             // Prepare request parsing (this is the client's request)
@@ -101,17 +110,16 @@ class SocketHandler {
             HttpRequest request;
             try {
                 request = requestParser.parse();
-            } catch (IOException | HttpException e) {
-                OutputStream localOutputStream = localSocketChannel.getOutputStream();
-                String errorStatusLine;
-                if (e instanceof HttpException) {
-                    errorStatusLine = HttpUtils.badRequestErrorStatusLine();
-                } else {
-                    errorStatusLine = HttpUtils.internalServerErrorStatusLine();
-                }
-                localOutputStream.write(CrlfFormat.format(errorStatusLine));
+            } catch (HttpException e) {
+                localSocketChannel.getOutputStream().write(CrlfFormat.format(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST)));
+                throw e;
+            } catch (ConnectionClosedException e) {
+                throw e;
+            } catch (Exception e) {
+                localSocketChannel.getOutputStream().write(CrlfFormat.format(HttpUtils.toInternalServerErrorStatusLine()));
                 throw e;
             }
+
             RequestLine requestLine = request.getRequestLine();
             logger.debug("Start processing request line {}", requestLine);
 
@@ -125,7 +133,8 @@ class SocketHandler {
                 logger.debug("End processing request line {}", requestLine);
             }
         } catch (ConnectionClosedException e) {
-            // The connection has been closed unexpectedly.
+
+            // The connection had been closed unexpectedly.
             // Not a real error, therefore we only debug it.
             logger.debug(e.getMessage(), e);
         } catch (Throwable e) {
@@ -133,7 +142,6 @@ class SocketHandler {
         } finally {
             LocalIOUtils.close(localSocketChannel);
         }
-
     }
 
     /**
@@ -144,19 +152,33 @@ class SocketHandler {
      * @throws Exception
      */
     private void handleConnect(RequestLine requestLine) throws Exception {
-        URI uri = HttpUtils.parseConnectUri(requestLine.getUri());
         logger.debug("Handle proxy connect request");
 
-        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-        HttpHost target = new HttpHost(uri.getHost(), uri.getPort());
+        HttpHost proxy;
+        HttpHost target;
+        try {
+            URI uri = HttpUtils.parseConnectUri(requestLine.getUri());
+            proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
+            target = new HttpHost(uri.getHost(), uri.getPort());
+        } catch (Exception e) {
+
+            // We give back to the client
+            // a Bad Request status line
+            // since the connect line is bad.
+            localSocketChannel.getOutputStream().write(
+                    CrlfFormat.format(HttpUtils.toStatusLine(
+                            requestLine.getProtocolVersion(), HttpStatus.SC_BAD_REQUEST)));
+            throw e;
+        }
 
         Socket socket = null;
+        Future<?> copyToSocketFuture = null;
         try {
             // Creates a tunnel through proxy.
             socket = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(),
                     localSocketChannel.getOutputStream());
             final OutputStream socketOutputStream = socket.getOutputStream();
-            proxyContext.executeAsync(() -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
+            copyToSocketFuture = proxyContext.executeAsync(() -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
                     socketOutputStream));
             LocalIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
         } catch (org.apache.http.impl.execchain.TunnelRefusedException tre) {
@@ -174,7 +196,7 @@ class SocketHandler {
                         localOutputStream.write(CrlfFormat.format(header.toString()));
                     }
 
-                    // Empty line
+                    // Empty line between headers and the body
                     localOutputStream.write(CrlfFormat.CRLF.getBytes());
 
                     HttpEntity entity = errorResponse.getEntity();
@@ -185,11 +207,12 @@ class SocketHandler {
                     }
                     EntityUtils.consume(entity);
                 } else {
-                    // Since we have no response,
-                    // we return Internal Server Error
-                    // to the client
-                    localSocketChannel.getOutputStream().write(CrlfFormat.format(
-                            HttpUtils.internalServerErrorStatusLine(requestLine.getProtocolVersion())));
+
+                    // No remote response, therefore we give back
+                    // to the client an Internal Server Error status line
+                    localSocketChannel.getOutputStream().write(
+                            CrlfFormat.format(HttpUtils.toInternalServerErrorStatusLine(
+                                    requestLine.getProtocolVersion())));
                 }
             } catch (Exception e) {
                 logger.error("Error on sending error response", e);
@@ -197,6 +220,18 @@ class SocketHandler {
         } catch (Exception e) {
             logger.error("Error on creating/handling proxy tunnel", e);
         } finally {
+            if (copyToSocketFuture != null) {
+                try {
+
+                    // Wait for copy to finish
+                    // before closing the socket
+                    copyToSocketFuture.get();
+                } catch (ExecutionException e) {
+                    logger.debug("Error on writing to socket", e.getCause());
+                } catch (Exception e) {
+                    logger.debug("Error on writing to socket", e);
+                }
+            }
             LocalIOUtils.close(socket);
         }
     }
@@ -253,20 +288,18 @@ class SocketHandler {
                 CloseableHttpResponse response;
                 try {
                     if (retryRequest) {
-                        response = Functions
-                                .repeat(() -> httpClient.execute(target, request),
-                                        (t) -> t.getStatusLine().getStatusCode()
-                                                != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
+                        response = Functions.repeat(() -> httpClient.execute(target, request),
+                                        (t) -> t.getStatusLine().getStatusCode() != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
                                         systemConfig.getRepeatsOnFailure()).orElseThrow();
                     } else {
                         response = httpClient.execute(target, request);
                     }
                 } catch (Exception e) {
-                    // Since we have no response,
-                    // we return Internal Server Error
-                    // to the client
-                    outputStream.write(CrlfFormat.format(
-                            HttpUtils.internalServerErrorStatusLine(requestLine.getProtocolVersion())));
+
+                    // No remote response, therefore we give back
+                    // to the client an Internal Server Error status line
+                    localSocketChannel.getOutputStream().write(CrlfFormat.format(
+                            HttpUtils.toInternalServerErrorStatusLine(requestLine.getProtocolVersion())));
                     throw e;
                 }
                 try {

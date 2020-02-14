@@ -190,21 +190,14 @@ class CustomProxyClient {
         // Write the status line
         responseStream.write(CrlfFormat.format(response.getStatusLine().toString()));
 
-        // Write the response headers.
+        // Write an empty line as separator
         // The client might not be interested,
         // therefore only debug the error.
         try {
-            logger.debug("Start writing tunnel response headers");
-            for (Header header : response.getAllHeaders()) {
-                String strHeader = header.toString();
-                logger.debug("Write response tunnel header: {}", strHeader);
-                responseStream.write(CrlfFormat.format(strHeader));
-            }
-
-            // Empty line to separate the headers
+            logger.debug("Write empty line");
             responseStream.write(CrlfFormat.CRLF.getBytes());
-        } catch (IOException e) {
-            logger.debug("Error on writing headers", e);
+        } catch (Exception e) {
+            logger.debug("Error on writing empty line", e);
         }
 
         return connection.getSocket();

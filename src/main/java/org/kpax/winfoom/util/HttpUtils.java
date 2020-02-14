@@ -12,16 +12,18 @@
 
 package org.kpax.winfoom.util;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.EnglishReasonPhraseCatalog;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicStatusLine;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.config.UserConfig;
 import org.slf4j.Logger;
@@ -36,6 +38,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -43,12 +46,6 @@ import java.util.stream.Collectors;
  * @author Eugen Covaci
  */
 public final class HttpUtils {
-
-    public static final String CONNECTION_ESTABLISHED = "200 Connection established";
-
-    public static final String BAD_REQUEST = "400 Bad Request";
-
-    public static final String INTERNAL_SERVER_ERROR = "500 Internal Server Error";
 
     public static final String HTTP_CONNECT = "CONNECT";
 
@@ -71,26 +68,6 @@ public final class HttpUtils {
             return uriBuilder.build();
         }
         return new URIBuilder(url).build();
-    }
-
-    public static String statusLine(ProtocolVersion version, String line) {
-        return version.toString() + StringUtils.SPACE + line;
-    }
-
-    public static String connectionEstablishedStatusLine(ProtocolVersion version) {
-        return statusLine(version, CONNECTION_ESTABLISHED);
-    }
-
-    public static String badRequestErrorStatusLine() {
-        return statusLine(HttpVersion.HTTP_1_1, BAD_REQUEST);
-    }
-
-    public static String internalServerErrorStatusLine(ProtocolVersion version) {
-        return statusLine(version, INTERNAL_SERVER_ERROR);
-    }
-
-    public static String internalServerErrorStatusLine() {
-        return statusLine(HttpVersion.HTTP_1_1, INTERNAL_SERVER_ERROR);
     }
 
     public static String stripChunked(String value) {
@@ -150,6 +127,24 @@ public final class HttpUtils {
             logger.error("Error on testing proxy config", e);
             throw e;
         }
+    }
+
+    public static BasicStatusLine toInternalServerErrorStatusLine() {
+        return toStatusLine(HttpVersion.HTTP_1_1, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    }
+
+    public static BasicStatusLine toStatusLine(int httpCode) {
+        return toStatusLine(HttpVersion.HTTP_1_1, httpCode);
+    }
+
+    public static BasicStatusLine toInternalServerErrorStatusLine(ProtocolVersion protocolVersion) {
+        return toStatusLine(protocolVersion, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    }
+
+    public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode) {
+        Validate.notNull(protocolVersion, "protocolVersion cannot be null");
+        return new BasicStatusLine(protocolVersion, httpCode,
+                EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH));
     }
 
 }

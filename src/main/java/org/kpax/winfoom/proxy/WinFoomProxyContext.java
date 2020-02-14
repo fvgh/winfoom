@@ -44,10 +44,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * It provides a thread pool, a HTTP connection manager etc.
@@ -57,9 +54,9 @@ import java.util.concurrent.TimeUnit;
  * @author Eugen Covaci
  */
 @Component
-class ProxyContextImpl implements ProxyContext {
+class WinFoomProxyContext implements ProxyContext {
 
-    private final Logger logger = LoggerFactory.getLogger(ProxyContextImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(WinFoomProxyContext.class);
 
     @Autowired
     private SystemConfig systemConfig;
@@ -80,7 +77,7 @@ class ProxyContextImpl implements ProxyContext {
     private Timer connectionEvictionTimer;
 
     @PostConstruct
-    public void init() {
+    private void init() {
         logger.info("Create thread pool");
 
         // All threads are daemons!
@@ -108,8 +105,11 @@ class ProxyContextImpl implements ProxyContext {
         logger.info("Done proxy context's initialization");
     }
 
-    @Override
-    public void start() {
+    /**
+     * After this method call, the proxy should be ready
+     * for handling HTTP(s) requests.
+     */
+     void start() {
         if (systemConfig.isEvictionEnabled()) {
             logger.info("Start connection eviction task");
             connectionEvictionTimer.schedule(new EvictionTask(), 0, systemConfig.getEvictionPeriod() * 1000);
@@ -147,8 +147,12 @@ class ProxyContextImpl implements ProxyContext {
     }
 
     @Override
-    public void executeAsync(Runnable runnable) {
-        threadPool.execute(runnable);
+    public Future<?> executeAsync(Runnable runnable) {
+        return threadPool.submit(runnable);
+    }
+
+    ThreadPoolExecutor getThreadPool() {
+        return threadPool;
     }
 
     @Override
