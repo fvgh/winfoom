@@ -112,7 +112,9 @@ class WinFoomProxyContext implements ProxyContext {
      void start() {
         if (systemConfig.isEvictionEnabled()) {
             logger.info("Start connection eviction task");
-            connectionEvictionTimer.schedule(new EvictionTask(), 0, systemConfig.getEvictionPeriod() * 1000);
+            connectionEvictionTimer.schedule(new EvictionTask(),
+                    systemConfig.getEvictionPeriod() * 1000,
+                    systemConfig.getEvictionPeriod() * 1000);
         }
         logger.info("Proxy context is ready");
     }
