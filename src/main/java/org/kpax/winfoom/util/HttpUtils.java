@@ -13,6 +13,8 @@
 package org.kpax.winfoom.util;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -54,9 +56,9 @@ public final class HttpUtils {
     private HttpUtils() {
     }
 
-    public static URI parseConnectUri(String uri) throws NumberFormatException, URISyntaxException {
+    public static Pair<String,Integer> parseConnectUri(String uri) throws NumberFormatException {
         String[] split = uri.split(":");
-        return new URI(null, null, split[0], Integer.parseInt(split[1]), null, null, null);
+        return new ImmutablePair<>(split[0], Integer.parseInt(split[1]));
     }
 
     public static URI parseUri(String url) throws URISyntaxException {
@@ -129,7 +131,7 @@ public final class HttpUtils {
         }
     }
 
-    public static BasicStatusLine toInternalServerErrorStatusLine() {
+    public static BasicStatusLine to500StatusLine() {
         return toStatusLine(HttpVersion.HTTP_1_1, HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
@@ -137,7 +139,7 @@ public final class HttpUtils {
         return toStatusLine(HttpVersion.HTTP_1_1, httpCode);
     }
 
-    public static BasicStatusLine toInternalServerErrorStatusLine(ProtocolVersion protocolVersion) {
+    public static BasicStatusLine to500StatusLine(ProtocolVersion protocolVersion) {
         return toStatusLine(protocolVersion, HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 

@@ -12,6 +12,8 @@
 
 package org.kpax.winfoom.util;
 
+import org.apache.http.ProtocolVersion;
+
 /**
  * @author Eugen Covaci
  */
@@ -27,6 +29,23 @@ public final class CrlfFormat {
             return (input + CRLF).getBytes();
         }
         return CRLF.getBytes();
+    }
+
+    public static byte[] toStatusLine(ProtocolVersion protocolVersion, int httpCode) {
+        return CrlfFormat.format(HttpUtils.toStatusLine(protocolVersion, httpCode));
+    }
+
+    public static byte[] toStatusLine(int httpCode) {
+        return CrlfFormat.format(HttpUtils.toStatusLine(httpCode));
+    }
+
+    public static byte[] to500StatusLine(ProtocolVersion protocolVersion) {
+        return CrlfFormat.format(HttpUtils.to500StatusLine(
+                protocolVersion));
+    }
+
+    public static byte[] to500StatusLine() {
+        return CrlfFormat.format(HttpUtils.to500StatusLine());
     }
 
 }

@@ -53,7 +53,7 @@ public class LocalProxyServer implements Closeable {
 
     private AsynchronousServerSocketChannel serverSocket;
 
-    private boolean started;
+    private volatile boolean started;
 
     /**
      * Starts the local proxy server.
@@ -71,6 +71,7 @@ public class LocalProxyServer implements Closeable {
             serverSocket = AsynchronousServerSocketChannel.open()
                     .bind(new InetSocketAddress(userConfig.getLocalPort()));
             serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
+
                 public void completed(AsynchronousSocketChannel socketChanel, Void att) {
                     try {
                         // accept the next connection
@@ -83,7 +84,7 @@ public class LocalProxyServer implements Closeable {
                     // Tune the socket for better performance.
                     try {
                         applicationContext.getBean(SocketHandler.class)
-                                .bind(socketChanel.setOption(StandardSocketOptions.TCP_NODELAY, true)
+                                .bind(socketChanel
                                         .setOption(StandardSocketOptions.SO_RCVBUF,
                                                 systemConfig.getServerSocketBufferSize())
                                         .setOption(StandardSocketOptions.SO_SNDBUF,
@@ -101,9 +102,10 @@ public class LocalProxyServer implements Closeable {
                     if (!(exc instanceof AsynchronousCloseException)) {
                         logger.warn("SocketServer failed", exc);
                     }
+
                 }
+
             });
-            ((WinFoomProxyContext)proxyContext).start();
             started = true;
             logger.info("Server started, listening on port: " + userConfig.getLocalPort());
         } catch (Exception e) {

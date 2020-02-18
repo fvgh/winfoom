@@ -191,14 +191,8 @@ class CustomProxyClient {
         responseStream.write(CrlfFormat.format(response.getStatusLine().toString()));
 
         // Write an empty line as separator
-        // The client might not be interested,
-        // therefore only debug the error.
-        try {
-            logger.debug("Write empty line");
-            responseStream.write(CrlfFormat.CRLF.getBytes());
-        } catch (Exception e) {
-            logger.debug("Error on writing empty line", e);
-        }
+        responseStream.write(CrlfFormat.CRLF.getBytes());
+        logger.debug("Done writing empty line");
 
         return connection.getSocket();
     }

@@ -38,9 +38,6 @@ public class SystemConfig {
     @Value("${max.connections}")
     private Integer maxConnections;
 
-    @Value("${eviction.period}")
-    private Integer evictionPeriod;
-
     @Value("${max.connection.idle}")
     private Integer maxConnectionIdle;
 
@@ -55,12 +52,6 @@ public class SystemConfig {
 
     @Value("${internal.buffer.length}")
     private Integer internalBufferLength;
-
-    @Value("${socket.channel.timeout}")
-    private Integer socketChannelTimeout;
-
-    @Value("${eviction.enabled}")
-    private boolean evictionEnabled;
 
     @Value("${use.system.properties}")
     private boolean useSystemProperties;
@@ -89,10 +80,6 @@ public class SystemConfig {
         return maxConnections;
     }
 
-    public Integer getEvictionPeriod() {
-        return evictionPeriod;
-    }
-
     public Integer getServerSocketBufferSize() {
         return serverSocketBufferSize;
     }
@@ -109,10 +96,6 @@ public class SystemConfig {
         return maxConnectionIdle;
     }
 
-    public boolean isEvictionEnabled() {
-        return evictionEnabled;
-    }
-
     public String getReleaseVersion() {
         return releaseVersion;
     }
@@ -125,7 +108,4 @@ public class SystemConfig {
         return internalBufferLength;
     }
 
-    public Integer getSocketChannelTimeout() {
-        return socketChannelTimeout;
-    }
 }

@@ -17,7 +17,6 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
-import org.kpax.winfoom.exception.CommandExecutionException;
 import org.kpax.winfoom.util.CommandExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
