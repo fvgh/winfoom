@@ -12,9 +12,6 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.http.HeaderElement;
-import org.apache.http.HeaderElementIterator;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.AuthSchemes;
@@ -22,19 +19,12 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
-import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.auth.BasicSchemeFactory;
 import org.apache.http.impl.auth.DigestSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.ProxyAuthenticationStrategy;
-import org.apache.http.impl.client.WinHttpClients;
+import org.apache.http.impl.client.*;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.message.BasicHeaderElementIterator;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
 import org.kpax.winfoom.config.SystemConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.*;
 
 /**
@@ -74,8 +62,6 @@ class WinFoomProxyContext implements ProxyContext {
 
     private PoolingHttpClientConnectionManager connectionManager;
 
-    private Timer connectionEvictionTimer;
-
     @PostConstruct
     private void init() {
         logger.info("Create thread pool");
@@ -99,24 +85,7 @@ class WinFoomProxyContext implements ProxyContext {
             connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
         }
 
-        logger.info("Create connection eviction timer");
-        connectionEvictionTimer = new Timer();
-
         logger.info("Done proxy context's initialization");
-    }
-
-    /**
-     * After this method call, the proxy should be ready
-     * for handling HTTP(s) requests.
-     */
-     void start() {
-        if (systemConfig.isEvictionEnabled()) {
-            logger.info("Start connection eviction task");
-            connectionEvictionTimer.schedule(new EvictionTask(),
-                    systemConfig.getEvictionPeriod() * 1000,
-                    systemConfig.getEvictionPeriod() * 1000);
-        }
-        logger.info("Proxy context is ready");
     }
 
     @Override
@@ -136,7 +105,7 @@ class WinFoomProxyContext implements ProxyContext {
                 .setDefaultSocketConfig(socketConfig)
                 .setConnectionManager(connectionManager)
                 .setConnectionManagerShared(true)
-                .setKeepAliveStrategy(new CustomConnectionKeepAliveStrategy())
+                .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
                 .disableRedirectHandling()
                 .disableCookieManagement();
         if (!retry) {
@@ -153,10 +122,6 @@ class WinFoomProxyContext implements ProxyContext {
         return threadPool.submit(runnable);
     }
 
-    ThreadPoolExecutor getThreadPool() {
-        return threadPool;
-    }
-
     @Override
     public void close() {
         logger.info("Close all context's resources");
@@ -171,52 +136,6 @@ class WinFoomProxyContext implements ProxyContext {
             connectionManager.close();
         } catch (Exception e) {
             logger.warn("Error on closing PoolingHttpClientConnectionManager instance", e);
-        }
-
-        if (connectionEvictionTimer != null) {
-            try {
-                connectionEvictionTimer.cancel();
-            } catch (Exception e) {
-                logger.warn("Error on closing connectionEvictionTimer", e);
-            }
-        }
-    }
-
-
-    private class CustomConnectionKeepAliveStrategy implements ConnectionKeepAliveStrategy {
-
-        @Override
-        public long getKeepAliveDuration(HttpResponse response, HttpContext context) {
-
-            // Honor 'keep-alive' header
-            HeaderElementIterator it = new BasicHeaderElementIterator(response.headerIterator(HTTP.CONN_KEEP_ALIVE));
-            while (it.hasNext()) {
-                HeaderElement headerElement = it.nextElement();
-                String value = headerElement.getValue();
-                if (value != null && headerElement.getName().equalsIgnoreCase("timeout")) {
-                    try {
-                        return Long.parseLong(value) * 1000;
-                    } catch (NumberFormatException ignore) {
-                    }
-                }
-            }
-
-            return systemConfig.getMaxConnectionIdle() * 1000;
-        }
-
-    }
-
-    private class EvictionTask extends TimerTask {
-
-        @Override
-        public void run() {
-
-            // Close expired connections
-            connectionManager.closeExpiredConnections();
-
-            // Close connections that have been idle
-            // longer than MAX_CONNECTION_IDLE seconds
-            connectionManager.closeIdleConnections(systemConfig.getMaxConnectionIdle(), TimeUnit.SECONDS);
         }
     }
 
