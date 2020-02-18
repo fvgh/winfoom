@@ -15,7 +15,7 @@ An example of such facade for NTLM proxies is [CNTLM](http://cntlm.sourceforge.n
 Winfoom is a Java application and comes with a release that includes a Java environment [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.5%2B10/OpenJDK11U-jdk_x64_windows_hotspot_11.0.5_10.msi),
 so you don't have to install anything. 
 
-The release contains the following executable files:
+Starting with v1.2.0, the release contains the following executable files:
  
 * `launch.bat` launches the application using the bundled JRE.
 * `launch_debug.bat` launches the application using the bundled JRE in debug mode.
