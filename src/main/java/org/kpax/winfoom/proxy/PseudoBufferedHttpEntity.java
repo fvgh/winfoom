@@ -17,7 +17,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.FoomIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +73,7 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             writeTo(out, contentLength < 0 ? internalBufferLength : contentLength);
             this.bufferedBytes = out.toByteArray();
-            this.repeatable = !(contentLength < 0 && LocalIOUtils.isAvailable(this.inputBuffer));
+            this.repeatable = !(contentLength < 0 && FoomIOUtils.isAvailable(this.inputBuffer));
         }
 
         logger.debug("bufferedBytes {}", this.bufferedBytes.length);
@@ -84,7 +84,7 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
         int length;
         if (maxLength < 0) {
             // consume until EOF
-            while (LocalIOUtils.isAvailable(inputBuffer)) {
+            while (FoomIOUtils.isAvailable(inputBuffer)) {
                 length = inputBuffer.read(buffer);
                 if (length == -1) {
                     break;
@@ -95,7 +95,7 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
         } else {
             // consume no more than maxLength
             long remaining = maxLength;
-            while (remaining > 0 && LocalIOUtils.isAvailable(inputBuffer)) {
+            while (remaining > 0 && FoomIOUtils.isAvailable(inputBuffer)) {
                 length = inputBuffer.read(buffer, 0, (int) Math.min(OUTPUT_BUFFER_SIZE, remaining));
                 if (length == -1) {
                     break;

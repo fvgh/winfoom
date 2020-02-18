@@ -39,7 +39,7 @@ public class Functions {
             if (until.test(r)) {
                 break;
             } else if (i < times - 1) {
-                LocalIOUtils.close(r);
+                FoomIOUtils.close(r);
             }
 
         }

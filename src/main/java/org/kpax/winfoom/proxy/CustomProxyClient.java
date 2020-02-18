@@ -45,7 +45,7 @@ import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.FoomIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -159,7 +159,7 @@ class CustomProxyClient {
                         EntityUtils.consume(response.getEntity());
                     } else {
                         logger.debug("Close tunnel connection");
-                        LocalIOUtils.close(connection);
+                        FoomIOUtils.close(connection);
                     }
                     // discard previous auth header
                     connect.removeHeaders(AUTH.PROXY_AUTH_RESP);
@@ -183,7 +183,7 @@ class CustomProxyClient {
                 response.setEntity(new BufferedHttpEntity(entity));
             }
             logger.debug("Close tunnel connection");
-            LocalIOUtils.close(connection);
+            FoomIOUtils.close(connection);
             throw new TunnelRefusedException("CONNECT refused by proxy: " + response.getStatusLine(), response);
         }
 

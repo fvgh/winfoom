@@ -135,8 +135,12 @@ public class JavafxApplication extends Application {
                                 ButtonType.CANCEL);
                 alert.initStyle(StageStyle.UTILITY);
                 alert.setTitle("Warning");
+
                 Optional<ButtonType> result = alert.showAndWait();
-                if (result.get() == ButtonType.OK) {
+
+                // Get the pressed button
+                ButtonType buttonType = result.orElseGet(() -> ButtonType.CANCEL);
+                if (buttonType == ButtonType.OK) {
                     try {
                         // Save the user properties before close
                         applicationContext.getBean(UserConfig.class).save();
@@ -147,6 +151,7 @@ public class JavafxApplication extends Application {
                 } else {
                     event.consume();
                 }
+
             } else {
                 Platform.exit();
             }

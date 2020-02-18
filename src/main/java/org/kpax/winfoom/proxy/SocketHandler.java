@@ -28,7 +28,7 @@ import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.Functions;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.FoomIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -47,8 +46,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -104,7 +101,7 @@ class SocketHandler {
             // Prepare request parsing (this is the client's request)
             HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
             SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics,
-                    LocalIOUtils.DEFAULT_BUFFER_SIZE);
+                    FoomIOUtils.DEFAULT_BUFFER_SIZE);
             inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
@@ -116,11 +113,11 @@ class SocketHandler {
                 localSocketChannel.getOutputStream().write(
                         CrlfFormat.toStatusLine(HttpStatus.SC_BAD_REQUEST));
                 throw e;
-            } catch (ConnectionClosedException e) {
-                throw e;
             } catch (Exception e) {
-                localSocketChannel.getOutputStream().write(
-                        CrlfFormat.to500StatusLine());
+                if (!(e instanceof ConnectionClosedException)) {
+                    localSocketChannel.getOutputStream().write(
+                            CrlfFormat.to500StatusLine());
+                }
                 throw e;
             }
 
@@ -144,7 +141,7 @@ class SocketHandler {
         } catch (Throwable e) {
             logger.error("Error on handling local socket connection", e);
         } finally {
-            LocalIOUtils.close(localSocketChannel);
+            FoomIOUtils.close(localSocketChannel);
         }
     }
 
@@ -158,14 +155,11 @@ class SocketHandler {
     private void handleConnect(RequestLine requestLine) throws Exception {
         logger.debug("Handle proxy connect request");
 
-        HttpHost proxy;
-        HttpHost target;
+        Pair<String, Integer> hostPort;
         try {
-            proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
 
             // Get host and port
-            Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
-            target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
+            hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
         } catch (Exception e) {
 
             // We give back to the client
@@ -177,26 +171,33 @@ class SocketHandler {
             throw e;
         }
 
+        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
+        HttpHost  target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
         Socket socket = null;
         try {
             // Creates a tunnel through proxy.
             socket = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(),
                     localSocketChannel.getOutputStream());
+
             final OutputStream socketOutputStream = socket.getOutputStream();
-            Future<?> copyToSocketFuture = proxyContext.executeAsync(() -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
+            Future<?> copyToSocketFuture = proxyContext.executeAsync(() -> FoomIOUtils.copyQuietly(localSocketChannel.getInputStream(),
                     socketOutputStream));
-            LocalIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
+            FoomIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
             if (!copyToSocketFuture.isDone()) {
                 try {
 
                     // Wait for async copy to finish
                     copyToSocketFuture.get();
                 } catch (ExecutionException e) {
+
+                    // If the cause is an IOException
+                    // we throw it as it is, otherwise
+                    // we wrap it into an IOException
+                    if (e.getCause() instanceof IOException) {
+                        throw (IOException)e.getCause();
+                    }
                     throw new IOException("Error on writing to socket", e.getCause());
                 } catch (Exception e) {
-                    if (e instanceof IOException) {
-                        throw e;
-                    }
                     throw new IOException("Error on writing to socket", e);
                 }
             }
@@ -241,7 +242,7 @@ class SocketHandler {
         } catch (Exception e) {
             logger.error("Error on creating/handling proxy tunnel", e);
         } finally {
-            LocalIOUtils.close(socket);
+            FoomIOUtils.close(socket);
         }
     }
 
@@ -357,7 +358,7 @@ class SocketHandler {
                     // Make sure the entity is fully consumed
                     EntityUtils.consume(entity);
                 } finally {
-                    LocalIOUtils.close(response);
+                    FoomIOUtils.close(response);
                 }
 
             } catch (org.apache.http.client.ClientProtocolException e) {
@@ -367,7 +368,7 @@ class SocketHandler {
             }
             logger.debug("End handling non-connect request {}", requestLine);
         } finally {
-            LocalIOUtils.close(httpClient);
+            FoomIOUtils.close(httpClient);
         }
     }
 
