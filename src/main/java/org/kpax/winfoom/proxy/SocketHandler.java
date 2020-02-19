@@ -17,6 +17,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
@@ -26,9 +27,8 @@ import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.CrlfFormat;
-import org.kpax.winfoom.util.Functions;
-import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.FoomIOUtils;
+import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -172,7 +172,7 @@ class SocketHandler {
         }
 
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-        HttpHost  target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
+        HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
         Socket socket = null;
         try {
             // Creates a tunnel through proxy.
@@ -194,7 +194,7 @@ class SocketHandler {
                     // we throw it as it is, otherwise
                     // we wrap it into an IOException
                     if (e.getCause() instanceof IOException) {
-                        throw (IOException)e.getCause();
+                        throw (IOException) e.getCause();
                     }
                     throw new IOException("Error on writing to socket", e.getCause());
                 } catch (Exception e) {
@@ -267,12 +267,9 @@ class SocketHandler {
             logger.debug("No enclosing entity");
         }
 
-        final boolean retryRequest = !(request instanceof BasicHttpEntityEnclosingRequest)
-                || ((BasicHttpEntityEnclosingRequest) request).getEntity().isRepeatable();
-        logger.debug("retryRequest {} ", retryRequest);
-
-        URI uri = HttpUtils.parseUri(requestLine.getUri());
-        CloseableHttpClient httpClient = proxyContext.createHttpClient(retryRequest);
+        // Create the CloseableHttpClient instance
+        HttpClientBuilder httpClientBuilder = proxyContext.createHttpClientBuilder();
+        CloseableHttpClient httpClient = httpClientBuilder.build();
 
         try {
             List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?
@@ -293,17 +290,12 @@ class SocketHandler {
 
             // Execute the request
             try {
+                URI uri = HttpUtils.parseUri(requestLine.getUri());
                 HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
                 OutputStream outputStream = localSocketChannel.getOutputStream();
                 CloseableHttpResponse response;
                 try {
-                    if (retryRequest) {
-                        response = Functions.repeat(() -> httpClient.execute(target, request),
-                                (t) -> t.getStatusLine().getStatusCode() != HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED,
-                                systemConfig.getRepeatsOnFailure()).orElseThrow();
-                    } else {
-                        response = httpClient.execute(target, request);
-                    }
+                    response = httpClient.execute(target, request);
                 } catch (Exception e) {
 
                     // No remote response, therefore we give back

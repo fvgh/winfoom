@@ -16,8 +16,10 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.Region;
+import javafx.stage.StageStyle;
 
 import java.awt.*;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -47,6 +49,29 @@ public class GuiUtils {
 
     public static void showMessage(MessageType messageType, String message) {
         showMessage(messageType.getLabel(), message);
+    }
+
+    public static ButtonType showCloseAppAlertAndWait () {
+        return showOkCancelAlertAndWait ("The local proxy facade is started. \nDo you like to stop the proxy facade and leave the application?");
+    }
+
+    public static ButtonType showCloseProxyAlertAndWait () {
+        return showOkCancelAlertAndWait ("The local proxy facade is started. \nDo you like to stop the proxy facade?");
+    }
+
+    public static ButtonType showOkCancelAlertAndWait (String message) {
+        Alert alert =
+                new Alert(Alert.AlertType.NONE,
+                        message,
+                        ButtonType.OK,
+                        ButtonType.CANCEL);
+        alert.initStyle(StageStyle.UTILITY);
+        alert.setTitle("Warning");
+
+        Optional<ButtonType> result = alert.showAndWait();
+
+        // Get the pressed button
+        return result.orElse(ButtonType.CANCEL);
     }
 
     public static void closeAllAwtWindows () {

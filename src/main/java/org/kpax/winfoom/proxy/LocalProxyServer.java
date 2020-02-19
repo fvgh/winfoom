@@ -107,6 +107,14 @@ public class LocalProxyServer implements Closeable {
 
             });
             started = true;
+
+            try {
+                // Save the user properties before close
+                userConfig.save();
+            } catch (Exception e) {
+                logger.warn("Error on saving user configuration", e);
+            }
+
             logger.info("Server started, listening on port: " + userConfig.getLocalPort());
         } catch (Exception e) {
             // Cleanup on exception
@@ -126,6 +134,7 @@ public class LocalProxyServer implements Closeable {
                 logger.warn("Error on closing server socket", e);
             }
         }
+        this.started = false;
     }
 
     public boolean isStarted() {

@@ -13,6 +13,7 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.Closeable;
 import java.util.concurrent.Future;
@@ -24,11 +25,10 @@ import java.util.concurrent.Future;
 interface ProxyContext extends Closeable {
 
     /**
-     * Configures and create a {@link org.apache.http.impl.client.CloseableHttpClient} .
-     * @param retry whether retries will be performed on failure.
-     * @return an instance of {@link org.apache.http.impl.client.CloseableHttpClient}.
+     * Configures and create a {@link org.apache.http.impl.client.HttpClientBuilder} .
+     * @return an instance of {@link org.apache.http.impl.client.HttpClientBuilder}.
      */
-    CloseableHttpClient createHttpClient(boolean retry);
+    HttpClientBuilder createHttpClientBuilder();
 
     /**
      * Submit to the internal executor a {@link Runnable} instance for asynchronous execution.

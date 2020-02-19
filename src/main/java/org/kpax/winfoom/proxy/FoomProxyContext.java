@@ -12,10 +12,16 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.ServiceUnavailableRetryStrategy;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
@@ -25,6 +31,7 @@ import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
 import org.apache.http.impl.client.*;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
 import org.kpax.winfoom.config.SystemConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +49,9 @@ import java.util.concurrent.*;
  * @author Eugen Covaci
  */
 @Component
-class WinFoomProxyContext implements ProxyContext {
+class FoomProxyContext implements ProxyContext {
 
-    private final Logger logger = LoggerFactory.getLogger(WinFoomProxyContext.class);
+    private final Logger logger = LoggerFactory.getLogger(FoomProxyContext.class);
 
     @Autowired
     private SystemConfig systemConfig;
@@ -56,11 +63,15 @@ class WinFoomProxyContext implements ProxyContext {
     private RequestConfig proxyRequestConfig;
 
     @Autowired
-    private  SocketConfig socketConfig;
+    private SocketConfig socketConfig;
 
     private ThreadPoolExecutor threadPool;
 
     private PoolingHttpClientConnectionManager connectionManager;
+
+    private FoomDefaultHttpRequestRetryHandler retryHandler;
+
+    private ProxyAuthenticationRequiredRetryStrategy retryStrategy;
 
     @PostConstruct
     private void init() {
@@ -85,11 +96,14 @@ class WinFoomProxyContext implements ProxyContext {
             connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
         }
 
+        retryHandler = new FoomDefaultHttpRequestRetryHandler();
+        retryStrategy = new ProxyAuthenticationRequiredRetryStrategy(systemConfig.getRepeatsOnFailure());
+
         logger.info("Done proxy context's initialization");
     }
 
     @Override
-    public CloseableHttpClient createHttpClient(boolean retry) {
+    public HttpClientBuilder createHttpClientBuilder() {
         final Registry<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
                 .register(AuthSchemes.BASIC, new BasicSchemeFactory())
                 .register(AuthSchemes.DIGEST, new DigestSchemeFactory())
@@ -106,15 +120,15 @@ class WinFoomProxyContext implements ProxyContext {
                 .setConnectionManager(connectionManager)
                 .setConnectionManagerShared(true)
                 .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
+                .setServiceUnavailableRetryStrategy(retryStrategy)
+                .setRetryHandler(retryHandler)
                 .disableRedirectHandling()
                 .disableCookieManagement();
-        if (!retry) {
-            builder.disableAutomaticRetries();
-        }
+
         if (systemConfig.isUseSystemProperties()) {
             builder.useSystemProperties();
         }
-        return builder.build();
+        return builder;
     }
 
     @Override
@@ -137,6 +151,40 @@ class WinFoomProxyContext implements ProxyContext {
         } catch (Exception e) {
             logger.warn("Error on closing PoolingHttpClientConnectionManager instance", e);
         }
+    }
+
+    private static class ProxyAuthenticationRequiredRetryStrategy implements ServiceUnavailableRetryStrategy {
+
+        private int maxExecutionCount;
+
+        public ProxyAuthenticationRequiredRetryStrategy(int maxExecutionCount) {
+            this.maxExecutionCount = maxExecutionCount;
+        }
+
+        @Override
+        public boolean retryRequest(HttpResponse response, int executionCount, HttpContext context) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            HttpRequest request = HttpClientContext.adapt(context).getRequest();
+            return statusCode == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED
+                    && executionCount < this.maxExecutionCount
+                    && (!(request instanceof HttpEntityEnclosingRequest)
+                           || ((HttpEntityEnclosingRequest) request).getEntity().isRepeatable());
+        }
+
+        @Override
+        public long getRetryInterval() {
+            return 0;
+        }
+    }
+
+    private static class FoomDefaultHttpRequestRetryHandler extends DefaultHttpRequestRetryHandler {
+
+        @Override
+        protected boolean handleAsIdempotent(HttpRequest request) {
+            return !(request instanceof HttpEntityEnclosingRequest)
+                    || ((HttpEntityEnclosingRequest) request).getEntity().isRepeatable();
+        }
+
     }
 
 }

@@ -128,25 +128,11 @@ public class JavafxApplication extends Application {
 
         scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {
             if (this.applicationContext.getBean(LocalProxyServer.class).isStarted()) {
-                Alert alert =
-                        new Alert(Alert.AlertType.NONE,
-                                "The local proxy facade is started. \nDo you like to stop the proxy facade and leave the application?",
-                                ButtonType.OK,
-                                ButtonType.CANCEL);
-                alert.initStyle(StageStyle.UTILITY);
-                alert.setTitle("Warning");
-
-                Optional<ButtonType> result = alert.showAndWait();
 
                 // Get the pressed button
-                ButtonType buttonType = result.orElseGet(() -> ButtonType.CANCEL);
+                ButtonType buttonType = GuiUtils.showCloseAppAlertAndWait();
+
                 if (buttonType == ButtonType.OK) {
-                    try {
-                        // Save the user properties before close
-                        applicationContext.getBean(UserConfig.class).save();
-                    } catch (Exception e) {
-                        logger.error("Error on saving user configuration", e);
-                    }
                     Platform.exit();
                 } else {
                     event.consume();

@@ -33,6 +33,9 @@ To test it, open a browser, let's say Firefox and configure proxy like this:
 
 Now you should be able to access any URL without Firefox asking for credentials.
 
+_If you don't have an available proxy, you still can test WinFoom by installing [WinGate](https://www.wingate.com/) and configure it to act 
+as a NTML proxy._
+
 > 👉 Note: Winfoom uses the current user credentials to authenticate to the remote proxy! For this, it uses [org.apache.http.impl.auth.win.WindowsCredentialsProvider]( https://hc.apache.org/httpcomponents-client-ga/httpclient-win/apidocs/org/apache/http/impl/auth/win/WindowsCredentialsProvider.html)
 
 ### TODO

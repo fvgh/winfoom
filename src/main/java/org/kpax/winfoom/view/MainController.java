@@ -15,6 +15,7 @@ package org.kpax.winfoom.view;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
@@ -45,6 +46,7 @@ import java.net.UnknownHostException;
 @Component
 public class MainController {
     final Logger logger = LoggerFactory.getLogger(MainController.class);
+
 
     @Autowired
     private LocalProxyServer localProxyServer;
@@ -77,6 +79,9 @@ public class MainController {
     private Button startBtn;
 
     @FXML
+    private Button stopBtn;
+
+    @FXML
     private MenuBar menuBar;
 
     @FXML
@@ -101,14 +106,15 @@ public class MainController {
 
         testUrl.setText(userConfig.getProxyTestUrl());
         testUrl.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setProxyTestUrl(newValue));
+
+        startedMode(false);
     }
 
     public void start(ActionEvent actionEvent) {
         if (isValidInput()) {
             try {
                 localProxyServer.start();
-                centerBox.setDisable(true);
-                buttonsBox.setDisable(true);
+                startedMode(true);
             } catch (Exception e) {
                 logger.error("Error on starting proxy server", e);
                 GuiUtils.showMessage(GuiUtils.MessageType.DLG_ERR_TITLE,
@@ -165,5 +171,21 @@ public class MainController {
         menuBar.fireEvent(
                 new WindowEvent(javafxApplication.getPrimaryStage().getScene().getWindow(),
                         WindowEvent.WINDOW_CLOSE_REQUEST));
+    }
+
+    public void stop(ActionEvent actionEvent) {
+        // Get the pressed button
+        ButtonType buttonType = GuiUtils.showCloseProxyAlertAndWait();
+        if (buttonType == ButtonType.OK) {
+            localProxyServer.close();
+            startedMode(false);
+        }
+
+    }
+
+    private void startedMode (boolean started) {
+        centerBox.setDisable(started);
+        startBtn.setDisable(started);
+        stopBtn.setDisable(!started);
     }
 }
