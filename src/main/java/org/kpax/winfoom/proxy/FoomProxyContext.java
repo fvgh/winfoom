@@ -165,6 +165,11 @@ class FoomProxyContext implements ProxyContext {
         public boolean retryRequest(HttpResponse response, int executionCount, HttpContext context) {
             int statusCode = response.getStatusLine().getStatusCode();
             HttpRequest request = HttpClientContext.adapt(context).getRequest();
+
+            /*
+            Repeat the request on 407 Proxy Authentication Required error code
+            but only if the request has no body or a repeatable one.
+             */
             return statusCode == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED
                     && executionCount < this.maxExecutionCount
                     && (!(request instanceof HttpEntityEnclosingRequest)
@@ -181,6 +186,11 @@ class FoomProxyContext implements ProxyContext {
 
         @Override
         protected boolean handleAsIdempotent(HttpRequest request) {
+
+            /*
+            Allow repeating also when
+            the request has a repeatable body
+             */
             return !(request instanceof HttpEntityEnclosingRequest)
                     || ((HttpEntityEnclosingRequest) request).getEntity().isRepeatable();
         }
