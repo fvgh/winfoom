@@ -32,20 +32,20 @@ public final class CrlfFormat {
     }
 
     public static byte[] toStatusLine(ProtocolVersion protocolVersion, int httpCode) {
-        return CrlfFormat.format(HttpUtils.toStatusLine(protocolVersion, httpCode));
+        return format(HttpUtils.toStatusLine(protocolVersion, httpCode));
     }
 
     public static byte[] toStatusLine(int httpCode) {
-        return CrlfFormat.format(HttpUtils.toStatusLine(httpCode));
+        return format(HttpUtils.toStatusLine(httpCode));
     }
 
     public static byte[] to500StatusLine(ProtocolVersion protocolVersion) {
-        return CrlfFormat.format(HttpUtils.to500StatusLine(
+        return format(HttpUtils.to500StatusLine(
                 protocolVersion));
     }
 
     public static byte[] to500StatusLine() {
-        return CrlfFormat.format(HttpUtils.to500StatusLine());
+        return format(HttpUtils.to500StatusLine());
     }
 
 }

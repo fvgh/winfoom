@@ -26,7 +26,7 @@ interface ProxyContext extends Closeable {
 
     /**
      * Configures and create a {@link org.apache.http.impl.client.HttpClientBuilder} .
-     * @return an instance of {@link org.apache.http.impl.client.HttpClientBuilder}.
+     * @return An instance of {@link org.apache.http.impl.client.HttpClientBuilder}.
      */
     HttpClientBuilder createHttpClientBuilder();
 
