@@ -67,8 +67,7 @@ public class SystemConfig {
                     .get(Attributes.Name.IMPLEMENTATION_VERSION).toString();
         } catch (Exception e) {
             releaseVersion = "Unknown";
-            logger.warn("Cannot get application version from MANIFEST file. Use debug mode to investigate!");
-            logger.debug("Error on getting application version", e);
+            logger.warn("Error on getting application version from MANIFEST file", e);
         }
     }
 
