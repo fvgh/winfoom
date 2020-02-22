@@ -16,8 +16,8 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.impl.io.SessionInputBufferImpl;
-import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.FoomIOUtils;
+import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

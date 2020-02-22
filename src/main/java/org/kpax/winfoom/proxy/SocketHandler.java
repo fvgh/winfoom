@@ -17,7 +17,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
@@ -70,7 +69,7 @@ class SocketHandler {
 
     /**
      * These headers will be removed from client's response if there is no enclosing
-     * entity (it means the response has no body).
+     * entity (it means the request has no body).
      */
     private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(
             HttpHeaders.PROXY_AUTHORIZATION);
@@ -228,8 +227,9 @@ class SocketHandler {
                     EntityUtils.consume(entity);
                 } else {
 
-                    // No remote response, therefore we give back
-                    // to the client an Internal Server Error status line
+                    // No response from the remote proxy,
+                    // therefore we give back to the client
+                    // an Internal Server Error status line
                     localSocketChannel.getOutputStream().write(
                             CrlfFormat.to500StatusLine(
                                     requestLine.getProtocolVersion()));
@@ -268,8 +268,7 @@ class SocketHandler {
         }
 
         // Create the CloseableHttpClient instance
-        HttpClientBuilder httpClientBuilder = proxyContext.createHttpClientBuilder();
-        CloseableHttpClient httpClient = httpClientBuilder.build();
+        CloseableHttpClient httpClient = proxyContext.createHttpClientBuilder().build();
 
         try {
             List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?

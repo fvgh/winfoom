@@ -19,7 +19,6 @@ import javafx.scene.layout.Region;
 import javafx.stage.StageStyle;
 
 import java.awt.*;
-import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
