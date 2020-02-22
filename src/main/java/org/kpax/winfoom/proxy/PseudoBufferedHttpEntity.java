@@ -128,7 +128,7 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
     /**
      * It relies on repeatable flag.
-     * If <code>true</code>, then the entity is buffered,
+     * If <code>true</code>, then the entity is not buffered,
      * otherwise it reads bytes from a socket.
      *
      * @return <code>true</code> if and only if {@link #repeatable} is <code>false</code>.
