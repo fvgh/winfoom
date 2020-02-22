@@ -96,6 +96,7 @@ class FoomProxyContext implements ProxyContext {
             connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
         }
 
+        logger.info("Configure retry strategy");
         retryHandler = new FoomDefaultHttpRequestRetryHandler();
         retryStrategy = new ProxyAuthenticationRequiredRetryStrategy(systemConfig.getRepeatsOnFailure());
 
