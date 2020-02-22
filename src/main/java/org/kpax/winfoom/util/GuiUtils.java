@@ -68,10 +68,8 @@ public class GuiUtils {
         alert.initStyle(StageStyle.UTILITY);
         alert.setTitle("Warning");
 
-        Optional<ButtonType> result = alert.showAndWait();
-
         // Get the pressed button
-        return result.orElse(ButtonType.CANCEL);
+        return alert.showAndWait().orElse(ButtonType.CANCEL);
     }
 
     public static void closeAllAwtWindows () {

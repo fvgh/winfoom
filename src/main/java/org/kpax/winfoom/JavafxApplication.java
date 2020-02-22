@@ -58,14 +58,12 @@ public class JavafxApplication extends Application {
         try {
             ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
                 genericApplicationContext.registerBean(JavafxApplication.class, () -> JavafxApplication.this);
-                genericApplicationContext.registerBean(FileBasedConfigurationBuilder.class, () -> new Configurations()
-                        .propertiesBuilder(Paths.get(System.getProperty("user.dir"), "config",
-                                "user.properties").toFile()));
             };
             SpringApplication springApplication = new SpringApplication(FoomApplication.class);
             springApplication.addInitializers(initializer);
             this.applicationContext = springApplication.run(getParameters().getRaw().toArray(new String[0]));
         } finally {
+
             // Initializing Spring context is
             // the only time consuming task,
             // so we close the splash screen.
