@@ -98,11 +98,15 @@ public class MainController {
         proxyPort.setTextFormatter(GuiUtils.createDecimalOnlyTextFormatter());
         proxyPort.setText("" + userConfig.getProxyPort());
 
-        proxyPort.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setProxyPort(Integer.parseInt(newValue)));
+        proxyPort.textProperty().addListener(
+                (obs, oldValue, newValue) -> userConfig.setProxyPort(
+                        StringUtils.isNotEmpty(newValue) ? Integer.parseInt(newValue) : null));
 
         localProxyPort.setTextFormatter(GuiUtils.createDecimalOnlyTextFormatter());
         localProxyPort.setText("" + userConfig.getLocalPort());
-        localProxyPort.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setLocalPort(Integer.parseInt(newValue)));
+        localProxyPort.textProperty().addListener(
+                (obs, oldValue, newValue) -> userConfig.setLocalPort(
+                        StringUtils.isNotEmpty(newValue) ? Integer.parseInt(newValue) : null));
 
         testUrl.setText(userConfig.getProxyTestUrl());
         testUrl.textProperty().addListener((obs, oldValue, newValue) -> userConfig.setProxyTestUrl(newValue));

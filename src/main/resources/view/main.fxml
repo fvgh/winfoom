@@ -50,7 +50,7 @@
             <children>
                 <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
                     <children>
-                        <Label minWidth="90.0" text="Proxy host:">
+                        <Label minWidth="100.0" text="Proxy host:*">
                             <HBox.margin>
                                 <Insets top="5.0"/>
                             </HBox.margin>
@@ -63,7 +63,7 @@
                 </HBox>
                 <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
                     <children>
-                        <Label minWidth="90.0" text="Proxy port:">
+                        <Label minWidth="100.0" text="Proxy port:*">
                             <HBox.margin>
                                 <Insets top="5.0"/>
                             </HBox.margin>
@@ -76,7 +76,7 @@
                 </HBox>
                 <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
                     <children>
-                        <Label minWidth="90.0" text="Local proxy port:">
+                        <Label minWidth="100.0" text="Local proxy port:*">
                             <HBox.margin>
                                 <Insets top="5.0"/>
                             </HBox.margin>
@@ -84,12 +84,12 @@
                         <TextField fx:id="localProxyPort" HBox.hgrow="ALWAYS"/>
                     </children>
                     <padding>
-                        <Insets bottom="10.0" left="5.0" right="5.0" top="5.0"/>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                     </padding>
                 </HBox>
                 <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
                     <children>
-                        <Label minWidth="90.0" text="Test URL:">
+                        <Label minWidth="100.0" text="Test URL:*">
                             <HBox.margin>
                                 <Insets top="5.0"/>
                             </HBox.margin>
@@ -97,7 +97,7 @@
                         <TextField fx:id="testUrl" HBox.hgrow="ALWAYS"/>
                     </children>
                     <padding>
-                        <Insets bottom="10.0" left="5.0" right="5.0" top="5.0"/>
+                        <Insets bottom="10.0" left="5.0" right="5.0" top="0.0"/>
                     </padding>
                 </HBox>
                 <Separator prefWidth="200.0"/>

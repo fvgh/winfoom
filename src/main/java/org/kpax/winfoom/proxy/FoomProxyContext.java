@@ -12,10 +12,7 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
+import org.apache.http.*;
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
@@ -33,9 +30,11 @@ import org.apache.http.impl.client.*;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.config.UserConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -54,13 +53,13 @@ class FoomProxyContext implements ProxyContext {
     private final Logger logger = LoggerFactory.getLogger(FoomProxyContext.class);
 
     @Autowired
+    private UserConfig userConfig;
+
+    @Autowired
     private SystemConfig systemConfig;
 
     @Autowired
     private CredentialsProvider credentialsProvider;
-
-    @Autowired
-    private RequestConfig proxyRequestConfig;
 
     @Autowired
     private SocketConfig socketConfig;
@@ -111,12 +110,13 @@ class FoomProxyContext implements ProxyContext {
                 .register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(null))
                 .register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(null))
                 .build();
+        RequestConfig requestConfig = createRequestConfig();
         HttpClientBuilder builder = WinHttpClients.custom()
                 .setDefaultCredentialsProvider(credentialsProvider)
                 .setDefaultAuthSchemeRegistry(authSchemeRegistry)
                 .setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy())
-                .setProxy(proxyRequestConfig.getProxy())
-                .setDefaultRequestConfig(proxyRequestConfig)
+                .setProxy(requestConfig.getProxy())
+                .setDefaultRequestConfig(requestConfig)
                 .setDefaultSocketConfig(socketConfig)
                 .setConnectionManager(connectionManager)
                 .setConnectionManagerShared(true)
@@ -152,6 +152,15 @@ class FoomProxyContext implements ProxyContext {
         } catch (Exception e) {
             logger.warn("Error on closing PoolingHttpClientConnectionManager instance", e);
         }
+    }
+
+    private RequestConfig createRequestConfig() {
+        logger.debug("Create proxy request config");
+        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
+        return RequestConfig.custom()
+                .setProxy(proxy)
+                .setCircularRedirectsAllowed(true)
+                .build();
     }
 
     private static class ProxyAuthenticationRequiredRetryStrategy implements ServiceUnavailableRetryStrategy {

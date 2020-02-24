@@ -37,7 +37,7 @@ public class UserConfig {
     private static final Logger logger = LoggerFactory.getLogger(UserConfig.class);
 
     @Value("${local.port:3129}")
-    private int localPort;
+    private Integer localPort;
 
     @Value("${proxy.host}")
     private String proxyHost;
@@ -46,7 +46,7 @@ public class UserConfig {
     private String proxyTestUrl;
 
     @Value("${proxy.port:0}")
-    private int proxyPort;
+    private Integer proxyPort;
 
     @PostConstruct
     public void init() {
@@ -64,11 +64,11 @@ public class UserConfig {
         }
     }
 
-    public int getLocalPort() {
+    public Integer getLocalPort() {
         return localPort;
     }
 
-    public void setLocalPort(int localPort) {
+    public void setLocalPort(Integer localPort) {
         this.localPort = localPort;
     }
 
@@ -80,11 +80,11 @@ public class UserConfig {
         this.proxyHost = proxyHost;
     }
 
-    public int getProxyPort() {
+    public Integer getProxyPort() {
         return proxyPort;
     }
 
-    public void setProxyPort(int proxyPort) {
+    public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
     }
 

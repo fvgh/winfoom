@@ -31,23 +31,11 @@ public class HttpConfiguration {
     private final Logger logger = LoggerFactory.getLogger(HttpConfiguration.class);
 
     @Autowired
-    private UserConfig userConfig;
-
-    @Autowired
     private SystemConfig systemConfig;
 
-    @Bean
-    public RequestConfig getProxyRequestConfig() {
-        logger.debug("Create proxy request config");
-        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-        return RequestConfig.custom()
-                .setProxy(proxy)
-                .setCircularRedirectsAllowed(true)
-                .build();
-    }
 
     @Bean
-    public SocketConfig getSocketConfig() {
+    public SocketConfig socketConfig() {
         logger.debug("Create socket config");
         return SocketConfig.custom()
                 .setTcpNoDelay(true)
