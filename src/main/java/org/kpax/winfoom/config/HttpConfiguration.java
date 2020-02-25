@@ -12,8 +12,6 @@
 
 package org.kpax.winfoom.config;
 
-import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.SocketConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

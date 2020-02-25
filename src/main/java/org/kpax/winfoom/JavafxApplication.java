@@ -118,6 +118,10 @@ public class JavafxApplication extends Application {
 
         this.primaryStage.show();
 
+        // Disable vertical resizing
+        this.primaryStage.maxHeightProperty().bind(this.primaryStage.heightProperty());
+        this.primaryStage.minHeightProperty().bind(this.primaryStage.heightProperty());
+
         scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {
             if (this.applicationContext.getBean(LocalProxyServer.class).isStarted()) {
 
