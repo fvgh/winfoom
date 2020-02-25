@@ -109,7 +109,7 @@ public class LocalProxyServer implements Closeable {
             started = true;
 
             try {
-                // Save the user properties before close
+                // Save the user properties
                 userConfig.save();
             } catch (Exception e) {
                 logger.warn("Error on saving user configuration", e);
