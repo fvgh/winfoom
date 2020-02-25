@@ -19,6 +19,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.WindowEvent;
@@ -88,7 +89,7 @@ public class MainController {
     private HBox buttonsBox;
 
     @FXML
-    private VBox centerBox;
+    private GridPane gridPane;
 
     @FXML
     public void initialize() {
@@ -188,7 +189,7 @@ public class MainController {
     }
 
     private void startedMode (boolean started) {
-        centerBox.setDisable(started);
+        gridPane.setDisable(started);
         startBtn.setDisable(started);
         stopBtn.setDisable(!started);
     }

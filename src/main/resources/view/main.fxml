@@ -12,10 +12,10 @@
   ~ See the License for the specific language governing permissions and limitations under the License.
   -->
 
-<?import javafx.geometry.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<BorderPane prefHeight="100.0" prefWidth="300.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+<BorderPane maxHeight="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="org.kpax.winfoom.view.MainController">
     <top>
         <MenuBar fx:id="menuBar" BorderPane.alignment="CENTER">
@@ -36,9 +36,18 @@
     <bottom>
         <HBox fx:id="buttonsBox" alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
             <children>
-                <Button fx:id="startBtn" alignment="CENTER" mnemonicParsing="false" onAction="#start" text="Start"
-                        BorderPane.alignment="CENTER"/>
-                <Button fx:id="stopBtn" mnemonicParsing="false" text="Stop"  onAction="#stop"/>
+                <Button fx:id="startBtn" alignment="CENTER" mnemonicParsing="false"
+                        onAction="#start" text="Start" BorderPane.alignment="CENTER">
+                    <tooltip>
+                        <Tooltip text="Start the local proxy facade"/>
+                    </tooltip>
+                </Button>
+                <Button fx:id="stopBtn" mnemonicParsing="false"
+                        onAction="#stop" text="Stop">
+                    <tooltip>
+                        <Tooltip text="Stop the local proxy facade"/>
+                    </tooltip>
+                </Button>
             </children>
             <padding>
                 <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
@@ -46,62 +55,48 @@
         </HBox>
     </bottom>
     <center>
-        <VBox fx:id="centerBox">
+        <GridPane fx:id="gridPane" alignment="center" hgap="10" vgap="10">
+            <padding>
+                <Insets bottom="10" left="10" right="10" top="10"/>
+            </padding>
+            <columnConstraints>
+                <ColumnConstraints halignment="LEFT" maxWidth="Infinity" minWidth="100" prefWidth="100">
+                </ColumnConstraints>
+                <ColumnConstraints hgrow="ALWAYS" maxWidth="Infinity" minWidth="200" prefWidth="200">
+                </ColumnConstraints>
+            </columnConstraints>
             <children>
-                <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
-                    <children>
-                        <Label minWidth="100.0" text="Proxy host:*">
-                            <HBox.margin>
-                                <Insets top="5.0"/>
-                            </HBox.margin>
-                        </Label>
-                        <TextField fx:id="proxyHost" HBox.hgrow="ALWAYS"/>
-                    </children>
-                    <padding>
-                        <Insets left="5.0" right="5.0" top="5.0"/>
-                    </padding>
-                </HBox>
-                <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
-                    <children>
-                        <Label minWidth="100.0" text="Proxy port:*">
-                            <HBox.margin>
-                                <Insets top="5.0"/>
-                            </HBox.margin>
-                        </Label>
-                        <TextField fx:id="proxyPort" HBox.hgrow="ALWAYS"/>
-                    </children>
-                    <padding>
-                        <Insets left="5.0" right="5.0" top="5.0"/>
-                    </padding>
-                </HBox>
-                <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
-                    <children>
-                        <Label minWidth="100.0" text="Local proxy port:*">
-                            <HBox.margin>
-                                <Insets top="5.0"/>
-                            </HBox.margin>
-                        </Label>
-                        <TextField fx:id="localProxyPort" HBox.hgrow="ALWAYS"/>
-                    </children>
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
-                    </padding>
-                </HBox>
-                <HBox minWidth="200.0" prefHeight="50.0" prefWidth="200.0" spacing="5.0" BorderPane.alignment="CENTER">
-                    <children>
-                        <Label minWidth="100.0" text="Test URL:*">
-                            <HBox.margin>
-                                <Insets top="5.0"/>
-                            </HBox.margin>
-                        </Label>
-                        <TextField fx:id="testUrl" HBox.hgrow="ALWAYS"/>
-                    </children>
-                    <padding>
-                        <Insets bottom="10.0" left="5.0" right="5.0" top="0.0"/>
-                    </padding>
-                </HBox>
-                <Separator prefWidth="200.0"/>
+                <Label mnemonicParsing="false" text="Proxy host:"
+                       GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <TextField fx:id="proxyHost" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <tooltip>
+                        <Tooltip text="The host of the remote proxy"/>
+                    </tooltip>
+                </TextField>
+
+                <Label mnemonicParsing="false" text="Proxy port:"
+                       GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <TextField fx:id="proxyPort" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <tooltip>
+                        <Tooltip text="The port of the remote proxy"/>
+                    </tooltip>
+                </TextField>
+
+                <Label mnemonicParsing="false" text="Local proxy port:"
+                       GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                <TextField fx:id="localProxyPort" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                    <tooltip>
+                        <Tooltip text="A port on your local machine range 1024-49151"/>
+                    </tooltip>
+                </TextField>
+
+                <Label text="Test URL:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                <TextField fx:id="testUrl" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                    <tooltip>
+                        <Tooltip text="A url to test the proxy settings before starting"/>
+                    </tooltip>
+                </TextField>
             </children>
-        </VBox>
+        </GridPane>
     </center>
 </BorderPane>
