@@ -187,6 +187,10 @@ public class MainController {
 
     }
 
+    public void autoStart () {
+        startBtn.fire();
+    }
+
     private void startedMode (boolean started) {
         gridPane.setDisable(started);
         startBtn.setDisable(started);

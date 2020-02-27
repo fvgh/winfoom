@@ -21,8 +21,10 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.LocalProxyServer;
 import org.kpax.winfoom.util.GuiUtils;
+import org.kpax.winfoom.view.MainController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -116,6 +118,12 @@ public class JavafxApplication extends Application {
             logger.warn("Icon tray not supported!");
         }
 
+        boolean autoStart = Boolean.valueOf(System.getProperty("foom.autoStart"));
+        logger.debug("Autostart mode {}", autoStart);
+        if (autoStart) {
+            this.primaryStage.setIconified(true);
+        }
+
         this.primaryStage.show();
 
         // Disable vertical resizing
@@ -138,6 +146,12 @@ public class JavafxApplication extends Application {
                 Platform.exit();
             }
         });
+
+        if (autoStart) {
+            if (this.applicationContext.getBean(UserConfig.class).canAutoStart()) {
+                this.applicationContext.getBean(MainController.class).autoStart();
+            }
+        }
     }
 
     @Override

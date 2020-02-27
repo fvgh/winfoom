@@ -108,6 +108,10 @@ public class UserConfig {
         propertiesBuilder.save();
     }
 
+    public boolean canAutoStart () {
+        return StringUtils.isNotEmpty(proxyHost) && proxyPort > 0;
+    }
+
     @Override
     public String toString() {
         return "UserConfig [localPort=" + localPort
