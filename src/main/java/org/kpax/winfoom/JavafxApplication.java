@@ -118,7 +118,8 @@ public class JavafxApplication extends Application {
             logger.warn("Icon tray not supported!");
         }
 
-        boolean autoStart = Boolean.valueOf(System.getProperty("foom.autoStart"));
+        boolean autoStart = Boolean.valueOf(System.getProperty("foom.autoStart"))
+                && this.applicationContext.getBean(UserConfig.class).canAutoStart();
         logger.debug("Autostart mode {}", autoStart);
         if (autoStart) {
             this.primaryStage.setIconified(true);
@@ -148,9 +149,7 @@ public class JavafxApplication extends Application {
         });
 
         if (autoStart) {
-            if (this.applicationContext.getBean(UserConfig.class).canAutoStart()) {
-                this.applicationContext.getBean(MainController.class).autoStart();
-            }
+            this.applicationContext.getBean(MainController.class).autoStart();
         }
     }
 
