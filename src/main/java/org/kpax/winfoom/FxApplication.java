@@ -21,10 +21,8 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.LocalProxyServer;
 import org.kpax.winfoom.util.GuiUtils;
-import org.kpax.winfoom.view.MainController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -41,9 +39,9 @@ import java.nio.file.Paths;
 /**
  * The entry point for Javafx. It will configure and launch Spring's context.
  */
-public class JavafxApplication extends Application {
+public class FxApplication extends Application {
 
-    private final Logger logger = LoggerFactory.getLogger(JavafxApplication.class);
+    private final Logger logger = LoggerFactory.getLogger(FxApplication.class);
 
     private ConfigurableApplicationContext applicationContext;
 
@@ -51,21 +49,12 @@ public class JavafxApplication extends Application {
 
     @Override
     public void init() {
-        try {
-            ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
-                genericApplicationContext.registerBean(JavafxApplication.class, () -> JavafxApplication.this);
-            };
-            SpringApplication springApplication = new SpringApplication(FoomApplication.class);
-            springApplication.addInitializers(initializer);
-            this.applicationContext = springApplication.run(getParameters().getRaw().toArray(new String[0]));
-        } finally {
-
-            // Initializing Spring context is
-            // the only time consuming task,
-            // so we close the splash screen.
-            GuiUtils.closeAllAwtWindows();
-        }
-
+        ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
+            genericApplicationContext.registerBean(FxApplication.class, () -> FxApplication.this);
+        };
+        SpringApplication springApplication = new SpringApplication(FoomApplication.class);
+        springApplication.addInitializers(initializer);
+        this.applicationContext = springApplication.run(getParameters().getRaw().toArray(new String[0]));
     }
 
     @Override
@@ -83,6 +72,10 @@ public class JavafxApplication extends Application {
         Scene scene = new Scene(root);
         this.primaryStage.setScene(scene);
         this.primaryStage.setTitle("WinFoom");
+
+        // Disable maximize button
+        this.primaryStage.resizableProperty().setValue(Boolean.FALSE);
+
         this.primaryStage.getIcons().add(
                 new javafx.scene.image.Image(Paths.get("./config/img/icon.png").toUri().toURL().toExternalForm()));
 
@@ -118,14 +111,6 @@ public class JavafxApplication extends Application {
             logger.warn("Icon tray not supported!");
         }
 
-        boolean autoStart = Boolean.valueOf(System.getProperty("foom.autoStart"))
-                && this.applicationContext.getBean(UserConfig.class).canAutoStart();
-        logger.debug("Autostart mode {}", autoStart);
-        if (autoStart) {
-            this.primaryStage.setIconified(true);
-        }
-
-        this.primaryStage.show();
 
         // Disable vertical resizing
         this.primaryStage.maxHeightProperty().bind(this.primaryStage.heightProperty());
@@ -135,7 +120,7 @@ public class JavafxApplication extends Application {
             if (this.applicationContext.getBean(LocalProxyServer.class).isStarted()) {
 
                 // Get the pressed button
-                ButtonType buttonType = GuiUtils.showCloseAppAlertAndWait();
+                ButtonType buttonType = GuiUtils.showCloseAppAlertAndWait(this.primaryStage);
 
                 if (buttonType == ButtonType.OK) {
                     Platform.exit();
@@ -148,9 +133,12 @@ public class JavafxApplication extends Application {
             }
         });
 
-        if (autoStart) {
-            this.applicationContext.getBean(MainController.class).autoStart();
-        }
+        // Close the splash screen
+        GuiUtils.closeAllAwtWindows();
+
+        // Show the main window
+        this.primaryStage.show();
+
     }
 
     @Override

@@ -63,6 +63,9 @@ class FoomProxyContext implements ProxyContext {
     @Autowired
     private SocketConfig socketConfig;
 
+    @Autowired
+    private LocalProxyServer localProxyServer;
+
     private ThreadPoolExecutor threadPool;
 
     private PoolingHttpClientConnectionManager connectionManager;
@@ -137,6 +140,11 @@ class FoomProxyContext implements ProxyContext {
     }
 
     @Override
+    public boolean isStarted() {
+        return localProxyServer.isStarted();
+    }
+
+    @Override
     public void close() {
         logger.info("Close all context's resources");
 
@@ -182,7 +190,7 @@ class FoomProxyContext implements ProxyContext {
             return statusCode == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED
                     && executionCount < this.maxExecutionCount
                     && (!(request instanceof HttpEntityEnclosingRequest)
-                           || ((HttpEntityEnclosingRequest) request).getEntity().isRepeatable());
+                    || ((HttpEntityEnclosingRequest) request).getEntity().isRepeatable());
         }
 
         @Override

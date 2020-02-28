@@ -27,6 +27,10 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * The local proxy server.
@@ -106,6 +110,7 @@ public class LocalProxyServer implements Closeable {
                 }
 
             });
+
             started = true;
 
             try {
@@ -137,7 +142,7 @@ public class LocalProxyServer implements Closeable {
         this.started = false;
     }
 
-    public boolean isStarted() {
+    public synchronized boolean isStarted() {
         return started;
     }
 

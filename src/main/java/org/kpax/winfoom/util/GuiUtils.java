@@ -12,13 +12,18 @@
 
 package org.kpax.winfoom.util;
 
+import javafx.application.Platform;
+import javafx.scene.Cursor;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.Region;
+import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.apache.commons.lang3.Validate;
 
-import java.awt.*;
+import javax.swing.*;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -39,54 +44,86 @@ public class GuiUtils {
         return new TextFormatter<>(filter);
     }
 
-    public static void showMessage(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.NONE, message, ButtonType.OK);
-        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
-        alert.setTitle(title);
-        alert.show();
+    public static void showMessage(Message message, Stage stage) {
+        showMessage(message.getType(), message.getText(), stage);
     }
 
-    public static void showMessage(MessageType messageType, String message) {
-        showMessage(messageType.getLabel(), message);
+    public static void showMessage(Message.MessageType type, String text, Stage stage) {
+        Validate.notNull(type, "title cannot be null");
+        Validate.notNull(text, "text cannot be null");
+
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.NONE, text, ButtonType.OK);
+            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+            alert.setTitle(type.getLabel());
+            alert.initOwner(stage);
+
+            Label img = new Label();
+            img.getStyleClass().addAll("alert", type.getLabel().toLowerCase(), "dialog-pane");
+            alert.setGraphic(img);
+
+            if (stage != null && !stage.isShowing()) {
+                stage.show();
+            }
+
+            alert.show();
+        });
     }
 
-    public static ButtonType showCloseAppAlertAndWait () {
-        return showOkCancelAlertAndWait ("The local proxy facade is started. \nDo you like to stop the proxy facade and leave the application?");
+
+    public static ButtonType showCloseAppAlertAndWait(Stage stage) {
+        return showOkCancelAlertAndWait(
+                "The local proxy facade is started. \nDo you like to stop the proxy facade and leave the application?",
+                stage);
     }
 
-    public static ButtonType showCloseProxyAlertAndWait () {
-        return showOkCancelAlertAndWait ("The local proxy facade is started. \nDo you like to stop the proxy facade?");
+    public static ButtonType showCloseProxyAlertAndWait(Stage stage) {
+        return showOkCancelAlertAndWait(
+                "The local proxy facade is started. \nDo you like to stop the proxy facade?",
+                stage);
     }
 
-    public static ButtonType showOkCancelAlertAndWait (String message) {
+    public static ButtonType showOkCancelAlertAndWait(String message, Stage stage) {
         Alert alert =
                 new Alert(Alert.AlertType.NONE,
                         message,
                         ButtonType.OK,
                         ButtonType.CANCEL);
         alert.initStyle(StageStyle.UTILITY);
-        alert.setTitle("Warning");
+        alert.setTitle(Message.MessageType.CONFIRMATION.getLabel());
+
+        Label img = new Label();
+        img.getStyleClass().addAll("alert",
+                Message.MessageType.CONFIRMATION.getLabel().toLowerCase(), "dialog-pane");
+        alert.setGraphic(img);
+
+        alert.initOwner(stage);
+        if (stage != null && !stage.isShowing()) {
+            stage.show();
+        }
 
         // Get the pressed button
         return alert.showAndWait().orElse(ButtonType.CANCEL);
     }
 
-    public static void closeAllAwtWindows () {
-        Stream.of(java.awt.Window.getWindows()).forEach(Window::dispose);
+    public static void closeAllAwtWindows() {
+        SwingUtilities.invokeLater(
+                () -> Stream.of(java.awt.Window.getWindows())
+                        .forEach(java.awt.Window::dispose));
     }
 
-    public enum MessageType {
-        DLG_ERR_TITLE("Error"), DLG_INFO_TITLE("Info"), DLG_WARN_TITLE("Warning");
-
-        private final String label;
-
-        MessageType(String label) {
-            this.label = label;
-        }
-
-        public String getLabel() {
-            return label;
-        }
+    public static void executeRunnable(Runnable runnable, Stage stage) {
+        stage.getScene().setCursor(Cursor.WAIT);
+        Thread thread = new Thread(() -> {
+            try {
+                runnable.run();
+            } finally {
+                Platform.runLater(() ->
+                        stage.getScene().setCursor(Cursor.DEFAULT));
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
     }
 
 }

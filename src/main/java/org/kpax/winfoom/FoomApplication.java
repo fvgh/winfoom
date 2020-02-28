@@ -27,6 +27,8 @@ public class FoomApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(FoomApplication.class);
 
+    private static SplashFrame splashFrame;
+
     public static void main(String[] args) {
 
         // Necessary for tray icon
@@ -36,14 +38,22 @@ public class FoomApplication {
         // It will be closed after Spring's context is fully initialized.
         EventQueue.invokeLater(() -> {
             try {
-                new SplashFrame().setVisible(true);
+                splashFrame = new SplashFrame();
+                splashFrame.setVisible(true);
             } catch (Exception e) {
                 logger.error("Cannot show splash screen", e);
             }
         });
 
         // Launch the Javafx application
-        Application.launch(JavafxApplication.class, args);
+        Application.launch(FxApplication.class, args);
+    }
+
+    public static void closeSplashScreen () {
+        if (splashFrame != null) {
+            EventQueue.invokeLater(() ->
+            splashFrame.dispose());
+        }
     }
 
 }

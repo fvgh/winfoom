@@ -21,19 +21,26 @@ import java.util.concurrent.Future;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 1/22/2020
  */
-interface ProxyContext extends Closeable {
+public interface ProxyContext extends Closeable {
 
     /**
      * Configures and create a {@link org.apache.http.impl.client.HttpClientBuilder} .
+     *
      * @return An instance of {@link org.apache.http.impl.client.HttpClientBuilder}.
      */
     HttpClientBuilder createHttpClientBuilder();
 
     /**
      * Submit to the internal executor a {@link Runnable} instance for asynchronous execution.
+     *
      * @param runnable The instance to be submitted for execution.
      * @return The <code>Future</code> instance.
      */
     Future<?> executeAsync(Runnable runnable);
 
+    /**
+     * Check whether the local proxy server is started.
+     * @return <code>true</code> iff the local proxy server is started.
+     */
+    boolean isStarted();
 }

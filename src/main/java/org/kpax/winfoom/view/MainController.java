@@ -24,12 +24,14 @@ import javafx.scene.layout.HBox;
 import javafx.stage.WindowEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.HttpHostConnectException;
-import org.kpax.winfoom.JavafxApplication;
+import org.kpax.winfoom.FxApplication;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.LocalProxyServer;
+import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.util.GuiUtils;
 import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +60,10 @@ public class MainController {
     private SystemConfig systemConfig;
 
     @Autowired
-    private JavafxApplication javafxApplication;
+    private FxApplication fxApplication;
+
+    @Autowired
+    private ProxyContext proxyContext;
 
     @FXML
     private BorderPane borderPane;
@@ -115,71 +120,80 @@ public class MainController {
     }
 
     public void start(ActionEvent actionEvent) {
-        if (isValidInput()) {
-            try {
-                localProxyServer.start();
-                startedMode(true);
-            } catch (Exception e) {
-                logger.error("Error on starting proxy server", e);
-                GuiUtils.showMessage(GuiUtils.MessageType.DLG_ERR_TITLE,
-                        "Error on starting proxy server.\nSee the application's log for details.");
+        disableAll();
+        GuiUtils.executeRunnable(() -> {
+            if (isValidInput()) {
+                try {
+                    localProxyServer.start();
+                    startedMode(true);
+                } catch (Exception e) {
+                    logger.error("Error on starting proxy server", e);
+                    startedMode(false);
+                    GuiUtils.showMessage(Message.MessageType.ERROR,
+                            "Error on starting proxy server.\nSee the application's log for details.",
+                            fxApplication.getPrimaryStage());
+                }
+            } else {
+                startedMode(false);
             }
-        }
+        }, fxApplication.getPrimaryStage());
     }
 
     private boolean isValidInput() {
+        Message formErrMessage = null;
         if (StringUtils.isBlank(userConfig.getProxyHost())) {
-            GuiUtils.showMessage("Validation Error", "Fill in the proxy address!");
-            return false;
+            formErrMessage = Message.error("Fill in the proxy address!");
+        } else if (userConfig.getProxyPort() < 1) {
+            formErrMessage = Message.error("Fill in a valid proxy port!");
+        } else if (userConfig.getLocalPort() < 1024) {
+            formErrMessage = Message.error("Fill in a valid proxy port!");
+        } else if (StringUtils.isBlank(userConfig.getProxyTestUrl())) {
+            formErrMessage = Message.error("Fill in the test URL!");
         }
-        if (userConfig.getProxyPort() < 1) {
-            GuiUtils.showMessage("Validation Error", "Fill in a valid proxy port!");
-            return false;
-        }
-        if (userConfig.getLocalPort() < 1024) {
-            GuiUtils.showMessage("Validation Error", "Fill in a valid proxy port!");
-            return false;
-        }
-        if (StringUtils.isBlank(userConfig.getProxyTestUrl())) {
-            GuiUtils.showMessage("Validation Error", "Fill in the test URL!");
+
+        if (formErrMessage != null) {
+            GuiUtils.showMessage(formErrMessage, fxApplication.getPrimaryStage());
             return false;
         }
 
-        // Test the proxy configuration
+        Message testConnErrMessage = null;
         try {
+            // Test the proxy configuration
             HttpUtils.testProxyConfig(userConfig);
         } catch (CredentialException e) {
-            GuiUtils.showMessage("Test Connection Error", "Wrong user/password!");
-            return false;
+            testConnErrMessage = Message.error("Wrong user/password!");
         } catch (UnknownHostException e) {
-            GuiUtils.showMessage("Test Connection Error", "Wrong proxy host!");
-            return false;
+            testConnErrMessage = Message.error("Wrong proxy host!");
         } catch (HttpHostConnectException e) {
-            GuiUtils.showMessage("Test Connection Error", "Wrong proxy port!");
-            return false;
+            testConnErrMessage = Message.error("Wrong proxy port!");
         } catch (IOException e) {
-            GuiUtils.showMessage("Test Connection Error", e.getMessage());
+            testConnErrMessage = Message.error(e.getMessage());
+        }
+
+        if (testConnErrMessage != null) {
+            GuiUtils.showMessage(testConnErrMessage, fxApplication.getPrimaryStage());
             return false;
         }
+
         return true;
     }
 
     public void about(ActionEvent actionEvent) {
-        GuiUtils.showMessage("About", "Winfoom - Basic Proxy Facade" +
+        GuiUtils.showMessage(Message.MessageType.INFO, "Winfoom - Basic Proxy Facade" +
                 "\nVersion: " + systemConfig.getReleaseVersion()
                 + "\nProject home page: https://github.com/ecovaci/winfoom"
-                + "\nLicense: Apache 2.0");
+                + "\nLicense: Apache 2.0", fxApplication.getPrimaryStage());
     }
 
     public void close(ActionEvent actionEvent) {
         menuBar.fireEvent(
-                new WindowEvent(javafxApplication.getPrimaryStage().getScene().getWindow(),
+                new WindowEvent(fxApplication.getPrimaryStage().getScene().getWindow(),
                         WindowEvent.WINDOW_CLOSE_REQUEST));
     }
 
     public void stop(ActionEvent actionEvent) {
         // Get the pressed button
-        ButtonType buttonType = GuiUtils.showCloseProxyAlertAndWait();
+        ButtonType buttonType = GuiUtils.showCloseProxyAlertAndWait(fxApplication.getPrimaryStage());
         if (buttonType == ButtonType.OK) {
             localProxyServer.close();
             startedMode(false);
@@ -187,13 +201,21 @@ public class MainController {
 
     }
 
-    public void autoStart () {
+    public void autoStart() {
         startBtn.fire();
     }
 
-    private void startedMode (boolean started) {
+    private void startedMode(boolean started) {
         gridPane.setDisable(started);
         startBtn.setDisable(started);
         stopBtn.setDisable(!started);
     }
+
+    private void disableAll() {
+        gridPane.setDisable(true);
+        startBtn.setDisable(true);
+        stopBtn.setDisable(true);
+    }
+
+
 }
