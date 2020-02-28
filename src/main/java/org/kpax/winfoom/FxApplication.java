@@ -73,8 +73,8 @@ public class FxApplication extends Application {
         this.primaryStage.setScene(scene);
         this.primaryStage.setTitle("WinFoom");
 
-        // Disable maximize button
-        this.primaryStage.resizableProperty().setValue(Boolean.FALSE);
+        // Disable resize window
+        this.primaryStage.setResizable(false);
 
         this.primaryStage.getIcons().add(
                 new javafx.scene.image.Image(Paths.get("./config/img/icon.png").toUri().toURL().toExternalForm()));
@@ -110,11 +110,6 @@ public class FxApplication extends Application {
         } else {
             logger.warn("Icon tray not supported!");
         }
-
-
-        // Disable vertical resizing
-        this.primaryStage.maxHeightProperty().bind(this.primaryStage.heightProperty());
-        this.primaryStage.minHeightProperty().bind(this.primaryStage.heightProperty());
 
         scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {
             if (this.applicationContext.getBean(LocalProxyServer.class).isStarted()) {
