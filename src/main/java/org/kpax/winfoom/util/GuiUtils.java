@@ -48,7 +48,17 @@ public class GuiUtils {
         showMessage(message.getType(), message.getText(), stage);
     }
 
-    public static void showMessage(Message.MessageType type, String text, Stage stage) {
+    public static void showErrorMessage(String text, Stage stage) {
+        showMessage(Message.MessageType.ERROR, text, stage);
+    }
+    public static void showWarningMessage(String text, Stage stage) {
+        showMessage(Message.MessageType.WARNING, text, stage);
+    }
+    public static void showInfoMessage(String text, Stage stage) {
+        showMessage(Message.MessageType.INFO, text, stage);
+    }
+
+    private static void showMessage(Message.MessageType type, String text, Stage stage) {
         Validate.notNull(type, "title cannot be null");
         Validate.notNull(text, "text cannot be null");
 

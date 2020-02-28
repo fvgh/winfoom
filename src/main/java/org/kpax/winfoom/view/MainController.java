@@ -129,7 +129,7 @@ public class MainController {
                 } catch (Exception e) {
                     logger.error("Error on starting proxy server", e);
                     startedMode(false);
-                    GuiUtils.showMessage(Message.MessageType.ERROR,
+                    GuiUtils.showErrorMessage(
                             "Error on starting proxy server.\nSee the application's log for details.",
                             fxApplication.getPrimaryStage());
                 }
@@ -146,7 +146,7 @@ public class MainController {
         } else if (userConfig.getProxyPort() < 1) {
             formErrMessage = Message.error("Fill in a valid proxy port!");
         } else if (userConfig.getLocalPort() < 1024) {
-            formErrMessage = Message.error("Fill in a valid proxy port!");
+            formErrMessage = Message.error("Fill in a valid local proxy port!");
         } else if (StringUtils.isBlank(userConfig.getProxyTestUrl())) {
             formErrMessage = Message.error("Fill in the test URL!");
         }
@@ -179,7 +179,7 @@ public class MainController {
     }
 
     public void about(ActionEvent actionEvent) {
-        GuiUtils.showMessage(Message.MessageType.INFO, "Winfoom - Basic Proxy Facade" +
+        GuiUtils.showInfoMessage("Winfoom - Basic Proxy Facade" +
                 "\nVersion: " + systemConfig.getReleaseVersion()
                 + "\nProject home page: https://github.com/ecovaci/winfoom"
                 + "\nLicense: Apache 2.0", fxApplication.getPrimaryStage());
