@@ -49,12 +49,18 @@ public class FxApplication extends Application {
 
     @Override
     public void init() {
-        ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
-            genericApplicationContext.registerBean(FxApplication.class, () -> FxApplication.this);
-        };
-        SpringApplication springApplication = new SpringApplication(FoomApplication.class);
-        springApplication.addInitializers(initializer);
-        this.applicationContext = springApplication.run(getParameters().getRaw().toArray(new String[0]));
+        try {
+            ApplicationContextInitializer<GenericApplicationContext> initializer = genericApplicationContext -> {
+                genericApplicationContext.registerBean(FxApplication.class, () -> FxApplication.this);
+            };
+            SpringApplication springApplication = new SpringApplication(FoomApplication.class);
+            springApplication.addInitializers(initializer);
+            this.applicationContext = springApplication.run(getParameters().getRaw().toArray(new String[0]));
+        } finally {
+
+            // Close the splash screen
+            GuiUtils.closeAllAwtWindows();
+        }
     }
 
     @Override
@@ -127,9 +133,6 @@ public class FxApplication extends Application {
                 Platform.exit();
             }
         });
-
-        // Close the splash screen
-        GuiUtils.closeAllAwtWindows();
 
         // Show the main window
         this.primaryStage.show();
