@@ -38,9 +38,6 @@ public class SystemConfig {
     @Value("${max.connections}")
     private Integer maxConnections;
 
-    @Value("${max.connection.idle}")
-    private Integer maxConnectionIdle;
-
     @Value("${server.socket.buffer.size}")
     private Integer serverSocketBufferSize;
 
@@ -89,10 +86,6 @@ public class SystemConfig {
 
     public Integer getRepeatsOnFailure() {
         return repeatsOnFailure;
-    }
-
-    public Integer getMaxConnectionIdle() {
-        return maxConnectionIdle;
     }
 
     public String getReleaseVersion() {
