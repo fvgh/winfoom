@@ -12,8 +12,6 @@
 
 package org.kpax.winfoom.proxy;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -36,8 +34,6 @@ import org.junit.rules.Timeout;
 import org.kpax.winfoom.util.CrlfWriter;
 import org.kpax.winfoom.util.FoomIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
