@@ -35,6 +35,7 @@ import org.kpax.winfoom.util.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import javax.security.auth.login.CredentialException;
@@ -46,9 +47,10 @@ import java.net.UnknownHostException;
  * Created on 9/10/2019
  */
 @Component
+@ConditionalOnProperty(value="gui.enabled", havingValue="true")
 public class MainController {
-    final Logger logger = LoggerFactory.getLogger(MainController.class);
 
+    private final Logger logger = LoggerFactory.getLogger(MainController.class);
 
     @Autowired
     private LocalProxyServer localProxyServer;

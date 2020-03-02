@@ -56,7 +56,7 @@ public class PseudoBufferedHttpEntityTests {
 
     private AsynchronousServerSocketChannel serverSocket;
 
-    private int bufferSize;
+    private int bufferSize = 1024;
 
     @Rule
     public Timeout globalTimeout = Timeout.seconds(5);
@@ -85,26 +85,26 @@ public class PseudoBufferedHttpEntityTests {
                     HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
                     HttpRequest request = requestParser.parse();
 
-                    PseudoBufferedHttpEntity entity = new PseudoBufferedHttpEntity(inputBuffer, request,
+                    PseudoBufferedHttpEntity requestEntity = new PseudoBufferedHttpEntity(inputBuffer, request,
                             bufferSize);
-                    ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
+                    ((BasicHttpEntityEnclosingRequest) request).setEntity(requestEntity);
 
                     CrlfWriter crlfWriter = new CrlfWriter(localSocketChannel.getOutputStream());
                     crlfWriter
                             .write("HTTP/1.1 200 OK")
                             .write(HttpUtils.createHttpHeader(entityRepeatableHeader,
-                                    String.valueOf(entity.isRepeatable())));
+                                    String.valueOf(requestEntity.isRepeatable())));
 
                     if (request.containsHeader(echoContentHeader)) {
                         crlfWriter
                                 .write(request.getFirstHeader(HTTP.CONTENT_LEN))
                                 .write(request.getFirstHeader(HTTP.CONTENT_TYPE));
                         crlfWriter.writeEmptyLine();
-                        entity.getContent().transferTo(localSocketChannel.getOutputStream());
+                        requestEntity.getContent().transferTo(localSocketChannel.getOutputStream());
                     } else {
                         crlfWriter.write(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
                         crlfWriter.writeEmptyLine();
-                        EntityUtils.consume(entity);
+                        EntityUtils.consume(requestEntity);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -287,7 +287,6 @@ public class PseudoBufferedHttpEntityTests {
             }
         }
     }
-
 
     @After
     public void after() throws IOException {

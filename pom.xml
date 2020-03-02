@@ -38,6 +38,7 @@
         <commons-configuration2.version>2.2</commons-configuration2.version>
         <commons-io.version>2.5</commons-io.version>
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
+        <mock-server.version>5.9.0</mock-server.version>
     </properties>
 
     <dependencies>
@@ -106,6 +107,12 @@
             <version>${httpclient.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.littleshoot</groupId>
+            <artifactId>littleproxy</artifactId>
+            <version>1.1.2</version>
         </dependency>
 
     </dependencies>

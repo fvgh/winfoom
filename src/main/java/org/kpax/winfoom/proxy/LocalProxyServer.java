@@ -27,10 +27,6 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
 
 /**
  * The local proxy server.

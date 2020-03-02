@@ -66,7 +66,7 @@ import java.net.Socket;
  */
 @Component
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-class CustomProxyClient {
+public class CustomProxyClient {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomProxyClient.class);
 
