@@ -12,6 +12,7 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
 import org.apache.http.entity.AbstractHttpEntity;
@@ -21,10 +22,7 @@ import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 /**
  * A pseudo-buffered (i.e. buffered under some conditions) entity.
@@ -32,7 +30,7 @@ import java.io.OutputStream;
  *
  * @author Eugen Covaci
  */
-class PseudoBufferedHttpEntity extends AbstractHttpEntity {
+public class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
     private static final Logger logger = LoggerFactory.getLogger(PseudoBufferedHttpEntity.class);
 
@@ -56,9 +54,12 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
      */
     private final boolean repeatable;
 
-    PseudoBufferedHttpEntity(SessionInputBufferImpl inputBuffer,
-                             HttpRequest request, int internalBufferLength)
+    public PseudoBufferedHttpEntity(final SessionInputBufferImpl inputBuffer,
+                                    final HttpRequest request,
+                                    final int internalBufferLength)
             throws IOException {
+        Validate.isTrue(internalBufferLength > 0, "internalBufferLength has to be positive");
+
         this.inputBuffer = inputBuffer;
         this.contentType = request.getFirstHeader(HttpHeaders.CONTENT_TYPE);
         this.contentEncoding = request.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
@@ -157,7 +158,21 @@ class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
     @Override
     public InputStream getContent() {
-        throw new UnsupportedOperationException("No content available");
+        if (isStreaming()) {
+            return new InputStream() {
+                @Override
+                public int read() throws IOException {
+                    return inputBuffer.read();
+                }
+
+                @Override
+                public int read(byte[] b, int off, int len) throws IOException {
+                    return inputBuffer.read(b, off, len);
+                }
+            };
+        } else {
+            return new ByteArrayInputStream(this.bufferedBytes);
+        }
     }
 
 }

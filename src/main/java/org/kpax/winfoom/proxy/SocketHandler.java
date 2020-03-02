@@ -26,6 +26,7 @@ import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.CrlfFormat;
+import org.kpax.winfoom.util.CrlfWriter;
 import org.kpax.winfoom.util.FoomIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
@@ -207,21 +208,21 @@ class SocketHandler {
                     StatusLine errorStatusLine = errorResponse.getStatusLine();
                     logger.debug("errorStatusLine {}", errorStatusLine);
 
-                    OutputStream localOutputStream = localSocketChannel.getOutputStream();
-                    localOutputStream.write(CrlfFormat.format(errorStatusLine.toString()));
+                    CrlfWriter crlfWriter = new CrlfWriter(localSocketChannel.getOutputStream());
+                    crlfWriter.write(errorStatusLine);
 
                     logger.debug("Start writing error headers");
                     for (Header header : errorResponse.getAllHeaders()) {
-                        localOutputStream.write(CrlfFormat.format(header.toString()));
+                        crlfWriter.write(header);
                     }
 
                     // Empty line between headers and the body
-                    localOutputStream.write(CrlfFormat.CRLF.getBytes());
+                    crlfWriter.writeEmptyLine();
 
                     HttpEntity entity = errorResponse.getEntity();
                     if (entity != null) {
                         logger.debug("Start writing error entity content");
-                        entity.writeTo(localOutputStream);
+                        entity.writeTo(localSocketChannel.getOutputStream());
                         logger.debug("End writing error entity content");
                     }
                     EntityUtils.consume(entity);
@@ -291,7 +292,7 @@ class SocketHandler {
             try {
                 URI uri = HttpUtils.parseUri(requestLine.getUri());
                 HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
-                OutputStream outputStream = localSocketChannel.getOutputStream();
+                CrlfWriter crlfWriter = new CrlfWriter(localSocketChannel.getOutputStream());
                 CloseableHttpResponse response;
                 try {
                     response = httpClient.execute(target, request);
@@ -307,7 +308,7 @@ class SocketHandler {
                     String statusLine = response.getStatusLine().toString();
                     logger.debug("Response status line: {}", statusLine);
 
-                    outputStream.write(CrlfFormat.format(statusLine));
+                    crlfWriter.write(statusLine);
 
                     logger.debug("Done writing status line, now write response headers");
 
@@ -318,16 +319,15 @@ class SocketHandler {
                             // since the response is not chunked
                             String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
                             if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                                outputStream.write(
-                                        CrlfFormat.format(
+                                crlfWriter.write(
                                                 HttpUtils.createHttpHeaderAsString(HttpHeaders.TRANSFER_ENCODING,
-                                                        nonChunkedTransferEncoding)));
+                                                        nonChunkedTransferEncoding));
                                 logger.debug("Add chunk-striped header response");
                             } else {
                                 logger.debug("Remove transfer encoding chunked header response");
                             }
                         } else {
-                            outputStream.write(CrlfFormat.format(header));
+                            crlfWriter.write(header);
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Done writing response header: {}", header);
                             }
@@ -336,13 +336,13 @@ class SocketHandler {
 
                     // Empty line marking the end
                     // of header's section
-                    outputStream.write(CrlfFormat.CRLF.getBytes());
+                    crlfWriter.writeEmptyLine();
 
                     // Now write the request body, if any
                     HttpEntity entity = response.getEntity();
                     if (entity != null) {
                         logger.debug("Start writing entity content");
-                        entity.writeTo(outputStream);
+                        entity.writeTo(localSocketChannel.getOutputStream());
                         logger.debug("End writing entity content");
                     }
 
