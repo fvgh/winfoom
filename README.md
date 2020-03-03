@@ -41,6 +41,7 @@ as a NTML proxy._
 ### TODO
 
    - Unit testing (In progress).
+   - Performance tests.
    
 ### Coding Guidance
 
