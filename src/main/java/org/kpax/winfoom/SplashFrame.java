@@ -22,13 +22,11 @@ import java.awt.*;
  */
 public class SplashFrame extends JFrame {
 
-    /**
-     * The image scale.
-     */
-    private static final double SCALE = 0.75;
+    private final int frameWidth = 305;
+    private final int frameHeight = 465;
 
     private final JPanel contentPane;
-    private JLabel label;
+    private Canvas canvas;
     private JProgressBar progressBar;
 
     /**
@@ -37,25 +35,33 @@ public class SplashFrame extends JFrame {
     public SplashFrame() {
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(scale());
+        setSize(frameWidth, frameHeight);
         setLocationRelativeTo(null);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(0, 0, 0, 0));
         contentPane.setLayout(new BorderLayout(0, 0));
         setContentPane(contentPane);
-        contentPane.add(getLabel(), BorderLayout.CENTER);
+        contentPane.add(getCanvas(), BorderLayout.CENTER);
         contentPane.add(getProgressBar(), BorderLayout.SOUTH);
     }
 
-    private JLabel getLabel() {
-        if (label == null) {
-            Image image = Toolkit.getDefaultToolkit().getImage("config/img/splash.jpg");
-            Dimension dimension = scale();
-            Image scaledImage = image.getScaledInstance(dimension.width, dimension.height, Image.SCALE_SMOOTH);
-            ImageIcon imageIcon = new ImageIcon(scaledImage);
-            label = new JLabel(imageIcon);
+    private Canvas getCanvas() {
+        if (canvas == null) {
+            canvas = new Canvas() {
+                @Override
+                public void paint(Graphics g) {
+                    super.paint(g);
+                    Image image = Toolkit.getDefaultToolkit().getImage("config/img/splash.jpg");
+                    Graphics2D g2d = (Graphics2D) g.create();
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                    g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+                    g2d.drawImage(image, 0, 0, this);
+                    g2d.dispose();
+                }
+            };
         }
-        return label;
+        return canvas;
     }
 
     private JProgressBar getProgressBar() {
@@ -65,10 +71,6 @@ public class SplashFrame extends JFrame {
             progressBar.setIndeterminate(true);
         }
         return progressBar;
-    }
-
-    private Dimension scale() {
-        return new Dimension((int) (305 * SCALE), (int) (455 * SCALE));
     }
 
     /**
