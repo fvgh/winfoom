@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.security.auth.login.CredentialException;
@@ -47,7 +48,7 @@ import java.net.UnknownHostException;
  * Created on 9/10/2019
  */
 @Component
-@ConditionalOnProperty(value="gui.enabled", havingValue="true")
+@Profile("!test")
 public class MainController {
 
     private final Logger logger = LoggerFactory.getLogger(MainController.class);

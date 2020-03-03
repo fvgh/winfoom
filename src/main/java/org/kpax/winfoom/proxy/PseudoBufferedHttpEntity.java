@@ -30,7 +30,7 @@ import java.io.*;
  *
  * @author Eugen Covaci
  */
-public class PseudoBufferedHttpEntity extends AbstractHttpEntity {
+class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
     private static final Logger logger = LoggerFactory.getLogger(PseudoBufferedHttpEntity.class);
 

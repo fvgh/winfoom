@@ -15,12 +15,12 @@ package org.kpax.winfoom.config;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.auth.win.WindowsCredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.SystemDefaultCredentialsProvider;
+import org.kpax.winfoom.TestConstants;
+import org.kpax.winfoom.proxy.LocalProxyServer;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
@@ -30,9 +30,18 @@ import org.springframework.context.annotation.Profile;
 public class SecurityConfigurationTest {
 
     @Bean
-    public CredentialsProvider credentialsProvider () {
+    public CredentialsProvider credentialsProvider() {
         BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials("user", "pass"));
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(TestConstants.USERNAME, TestConstants.PASSWORD));
         return credentialsProvider;
     }
+
+    @Bean
+    public UserConfig userConfig() {
+        UserConfig userConfig = new UserConfig();
+        userConfig.setProxyHost("localhost");
+        userConfig.setProxyPort(TestConstants.PROXY_PORT);
+        return userConfig;
+    }
+
 }

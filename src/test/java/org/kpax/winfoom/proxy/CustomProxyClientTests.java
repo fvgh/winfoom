@@ -29,6 +29,7 @@ import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -44,6 +45,7 @@ import java.net.Socket;
 @SpringBootTest(classes = FoomApplicationTest.class)
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = SecurityConfigurationTest.class)
+@ActiveProfiles("test")
 public class CustomProxyClientTests {
 
     private static final String PROXY_HOST = "127.0.0.1";

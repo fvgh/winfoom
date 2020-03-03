@@ -31,6 +31,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.*;
 import org.junit.rules.Timeout;
+import org.kpax.winfoom.TestConstants;
 import org.kpax.winfoom.util.CrlfWriter;
 import org.kpax.winfoom.util.FoomIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
@@ -52,8 +53,6 @@ public class PseudoBufferedHttpEntityTests {
 
     private final String echoContentHeader = "Echo-content";
 
-    private final int port = 3128;
-
     private AsynchronousServerSocketChannel serverSocket;
 
     private int bufferSize = 1024;
@@ -64,7 +63,7 @@ public class PseudoBufferedHttpEntityTests {
     @Before
     public void before() throws IOException {
         serverSocket = AsynchronousServerSocketChannel.open()
-                .bind(new InetSocketAddress(port));
+                .bind(new InetSocketAddress(TestConstants.PROXY_PORT));
         serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
 
             public void completed(AsynchronousSocketChannel socketChanel, Void att) {
@@ -124,7 +123,7 @@ public class PseudoBufferedHttpEntityTests {
     public void repeatable_BufferLessThanContentLength_False() throws IOException {
         this.bufferSize = 1;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             request.setEntity(new StringEntity("12345"));
 
@@ -140,7 +139,7 @@ public class PseudoBufferedHttpEntityTests {
     public void repeatable_BufferEqualsContentLength_True() throws IOException {
         this.bufferSize = 5;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             request.setEntity(new StringEntity("12345"));
 
@@ -156,7 +155,7 @@ public class PseudoBufferedHttpEntityTests {
     public void repeatable_BufferBiggerThanContentLength_True() throws IOException {
         this.bufferSize = 7;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             request.setEntity(new StringEntity("12345"));
 
@@ -172,7 +171,7 @@ public class PseudoBufferedHttpEntityTests {
     public void repeatable_NegativeContentLengthBufferBiggerThanContentLength_False() throws IOException {
         this.bufferSize = 10;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             request.setEntity(new InputStreamEntity(new ByteArrayInputStream("12345".getBytes())));
 
@@ -188,7 +187,7 @@ public class PseudoBufferedHttpEntityTests {
     public void repeatable_NegativeContentLengthBufferLessThanContentLength_False() throws IOException {
         this.bufferSize = 2;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             request.setEntity(new InputStreamEntity(new ByteArrayInputStream("12345".getBytes())));
 
@@ -205,7 +204,7 @@ public class PseudoBufferedHttpEntityTests {
     public void repeatable_NegativeContentLengthNoAvailableData_False() throws IOException {
         this.bufferSize = 1024;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
@@ -221,7 +220,7 @@ public class PseudoBufferedHttpEntityTests {
     public void body_IsRepeatableWithEcho_True() throws IOException {
         this.bufferSize = 7;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             request.addHeader(echoContentHeader, "true");
             String requestBody = "12345";
@@ -239,7 +238,7 @@ public class PseudoBufferedHttpEntityTests {
     public void body_NotRepeatableWithEcho_True() throws IOException {
         this.bufferSize = 2;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             request.addHeader(echoContentHeader, "true");
             String requestBody = "12345";
@@ -258,7 +257,7 @@ public class PseudoBufferedHttpEntityTests {
     public void body_IsRepeatableNoEcho_True() throws IOException {
         this.bufferSize = 7;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             String requestBody = "12345";
             request.setEntity(new StringEntity(requestBody));
@@ -275,7 +274,7 @@ public class PseudoBufferedHttpEntityTests {
     public void body_NotRepeatableNoEcho_True() throws IOException {
         this.bufferSize = 2;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + port);
+            HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
             HttpPost request = new HttpPost("/");
             String requestBody = "12345";
             request.setEntity(new StringEntity(requestBody));
