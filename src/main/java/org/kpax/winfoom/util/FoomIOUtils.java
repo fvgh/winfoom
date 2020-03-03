@@ -31,7 +31,7 @@ public final class FoomIOUtils extends IOUtils {
 
     public static final int DEFAULT_BUFFER_SIZE = 4 * 1024;
 
-    private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(FoomIOUtils.class);
 
     private FoomIOUtils() {
     }

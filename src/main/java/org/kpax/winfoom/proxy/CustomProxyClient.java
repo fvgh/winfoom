@@ -59,8 +59,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 /**
- * ProxyClient can be used to establish a tunnel via an HTTP proxy.<br>
- * This is an adaptation of {@link org.apache.http.impl.client.ProxyClient}
+ * This class can be used to establish a tunnel via an HTTP proxy.<br>
+ * It is an adaptation of {@link org.apache.http.impl.client.ProxyClient}
  *
  * @author Eugen Covaci
  */
