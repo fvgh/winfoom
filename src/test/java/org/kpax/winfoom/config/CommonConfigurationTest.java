@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
  * Created on 1/24/2020
  */
 @Configuration
-public class SecurityConfigurationTest {
+public class CommonConfigurationTest {
 
     @Bean
     public CredentialsProvider credentialsProvider() {

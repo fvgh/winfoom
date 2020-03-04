@@ -32,7 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kpax.winfoom.FoomApplicationTest;
-import org.kpax.winfoom.config.SecurityConfigurationTest;
+import org.kpax.winfoom.config.CommonConfigurationTest;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -58,7 +58,7 @@ import static org.kpax.winfoom.TestConstants.*;
  */
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
-@ContextConfiguration(classes = SecurityConfigurationTest.class)
+@ContextConfiguration(classes = CommonConfigurationTest.class)
 @SpringBootTest(classes = FoomApplicationTest.class)
 public class SocketHandlerTests {
 

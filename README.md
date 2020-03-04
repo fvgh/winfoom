@@ -38,9 +38,8 @@ as a NTML proxy._
 
 > 👉 Note: Winfoom uses the current user credentials to authenticate to the remote proxy! For this, it uses [org.apache.http.impl.auth.win.WindowsCredentialsProvider]( https://hc.apache.org/httpcomponents-client-ga/httpclient-win/apidocs/org/apache/http/impl/auth/win/WindowsCredentialsProvider.html)
 
-### TODO
+### Todo
 
-   - Unit testing (In progress).
    - Performance tests.
    
 ### Coding Guidance
