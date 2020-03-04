@@ -25,14 +25,14 @@ import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.kpax.winfoom.FoomApplicationTest;
-import org.kpax.winfoom.config.CommonConfigurationTest;
+import org.kpax.winfoom.config.UserConfig;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.ByteArrayOutputStream;
@@ -40,13 +40,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import static org.mockito.Mockito.when;
+
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 3/2/2020
  */
 @SpringBootTest(classes = FoomApplicationTest.class)
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = CommonConfigurationTest.class)
 @ActiveProfiles("test")
 public class CustomProxyClientTests {
 
@@ -55,6 +56,9 @@ public class CustomProxyClientTests {
 
     private static final String USERNAME = "user";
     private static final String PASSWORD = "pass";
+
+    @MockBean
+    private UserConfig userConfig;
 
     @Autowired
     private CustomProxyClient customProxyClient;
@@ -69,6 +73,10 @@ public class CustomProxyClientTests {
 
     @Before
     public void before() {
+
+        when(userConfig.getProxyHost()).thenReturn("localhost");
+        when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+
         proxyServer = DefaultHttpProxyServer.bootstrap()
                 .withAddress(new InetSocketAddress(PROXY_HOST, PROXY_PORT))
                 .withName("AuthenticatedUpstreamProxy")

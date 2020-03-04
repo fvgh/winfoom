@@ -30,7 +30,7 @@ import org.junit.*;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.kpax.winfoom.FoomApplicationTest;
-import org.kpax.winfoom.config.CommonConfigurationTest;
+import org.kpax.winfoom.config.UserConfig;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -39,7 +39,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -49,6 +48,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
 import static org.kpax.winfoom.TestConstants.*;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
@@ -56,12 +56,14 @@ import static org.kpax.winfoom.TestConstants.*;
  */
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
-@ContextConfiguration(classes = CommonConfigurationTest.class)
 @SpringBootTest(classes = FoomApplicationTest.class)
 public class SocketHandlerTests {
 
     @MockBean
     private LocalProxyServer localProxyServer;
+
+    @MockBean
+    private UserConfig userConfig;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -80,6 +82,10 @@ public class SocketHandlerTests {
 
     @Before
     public void before() throws IOException {
+
+        when(userConfig.getProxyHost()).thenReturn("localhost");
+        when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+
         remoteProxyServer = DefaultHttpProxyServer.bootstrap()
                 .withPort(PROXY_PORT)
                 .withName("AuthenticatedUpstreamProxy")

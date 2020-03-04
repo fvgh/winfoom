@@ -12,16 +12,29 @@
 
 package org.kpax.winfoom;
 
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
 @SpringBootApplication
 public class FoomApplicationTest {
 
     private static final Logger logger = LoggerFactory.getLogger(FoomApplicationTest.class);
 
+    @Bean
+    @Primary
+    public CredentialsProvider credentialsProvider() {
+        BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(TestConstants.USERNAME, TestConstants.PASSWORD));
+        return credentialsProvider;
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(FoomApplicationTest.class, args);
