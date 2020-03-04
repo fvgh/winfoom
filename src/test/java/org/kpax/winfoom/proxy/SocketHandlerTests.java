@@ -26,10 +26,8 @@ import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.CommonConfigurationTest;
@@ -70,6 +68,9 @@ public class SocketHandlerTests {
 
     @Autowired
     private CredentialsProvider credentialsProvider;
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(5);
 
     private AsynchronousServerSocketChannel serverSocket;
 

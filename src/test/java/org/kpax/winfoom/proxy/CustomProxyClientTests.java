@@ -20,7 +20,9 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.CommonConfigurationTest;
@@ -59,6 +61,9 @@ public class CustomProxyClientTests {
 
     @Autowired
     private CredentialsProvider credentialsProvider;
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(5);
 
     private HttpProxyServer proxyServer;
 
