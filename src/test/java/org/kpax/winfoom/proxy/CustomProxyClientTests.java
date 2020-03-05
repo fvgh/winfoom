@@ -99,7 +99,6 @@ public class CustomProxyClientTests {
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Socket socket = customProxyClient.tunnel(proxy, target, HttpVersion.HTTP_1_1, outputStream);
-        System.out.println(new String(outputStream.toByteArray()));
         socket.close();
     }
 
@@ -110,7 +109,6 @@ public class CustomProxyClientTests {
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, "wrong_pass"));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Socket socket = customProxyClient.tunnel(proxy, target, HttpVersion.HTTP_1_1, outputStream);
-        System.out.println(new String(outputStream.toByteArray()));
         socket.close();
     }
 
@@ -122,7 +120,6 @@ public class CustomProxyClientTests {
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Socket socket = customProxyClient.tunnel(proxy, target, HttpVersion.HTTP_1_1, outputStream);
-        System.out.println(new String(outputStream.toByteArray()));
         socket.close();
     }
 
