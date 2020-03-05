@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import static org.kpax.winfoom.TestConstants.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -50,12 +51,6 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
 public class CustomProxyClientTests {
-
-    private static final String PROXY_HOST = "127.0.0.1";
-    private static final int PROXY_PORT = 80;
-
-    private static final String USERNAME = "user";
-    private static final String PASSWORD = "pass";
 
     @MockBean
     private UserConfig userConfig;
@@ -78,7 +73,7 @@ public class CustomProxyClientTests {
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
 
         proxyServer = DefaultHttpProxyServer.bootstrap()
-                .withAddress(new InetSocketAddress(PROXY_HOST, PROXY_PORT))
+                .withAddress(new InetSocketAddress("localhost", PROXY_PORT))
                 .withName("AuthenticatedUpstreamProxy")
                 .withProxyAuthenticator(new ProxyAuthenticator() {
                     public boolean authenticate(String userName, String password) {
@@ -100,8 +95,8 @@ public class CustomProxyClientTests {
     @Test
     public void tunnel_rightProxyAndCredentials_NoError() throws IOException, HttpException {
         HttpHost target = HttpHost.create("https://example.com");
-        HttpHost proxy = new HttpHost("localhost", 80, "http");
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials("user", "pass"));
+        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Socket socket = customProxyClient.tunnel(proxy, target, HttpVersion.HTTP_1_1, outputStream);
         System.out.println(new String(outputStream.toByteArray()));
@@ -111,8 +106,8 @@ public class CustomProxyClientTests {
     @Test(expected = org.apache.http.impl.execchain.TunnelRefusedException.class)
     public void tunnel_rightProxyWrongCredentials_TunnelRefusedException() throws IOException, HttpException {
         HttpHost target = HttpHost.create("https://example.com");
-        HttpHost proxy = new HttpHost("localhost", 80, "http");
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials("user", "wrong_pass"));
+        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, "wrong_pass"));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Socket socket = customProxyClient.tunnel(proxy, target, HttpVersion.HTTP_1_1, outputStream);
         System.out.println(new String(outputStream.toByteArray()));
@@ -123,8 +118,8 @@ public class CustomProxyClientTests {
     @Test(expected = java.net.UnknownHostException.class)
     public void tunnel_wrongProxyRightCredentials_UnknownHostException() throws IOException, HttpException {
         HttpHost target = HttpHost.create("https://example.com");
-        HttpHost proxy = new HttpHost("wronghost", 80, "http");
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials("user", "pass"));
+        HttpHost proxy = new HttpHost("wronghost", userConfig.getProxyPort(), "http");
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Socket socket = customProxyClient.tunnel(proxy, target, HttpVersion.HTTP_1_1, outputStream);
         System.out.println(new String(outputStream.toByteArray()));

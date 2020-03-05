@@ -18,7 +18,7 @@ package org.kpax.winfoom;
  */
 public interface TestConstants {
 
-    int PROXY_PORT = 80;
+    int PROXY_PORT = 8100;
     int LOCAL_PROXY_PORT = 3128;
     String USERNAME = "user";
     String PASSWORD = "pass";
