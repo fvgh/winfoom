@@ -49,7 +49,7 @@ public class LocalProxyServerTests {
     }
 
     @Test
-    public void start_DoStart_True() throws Exception {
+    public void server_DoStart_True() throws Exception {
         localProxyServer.start();
         Assert.assertTrue(localProxyServer.isStarted());
     }
