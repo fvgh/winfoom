@@ -46,7 +46,7 @@ If you decide to build the executable *jar* file from source code, you would nee
 * Maven 3.x version
 * Git for Windows
 
-Then open a terminal and follow this steps:
+Then open a terminal and execute the commands:
 
 1) `git clone https://github.com/ecovaci/winfoom.git`
 2) `cd winfoom`
