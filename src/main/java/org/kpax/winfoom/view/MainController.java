@@ -64,9 +64,6 @@ public class MainController {
     @Autowired
     private FxApplication fxApplication;
 
-    @Autowired
-    private ProxyContext proxyContext;
-
     @FXML
     private BorderPane borderPane;
 
