@@ -133,10 +133,11 @@ class SocketHandler {
             if (logger.isDebugEnabled()) {
                 logger.debug("End processing request line {}", requestLine);
             }
-        } catch (ConnectionClosedException e) {
+        } catch (ConnectionClosedException | HttpException e) {
 
-            // The connection had been closed unexpectedly.
-            // Not a real error, therefore we only debug it.
+            // This is a client error,
+            // not an application error,
+            // therefore we only debug it.
             logger.debug(e.getMessage(), e);
         } catch (Throwable e) {
             logger.error("Error on handling local socket connection", e);
@@ -320,8 +321,8 @@ class SocketHandler {
                             String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
                             if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
                                 crlfWriter.write(
-                                                HttpUtils.createHttpHeaderAsString(HttpHeaders.TRANSFER_ENCODING,
-                                                        nonChunkedTransferEncoding));
+                                        HttpUtils.createHttpHeaderAsString(HttpHeaders.TRANSFER_ENCODING,
+                                                nonChunkedTransferEncoding));
                                 logger.debug("Add chunk-striped header response");
                             } else {
                                 logger.debug("Remove transfer encoding chunked header response");
