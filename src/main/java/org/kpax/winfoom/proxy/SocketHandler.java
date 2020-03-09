@@ -181,8 +181,9 @@ class SocketHandler {
                     localSocketChannel.getOutputStream());
 
             final OutputStream socketOutputStream = socket.getOutputStream();
-            Future<?> copyToSocketFuture = proxyContext.executeAsync(() -> FoomIOUtils.copyQuietly(localSocketChannel.getInputStream(),
-                    socketOutputStream));
+            Future<?> copyToSocketFuture = proxyContext.executeAsync(
+                    () -> FoomIOUtils.copyQuietly(localSocketChannel.getInputStream(),
+                            socketOutputStream));
             FoomIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
             if (!copyToSocketFuture.isDone()) {
                 try {
