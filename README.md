@@ -38,6 +38,22 @@ as a NTML proxy._
 
 > 👉 Note: Winfoom uses the current user credentials to authenticate to the remote proxy! For this, it uses [org.apache.http.impl.auth.win.WindowsCredentialsProvider]( https://hc.apache.org/httpcomponents-client-ga/httpclient-win/apidocs/org/apache/http/impl/auth/win/WindowsCredentialsProvider.html)
 
+### Build from source code
+
+If you decide to build the executable *jar* file from source code, you would need this prerequisites:
+
+* Java JDK 11(+)
+* Maven 3.x version
+* Git for Windows
+
+Then open a terminal and execute the commands:
+
+1) `git clone https://github.com/ecovaci/winfoom.git`
+2) `cd winfoom`
+3) `mvn clean package`
+
+Now you should have the generated executable *jar* file under the *target* directory.
+
 ### Todo
 
    - Performance tests.
