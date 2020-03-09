@@ -27,6 +27,9 @@ The application log file is placed under `logs` directory.
 
 ### Configuration
 
+Winfoom has a graphical user interface that allows the user to configure proxy host, port and the URL for testing the settings.
+These fields are pre-filled with the values gathered from your system.
+
 To test it, open a browser, let's say Firefox and configure proxy like this:
 
 ![firefox](https://github.com/ecovaci/winfoom/blob/master/assets/img/firefox.png)
