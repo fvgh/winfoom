@@ -73,6 +73,6 @@ Please review these docs below about coding practices.
 Any feedback or suggestions are welcome. 
 It is hosted with an Apache 2.0 license so issues, forks and PRs are most appreciated. 
 
-Don't forget give this repository a star if it helped you. 
+Don't forget to give this repository a star if it helped you. 
 
 
