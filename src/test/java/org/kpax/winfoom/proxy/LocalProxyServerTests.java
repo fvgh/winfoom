@@ -12,19 +12,17 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.UserConfig;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.kpax.winfoom.TestConstants.LOCAL_PROXY_PORT;
 import static org.mockito.Mockito.when;
 
@@ -32,9 +30,10 @@ import static org.mockito.Mockito.when;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 3/4/2020
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @ActiveProfiles("test")
 @SpringBootTest(classes = FoomApplicationTest.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LocalProxyServerTests {
 
     @MockBean
@@ -43,7 +42,7 @@ public class LocalProxyServerTests {
     @SpyBean
     private LocalProxyServer localProxyServer;
 
-    @Before
+    @BeforeEach
     public void before() {
         when(userConfig.getLocalPort()).thenReturn(LOCAL_PROXY_PORT);
     }
@@ -51,10 +50,10 @@ public class LocalProxyServerTests {
     @Test
     public void server_DoStart_True() throws Exception {
         localProxyServer.start();
-        Assert.assertTrue(localProxyServer.isStarted());
+        assertTrue(localProxyServer.isStarted());
     }
 
-    @After
+    @AfterAll
     public void after() {
         if (localProxyServer != null) {
             localProxyServer.close();

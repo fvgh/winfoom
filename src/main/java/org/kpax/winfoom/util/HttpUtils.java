@@ -94,10 +94,6 @@ public final class HttpUtils {
         return new BasicHeader(name, value);
     }
 
-    public static String createHttpHeaderAsString(String name, String value) {
-        return createHttpHeader(name, value).toString();
-    }
-
     public static Socket tuneSocket(final Socket socket, int bufferSize) throws SocketException {
         socket.setTcpNoDelay(true);
         socket.setReceiveBufferSize(bufferSize);

@@ -28,7 +28,6 @@ import org.kpax.winfoom.FxApplication;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.LocalProxyServer;
-import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.util.GuiUtils;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.Message;

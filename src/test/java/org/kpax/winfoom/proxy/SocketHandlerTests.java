@@ -26,9 +26,8 @@ import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
-import org.junit.*;
-import org.junit.rules.Timeout;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.UserConfig;
 import org.littleshoot.proxy.HttpProxyServer;
@@ -39,6 +38,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -47,6 +47,7 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.kpax.winfoom.TestConstants.*;
 import static org.mockito.Mockito.when;
 
@@ -54,9 +55,11 @@ import static org.mockito.Mockito.when;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 3/3/2020
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @ActiveProfiles("test")
 @SpringBootTest(classes = FoomApplicationTest.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Timeout(5)
 public class SocketHandlerTests {
 
     @MockBean
@@ -71,20 +74,20 @@ public class SocketHandlerTests {
     @Autowired
     private CredentialsProvider credentialsProvider;
 
-    @Rule
-    public Timeout globalTimeout = Timeout.seconds(5);
-
     private AsynchronousServerSocketChannel serverSocket;
 
     private HttpServer remoteServer;
 
     private HttpProxyServer remoteProxyServer;
 
-    @Before
-    public void before() throws IOException {
-
+    @BeforeEach
+    void beforeEach() {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+    }
+
+    @BeforeAll
+    public void before() throws IOException {
 
         remoteProxyServer = DefaultHttpProxyServer.bootstrap()
                 .withPort(PROXY_PORT)
@@ -159,9 +162,9 @@ public class SocketHandlerTests {
             request.setEntity(new StringEntity("whatever"));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
                 String responseBody = EntityUtils.toString(response.getEntity());
-                Assert.assertEquals(responseBody, "12345");
+                assertEquals(responseBody, "12345");
             }
         }
     }
@@ -169,16 +172,17 @@ public class SocketHandlerTests {
     @Test
     public void request_Connect_True() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).setProxy(localProxy).build()) {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
+                .setProxy(localProxy).build()) {
             HttpHost target = HttpHost.create("http://localhost:" + remoteServer.getLocalPort());
             HttpRequest request = new BasicHttpRequest("CONNECT", "localhost:" + remoteServer.getLocalPort());
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
             }
         }
     }
 
-    @After
+    @AfterAll
     public void after() {
         try {
             serverSocket.close();

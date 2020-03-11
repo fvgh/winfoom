@@ -322,7 +322,7 @@ class SocketHandler {
                             String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
                             if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
                                 crlfWriter.write(
-                                        HttpUtils.createHttpHeaderAsString(HttpHeaders.TRANSFER_ENCODING,
+                                        HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
                                                 nonChunkedTransferEncoding));
                                 logger.debug("Add chunk-striped header response");
                             } else {
