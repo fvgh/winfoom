@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  */
 @Timeout(5)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class PseudoBufferedHttpEntityTests {
+class PseudoBufferedHttpEntityTests {
 
     private final String entityRepeatableHeader = "Entity-Repeatable";
 
@@ -62,7 +62,7 @@ public class PseudoBufferedHttpEntityTests {
     private int bufferSize = 1024;
 
     @BeforeAll
-    public void before() throws IOException {
+    void before() throws IOException {
         serverSocket = AsynchronousServerSocketChannel.open()
                 .bind(new InetSocketAddress(TestConstants.PROXY_PORT));
         serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
@@ -121,7 +121,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @Test
-    public void repeatable_BufferLessThanContentLength_False() throws IOException {
+    void repeatable_BufferLessThanContentLength_False() throws IOException {
         this.bufferSize = 1;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -137,7 +137,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @Test
-    public void repeatable_BufferEqualsContentLength_True() throws IOException {
+    void repeatable_BufferEqualsContentLength_True() throws IOException {
         this.bufferSize = 5;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -153,7 +153,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @Test
-    public void repeatable_BufferBiggerThanContentLength_True() throws IOException {
+    void repeatable_BufferBiggerThanContentLength_True() throws IOException {
         this.bufferSize = 7;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -169,7 +169,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @Test
-    public void repeatable_NegativeContentLengthBufferBiggerThanContentLength_False() throws IOException {
+    void repeatable_NegativeContentLengthBufferBiggerThanContentLength_False() throws IOException {
         this.bufferSize = 10;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -185,7 +185,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @Test
-    public void repeatable_NegativeContentLengthBufferLessThanContentLength_False() throws IOException {
+    void repeatable_NegativeContentLengthBufferLessThanContentLength_False() throws IOException {
         this.bufferSize = 2;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -202,7 +202,7 @@ public class PseudoBufferedHttpEntityTests {
 
 
     @Test
-    public void repeatable_NegativeContentLengthNoAvailableData_False() throws IOException {
+    void repeatable_NegativeContentLengthNoAvailableData_False() throws IOException {
         this.bufferSize = 1024;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -218,7 +218,7 @@ public class PseudoBufferedHttpEntityTests {
 
 
     @Test
-    public void body_IsRepeatableWithEcho_True() throws IOException {
+    void body_IsRepeatableWithEcho_True() throws IOException {
         this.bufferSize = 7;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -236,7 +236,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @Test
-    public void body_NotRepeatableWithEcho_True() throws IOException {
+    void body_NotRepeatableWithEcho_True() throws IOException {
         this.bufferSize = 2;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -255,7 +255,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @Test
-    public void body_IsRepeatableNoEcho_True() throws IOException {
+    void body_IsRepeatableNoEcho_True() throws IOException {
         this.bufferSize = 7;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -272,7 +272,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @Test
-    public void body_NotRepeatableNoEcho_True() throws IOException {
+    void body_NotRepeatableNoEcho_True() throws IOException {
         this.bufferSize = 2;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
@@ -289,7 +289,7 @@ public class PseudoBufferedHttpEntityTests {
     }
 
     @AfterAll
-    public void after() throws IOException {
+    void after() throws IOException {
         serverSocket.close();
     }
 

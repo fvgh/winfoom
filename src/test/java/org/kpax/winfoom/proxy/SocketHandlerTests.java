@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(classes = FoomApplicationTest.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Timeout(5)
-public class SocketHandlerTests {
+class SocketHandlerTests {
 
     @MockBean
     private LocalProxyServer localProxyServer;
@@ -87,7 +87,7 @@ public class SocketHandlerTests {
     }
 
     @BeforeAll
-    public void before() throws IOException {
+    void before() throws IOException {
 
         remoteProxyServer = DefaultHttpProxyServer.bootstrap()
                 .withPort(PROXY_PORT)
@@ -150,7 +150,7 @@ public class SocketHandlerTests {
     }
 
     @Test
-    public void request_NonConnect_True() throws IOException {
+    void request_NonConnect_True() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build()) {
             RequestConfig config = RequestConfig.custom()
@@ -170,7 +170,7 @@ public class SocketHandlerTests {
     }
 
     @Test
-    public void request_Connect_True() throws IOException {
+    void request_Connect_True() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
                 .setProxy(localProxy).build()) {
@@ -183,7 +183,7 @@ public class SocketHandlerTests {
     }
 
     @AfterAll
-    public void after() {
+    void after() {
         try {
             serverSocket.close();
         } catch (IOException e) {

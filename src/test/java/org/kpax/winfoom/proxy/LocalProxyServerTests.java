@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 @ActiveProfiles("test")
 @SpringBootTest(classes = FoomApplicationTest.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class LocalProxyServerTests {
+class LocalProxyServerTests {
 
     @MockBean
     private UserConfig userConfig;
@@ -43,18 +43,18 @@ public class LocalProxyServerTests {
     private LocalProxyServer localProxyServer;
 
     @BeforeEach
-    public void before() {
+    void before() {
         when(userConfig.getLocalPort()).thenReturn(LOCAL_PROXY_PORT);
     }
 
     @Test
-    public void server_DoStart_True() throws Exception {
+    void server_DoStart_True() throws Exception {
         localProxyServer.start();
         assertTrue(localProxyServer.isStarted());
     }
 
     @AfterAll
-    public void after() {
+    void after() {
         if (localProxyServer != null) {
             localProxyServer.close();
         }
