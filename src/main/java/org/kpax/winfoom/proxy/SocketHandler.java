@@ -302,8 +302,8 @@ class SocketHandler {
 
                     // No remote response, therefore we give back
                     // to the client an Internal Server Error status line
-                    localSocketChannel.getOutputStream().write(CrlfFormat.format(
-                            HttpUtils.to500StatusLine(requestLine.getProtocolVersion())));
+                    localSocketChannel.getOutputStream().write(
+                            CrlfFormat.to500StatusLine(requestLine.getProtocolVersion()));
                     throw e;
                 }
                 try {
@@ -346,10 +346,11 @@ class SocketHandler {
                         logger.debug("Start writing entity content");
                         entity.writeTo(localSocketChannel.getOutputStream());
                         logger.debug("End writing entity content");
+
+                        // Make sure the entity is fully consumed
+                        EntityUtils.consume(entity);
                     }
 
-                    // Make sure the entity is fully consumed
-                    EntityUtils.consume(entity);
                 } finally {
                     FoomIOUtils.close(response);
                 }
