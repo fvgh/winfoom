@@ -27,6 +27,7 @@ import org.apache.http.impl.auth.DigestSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
 import org.apache.http.impl.client.*;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.kpax.winfoom.config.SystemConfig;
@@ -120,6 +121,7 @@ class FoomProxyContext implements ProxyContext {
                 .setProxy(requestConfig.getProxy())
                 .setDefaultRequestConfig(requestConfig)
                 .setDefaultSocketConfig(socketConfig)
+                .setRoutePlanner(new DefaultProxyRoutePlanner(requestConfig.getProxy()))
                 .setConnectionManager(connectionManager)
                 .setConnectionManagerShared(true)
                 .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
