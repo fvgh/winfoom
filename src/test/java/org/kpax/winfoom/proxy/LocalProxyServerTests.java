@@ -45,6 +45,8 @@ class LocalProxyServerTests {
     @BeforeEach
     void before() {
         when(userConfig.getLocalPort()).thenReturn(LOCAL_PROXY_PORT);
+        when(userConfig.getProxyHost()).thenReturn("localhost");
+        when(userConfig.getProxyPort()).thenReturn(80);
     }
 
     @Test

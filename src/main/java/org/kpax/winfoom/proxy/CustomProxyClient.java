@@ -43,7 +43,6 @@ import org.apache.http.protocol.*;
 import org.apache.http.util.Args;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.FoomIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
@@ -55,7 +54,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
 
 /**
@@ -188,10 +186,10 @@ class CustomProxyClient {
         }
 
         // Write the status line
-        socketChannelWrapper.crlfWrite(response.getStatusLine());
+        socketChannelWrapper.write(response.getStatusLine());
 
         // Write an empty line as separator
-        socketChannelWrapper.crlfWriteln();
+        socketChannelWrapper.writeln();
         logger.debug("Done writing empty line");
 
         return connection.getSocket();

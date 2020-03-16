@@ -88,17 +88,17 @@ class PseudoBufferedHttpEntityTests {
                             bufferSize);
                     ((BasicHttpEntityEnclosingRequest) request).setEntity(requestEntity);
 
-                    localSocketChannel.crlfWrite("HTTP/1.1 200 OK");
-                    localSocketChannel.crlfWrite(HttpUtils.createHttpHeader(entityRepeatableHeader,
+                    localSocketChannel.write("HTTP/1.1 200 OK");
+                    localSocketChannel.write(HttpUtils.createHttpHeader(entityRepeatableHeader,
                             String.valueOf(requestEntity.isRepeatable())));
 
                     if (request.containsHeader(echoContentHeader)) {
-                        localSocketChannel.crlfWrite(request.getFirstHeader(HTTP.CONTENT_LEN));
-                        localSocketChannel.crlfWrite(request.getFirstHeader(HTTP.CONTENT_TYPE));
-                        localSocketChannel.crlfWriteln();
+                        localSocketChannel.write(request.getFirstHeader(HTTP.CONTENT_LEN));
+                        localSocketChannel.write(request.getFirstHeader(HTTP.CONTENT_TYPE));
+                        localSocketChannel.writeln();
                         requestEntity.getContent().transferTo(localSocketChannel.getOutputStream());
                     } else {
-                        localSocketChannel.crlfWriteln(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
+                        localSocketChannel.writeln(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
                         EntityUtils.consume(requestEntity);
                     }
                 } catch (Exception e) {

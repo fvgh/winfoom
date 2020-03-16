@@ -56,17 +56,16 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         return outputStream;
     }
 
-    public void crlfWrite(Object obj) throws IOException {
+    public void write(Object obj) throws IOException {
         outputStream.write(CrlfFormat.format(obj));
     }
 
-    public void crlfWriteln(Object obj) throws IOException {
-        crlfWrite(obj);
-        crlfWriteln();
+    public void writeln(Object obj) throws IOException {
+        write(obj);
+        writeln();
     }
 
-
-    public void crlfWriteln() throws IOException {
+    public void writeln() throws IOException {
         outputStream.write(CrlfFormat.CRLF.getBytes());
     }
 

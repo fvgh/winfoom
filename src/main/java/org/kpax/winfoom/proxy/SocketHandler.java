@@ -114,12 +114,12 @@ class SocketHandler {
             try {
                 request = requestParser.parse();
             } catch (HttpException e) {
-                localSocketChannel.crlfWriteln(
+                localSocketChannel.writeln(
                         HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST));
                 throw e;
             } catch (Exception e) {
                 if (!(e instanceof ConnectionClosedException)) {
-                    localSocketChannel.crlfWriteln(
+                    localSocketChannel.writeln(
                             HttpUtils.toStatusLine(HttpStatus.SC_INTERNAL_SERVER_ERROR));
                 }
                 throw e;
@@ -170,7 +170,7 @@ class SocketHandler {
             // We give back to the client
             // a Bad Request status line
             // since the connect line is bad.
-            localSocketChannel.crlfWriteln(
+            localSocketChannel.writeln(
                     HttpUtils.toStatusLine(
                             requestLine.getProtocolVersion(), HttpStatus.SC_BAD_REQUEST, e.getMessage()));
             throw e;
@@ -214,15 +214,15 @@ class SocketHandler {
                     StatusLine errorStatusLine = errorResponse.getStatusLine();
                     logger.debug("errorStatusLine {}", errorStatusLine);
 
-                    localSocketChannel.crlfWrite(errorStatusLine);
+                    localSocketChannel.write(errorStatusLine);
 
                     logger.debug("Start writing error headers");
                     for (Header header : errorResponse.getAllHeaders()) {
-                        localSocketChannel.crlfWrite(header);
+                        localSocketChannel.write(header);
                     }
 
                     // Empty line between headers and the body
-                    localSocketChannel.crlfWriteln();
+                    localSocketChannel.writeln();
 
                     HttpEntity entity = errorResponse.getEntity();
                     if (entity != null) {
@@ -236,7 +236,7 @@ class SocketHandler {
                     // No response from the remote proxy,
                     // therefore we give back to the client
                     // an Internal Server Error status line
-                    localSocketChannel.crlfWriteln(
+                    localSocketChannel.writeln(
                             HttpUtils.toStatusLine(
                                     requestLine.getProtocolVersion(), HttpStatus.SC_INTERNAL_SERVER_ERROR, tre.getMessage()));
                 }
@@ -301,20 +301,21 @@ class SocketHandler {
                 try {
                     response = httpClient.execute(target, request);
                 } catch (ClientProtocolException e) {
-                    localSocketChannel.crlfWriteln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
+                    localSocketChannel.writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
                     throw e;
                 } catch (Exception e) {
 
                     // No remote response, therefore we give back
                     // to the client an Internal Server Error status line
-                    localSocketChannel.crlfWriteln(HttpUtils.toStatusLine(requestLine.getProtocolVersion(), HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
+                    localSocketChannel.writeln(HttpUtils.toStatusLine(requestLine.getProtocolVersion(),
+                            HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
                     throw e;
                 }
                 try {
                     String statusLine = response.getStatusLine().toString();
                     logger.debug("Response status line: {}", statusLine);
 
-                    localSocketChannel.crlfWrite(statusLine);
+                    localSocketChannel.write(statusLine);
 
                     logger.debug("Done writing status line, now write response headers");
 
@@ -325,7 +326,7 @@ class SocketHandler {
                             // since the response is not chunked
                             String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
                             if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                                localSocketChannel.crlfWrite(
+                                localSocketChannel.write(
                                         HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
                                                 nonChunkedTransferEncoding));
                                 logger.debug("Add chunk-striped header response");
@@ -333,7 +334,7 @@ class SocketHandler {
                                 logger.debug("Remove transfer encoding chunked header response");
                             }
                         } else {
-                            localSocketChannel.crlfWrite(header);
+                            localSocketChannel.write(header);
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Done writing response header: {}", header);
                             }
@@ -342,7 +343,7 @@ class SocketHandler {
 
                     // Empty line marking the end
                     // of header's section
-                    localSocketChannel.crlfWriteln();
+                    localSocketChannel.writeln();
 
                     // Now write the request body, if any
                     HttpEntity entity = response.getEntity();
