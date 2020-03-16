@@ -10,23 +10,13 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.util;
+package org.kpax.winfoom.event;
 
-import org.apache.commons.lang3.Validate;
+import org.springframework.context.ApplicationEvent;
 
-/**
- * @author Eugen Covaci
- */
-public final class CrlfFormat {
+public class BeforeServerStartEvent extends ApplicationEvent {
 
-    public static final String CRLF = "\r\n";
-
-    private CrlfFormat() {
+    public BeforeServerStartEvent(Object source) {
+        super(source);
     }
-
-    public static byte[] format(Object input) {
-        Validate.notNull(input, "input cannot be null");
-        return (input + CRLF).getBytes();
-    }
-
 }

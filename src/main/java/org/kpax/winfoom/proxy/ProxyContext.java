@@ -12,23 +12,45 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.Closeable;
-import java.util.concurrent.Future;
+import javax.annotation.PostConstruct;
+import java.util.concurrent.*;
 
 /**
- * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
- * Created on 1/22/2020
+ * It provides a thread pool, a HTTP connection manager etc.
+ * mostly for the {@link SocketHandler} instance.<br/>
+ * We rely on the Spring context to close this instance!
+ *
+ * @author Eugen Covaci
  */
-public interface ProxyContext extends Closeable {
+@Component
+public class ProxyContext implements AutoCloseable {
 
-    /**
-     * Configures and create a {@link org.apache.http.impl.client.HttpClientBuilder} .
-     *
-     * @return An instance of {@link org.apache.http.impl.client.HttpClientBuilder}.
-     */
-    HttpClientBuilder createHttpClientBuilder();
+    private final Logger logger = LoggerFactory.getLogger(ProxyContext.class);
+
+    @Autowired
+    private LocalProxyServer localProxyServer;
+
+    private ThreadPoolExecutor threadPool;
+
+    @PostConstruct
+    private void init() {
+        logger.info("Create thread pool");
+
+        // All threads are daemons!
+        threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+                runnable -> {
+                    Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+                    thread.setDaemon(true);
+                    return thread;
+                });
+
+        logger.info("Done proxy context's initialization");
+    }
 
     /**
      * Submit to the internal executor a {@link Runnable} instance for asynchronous execution.
@@ -36,11 +58,28 @@ public interface ProxyContext extends Closeable {
      * @param runnable The instance to be submitted for execution.
      * @return The <code>Future</code> instance.
      */
-    Future<?> executeAsync(Runnable runnable);
+    public Future<?> executeAsync(Runnable runnable) {
+        return threadPool.submit(runnable);
+    }
 
     /**
      * Check whether the local proxy server is started.
+     *
      * @return <code>true</code> iff the local proxy server is started.
      */
-    boolean isStarted();
+    public boolean isStarted() {
+        return localProxyServer.isStarted();
+    }
+
+    @Override
+    public void close() {
+        logger.info("Close all context's resources");
+
+        try {
+            threadPool.shutdownNow();
+        } catch (Exception e) {
+            logger.warn("Error on closing thread pool", e);
+        }
+    }
+
 }

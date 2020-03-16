@@ -53,7 +53,7 @@ public class UserConfig {
         if (StringUtils.isEmpty(proxyHost)) {
             try {
                 CommandExecutor.getSystemProxy().ifPresent((s) -> {
-                    System.out.println("proxyLine: " + s);
+                    logger.info("proxyLine: {}", s);
                     String[] split = s.split(":");
                     proxyHost = split[0];
                     proxyPort = Integer.parseInt(split[1]);
@@ -108,14 +108,13 @@ public class UserConfig {
         propertiesBuilder.save();
     }
 
-    public boolean canAutoStart () {
-        return StringUtils.isNotEmpty(proxyHost) && proxyPort > 0;
-    }
-
     @Override
     public String toString() {
-        return "UserConfig [localPort=" + localPort
-                + ", proxyHost=" + proxyHost + ", proxyPort=" + proxyPort + "]";
+        return "UserConfig{" +
+                "localPort=" + localPort +
+                ", proxyHost='" + proxyHost + '\'' +
+                ", proxyTestUrl='" + proxyTestUrl + '\'' +
+                ", proxyPort=" + proxyPort +
+                '}';
     }
-
 }

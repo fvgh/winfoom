@@ -103,11 +103,11 @@ class CustomProxyClient {
     }
 
     public Socket tunnel(final HttpHost proxy, final HttpHost target,
-                         final ProtocolVersion protocolVersion, final OutputStream responseStream)
+                         final ProtocolVersion protocolVersion, final AsynchronousSocketChannelWrapper socketChannelWrapper)
             throws IOException, HttpException {
         Args.notNull(proxy, "Proxy host");
         Args.notNull(target, "Target host");
-        Args.notNull(responseStream, "responseStream");
+        Args.notNull(socketChannelWrapper, "socketChannelWrapper");
         HttpHost host = target;
         if (host.getPort() <= 0) {
             host = new HttpHost(host.getHostName(), 80, host.getSchemeName());
@@ -188,10 +188,10 @@ class CustomProxyClient {
         }
 
         // Write the status line
-        responseStream.write(CrlfFormat.format(response.getStatusLine().toString()));
+        socketChannelWrapper.crlfWrite(response.getStatusLine());
 
         // Write an empty line as separator
-        responseStream.write(CrlfFormat.CRLF.getBytes());
+        socketChannelWrapper.crlfWriteln();
         logger.debug("Done writing empty line");
 
         return connection.getSocket();

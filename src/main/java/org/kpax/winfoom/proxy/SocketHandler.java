@@ -15,8 +15,10 @@ package org.kpax.winfoom.proxy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
@@ -25,8 +27,6 @@ import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.util.CrlfFormat;
-import org.kpax.winfoom.util.CrlfWriter;
 import org.kpax.winfoom.util.FoomIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
@@ -87,7 +87,11 @@ class SocketHandler {
     @Autowired
     private CustomProxyClient proxyClient;
 
+    @Autowired
+    private HttpClientBuilder httpClientBuilder;
+
     private AsynchronousSocketChannelWrapper localSocketChannel;
+
 
     SocketHandler bind(AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already binded!");
@@ -110,13 +114,13 @@ class SocketHandler {
             try {
                 request = requestParser.parse();
             } catch (HttpException e) {
-                localSocketChannel.getOutputStream().write(
-                        CrlfFormat.toStatusLine(HttpStatus.SC_BAD_REQUEST));
+                localSocketChannel.crlfWriteln(
+                        HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST));
                 throw e;
             } catch (Exception e) {
                 if (!(e instanceof ConnectionClosedException)) {
-                    localSocketChannel.getOutputStream().write(
-                            CrlfFormat.to500StatusLine());
+                    localSocketChannel.crlfWriteln(
+                            HttpUtils.toStatusLine(HttpStatus.SC_INTERNAL_SERVER_ERROR));
                 }
                 throw e;
             }
@@ -166,9 +170,9 @@ class SocketHandler {
             // We give back to the client
             // a Bad Request status line
             // since the connect line is bad.
-            localSocketChannel.getOutputStream().write(
-                    CrlfFormat.toStatusLine(
-                            requestLine.getProtocolVersion(), HttpStatus.SC_BAD_REQUEST));
+            localSocketChannel.crlfWriteln(
+                    HttpUtils.toStatusLine(
+                            requestLine.getProtocolVersion(), HttpStatus.SC_BAD_REQUEST, e.getMessage()));
             throw e;
         }
 
@@ -178,7 +182,7 @@ class SocketHandler {
         try {
             // Creates a tunnel through proxy.
             socket = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(),
-                    localSocketChannel.getOutputStream());
+                    localSocketChannel);
 
             final OutputStream socketOutputStream = socket.getOutputStream();
             Future<?> copyToSocketFuture = proxyContext.executeAsync(
@@ -210,16 +214,15 @@ class SocketHandler {
                     StatusLine errorStatusLine = errorResponse.getStatusLine();
                     logger.debug("errorStatusLine {}", errorStatusLine);
 
-                    CrlfWriter crlfWriter = new CrlfWriter(localSocketChannel.getOutputStream());
-                    crlfWriter.write(errorStatusLine);
+                    localSocketChannel.crlfWrite(errorStatusLine);
 
                     logger.debug("Start writing error headers");
                     for (Header header : errorResponse.getAllHeaders()) {
-                        crlfWriter.write(header);
+                        localSocketChannel.crlfWrite(header);
                     }
 
                     // Empty line between headers and the body
-                    crlfWriter.writeEmptyLine();
+                    localSocketChannel.crlfWriteln();
 
                     HttpEntity entity = errorResponse.getEntity();
                     if (entity != null) {
@@ -233,9 +236,9 @@ class SocketHandler {
                     // No response from the remote proxy,
                     // therefore we give back to the client
                     // an Internal Server Error status line
-                    localSocketChannel.getOutputStream().write(
-                            CrlfFormat.to500StatusLine(
-                                    requestLine.getProtocolVersion()));
+                    localSocketChannel.crlfWriteln(
+                            HttpUtils.toStatusLine(
+                                    requestLine.getProtocolVersion(), HttpStatus.SC_INTERNAL_SERVER_ERROR, tre.getMessage()));
                 }
             } catch (Exception e) {
                 logger.error("Error on sending error response", e);
@@ -271,7 +274,7 @@ class SocketHandler {
         }
 
         // Create the CloseableHttpClient instance
-        CloseableHttpClient httpClient = proxyContext.createHttpClientBuilder().build();
+        CloseableHttpClient httpClient = httpClientBuilder.build();
 
         try {
             List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?
@@ -294,23 +297,24 @@ class SocketHandler {
             try {
                 URI uri = HttpUtils.parseUri(requestLine.getUri());
                 HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
-                CrlfWriter crlfWriter = new CrlfWriter(localSocketChannel.getOutputStream());
                 CloseableHttpResponse response;
                 try {
                     response = httpClient.execute(target, request);
+                } catch (ClientProtocolException e) {
+                    localSocketChannel.crlfWriteln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
+                    throw e;
                 } catch (Exception e) {
 
                     // No remote response, therefore we give back
                     // to the client an Internal Server Error status line
-                    localSocketChannel.getOutputStream().write(
-                            CrlfFormat.to500StatusLine(requestLine.getProtocolVersion()));
+                    localSocketChannel.crlfWriteln(HttpUtils.toStatusLine(requestLine.getProtocolVersion(), HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
                     throw e;
                 }
                 try {
                     String statusLine = response.getStatusLine().toString();
                     logger.debug("Response status line: {}", statusLine);
 
-                    crlfWriter.write(statusLine);
+                    localSocketChannel.crlfWrite(statusLine);
 
                     logger.debug("Done writing status line, now write response headers");
 
@@ -321,7 +325,7 @@ class SocketHandler {
                             // since the response is not chunked
                             String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
                             if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                                crlfWriter.write(
+                                localSocketChannel.crlfWrite(
                                         HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
                                                 nonChunkedTransferEncoding));
                                 logger.debug("Add chunk-striped header response");
@@ -329,7 +333,7 @@ class SocketHandler {
                                 logger.debug("Remove transfer encoding chunked header response");
                             }
                         } else {
-                            crlfWriter.write(header);
+                            localSocketChannel.crlfWrite(header);
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Done writing response header: {}", header);
                             }
@@ -338,7 +342,7 @@ class SocketHandler {
 
                     // Empty line marking the end
                     // of header's section
-                    crlfWriter.writeEmptyLine();
+                    localSocketChannel.crlfWriteln();
 
                     // Now write the request body, if any
                     HttpEntity entity = response.getEntity();

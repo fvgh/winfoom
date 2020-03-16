@@ -14,10 +14,13 @@ package org.kpax.winfoom.proxy;
 
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.event.BeforeServerStartEvent;
+import org.kpax.winfoom.event.AfterServerStopEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.io.Closeable;
@@ -51,6 +54,9 @@ public class LocalProxyServer implements Closeable {
     @Autowired
     private ApplicationContext applicationContext;
 
+    @Autowired
+    private ApplicationEventPublisher applicationEventPublisher;
+
     private AsynchronousServerSocketChannel serverSocket;
 
     private volatile boolean started;
@@ -67,6 +73,8 @@ public class LocalProxyServer implements Closeable {
             throw new IllegalStateException("Server already started!");
         }
         logger.info("Start local proxy server with userConfig {}", userConfig);
+
+        applicationEventPublisher.publishEvent(new BeforeServerStartEvent(this));
         try {
             serverSocket = AsynchronousServerSocketChannel.open()
                     .bind(new InetSocketAddress(userConfig.getLocalPort()));
@@ -136,6 +144,7 @@ public class LocalProxyServer implements Closeable {
             }
         }
         this.started = false;
+        applicationEventPublisher.publishEvent(new AfterServerStopEvent(this));
     }
 
     public synchronized boolean isStarted() {

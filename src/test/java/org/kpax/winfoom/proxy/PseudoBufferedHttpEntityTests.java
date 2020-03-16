@@ -31,7 +31,6 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
 import org.kpax.winfoom.TestConstants;
-import org.kpax.winfoom.util.CrlfWriter;
 import org.kpax.winfoom.util.FoomIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
 
@@ -89,21 +88,17 @@ class PseudoBufferedHttpEntityTests {
                             bufferSize);
                     ((BasicHttpEntityEnclosingRequest) request).setEntity(requestEntity);
 
-                    CrlfWriter crlfWriter = new CrlfWriter(localSocketChannel.getOutputStream());
-                    crlfWriter
-                            .write("HTTP/1.1 200 OK")
-                            .write(HttpUtils.createHttpHeader(entityRepeatableHeader,
-                                    String.valueOf(requestEntity.isRepeatable())));
+                    localSocketChannel.crlfWrite("HTTP/1.1 200 OK");
+                    localSocketChannel.crlfWrite(HttpUtils.createHttpHeader(entityRepeatableHeader,
+                            String.valueOf(requestEntity.isRepeatable())));
 
                     if (request.containsHeader(echoContentHeader)) {
-                        crlfWriter
-                                .write(request.getFirstHeader(HTTP.CONTENT_LEN))
-                                .write(request.getFirstHeader(HTTP.CONTENT_TYPE));
-                        crlfWriter.writeEmptyLine();
+                        localSocketChannel.crlfWrite(request.getFirstHeader(HTTP.CONTENT_LEN));
+                        localSocketChannel.crlfWrite(request.getFirstHeader(HTTP.CONTENT_TYPE));
+                        localSocketChannel.crlfWriteln();
                         requestEntity.getContent().transferTo(localSocketChannel.getOutputStream());
                     } else {
-                        crlfWriter.write(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
-                        crlfWriter.writeEmptyLine();
+                        localSocketChannel.crlfWriteln(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
                         EntityUtils.consume(requestEntity);
                     }
                 } catch (Exception e) {

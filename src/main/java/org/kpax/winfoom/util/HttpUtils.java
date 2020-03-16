@@ -12,6 +12,7 @@
 
 package org.kpax.winfoom.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,7 +57,7 @@ public final class HttpUtils {
     private HttpUtils() {
     }
 
-    public static Pair<String,Integer> parseConnectUri(String uri) throws NumberFormatException {
+    public static Pair<String, Integer> parseConnectUri(String uri) throws NumberFormatException {
         String[] split = uri.split(":");
         return new ImmutablePair<>(split[0], Integer.parseInt(split[1]));
     }
@@ -127,22 +128,24 @@ public final class HttpUtils {
         }
     }
 
-    public static BasicStatusLine to500StatusLine() {
-        return toStatusLine(HttpVersion.HTTP_1_1, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-    }
-
     public static BasicStatusLine toStatusLine(int httpCode) {
-        return toStatusLine(HttpVersion.HTTP_1_1, httpCode);
-    }
-
-    public static BasicStatusLine to500StatusLine(ProtocolVersion protocolVersion) {
-        return toStatusLine(protocolVersion, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        return toStatusLine(HttpVersion.HTTP_1_1, httpCode, null);
     }
 
     public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode) {
+        return toStatusLine(protocolVersion, httpCode, null);
+    }
+
+    public static BasicStatusLine toStatusLine(int httpCode, String reasonPhrase) {
+        return toStatusLine(HttpVersion.HTTP_1_1, httpCode, null);
+    }
+
+    public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode, String reasonPhrase) {
         Validate.notNull(protocolVersion, "protocolVersion cannot be null");
-        return new BasicStatusLine(protocolVersion, httpCode,
-                EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH));
+        if (StringUtils.isEmpty(reasonPhrase)) {
+            reasonPhrase = EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH);
+        }
+        return new BasicStatusLine(protocolVersion, httpCode, reasonPhrase);
     }
 
 }

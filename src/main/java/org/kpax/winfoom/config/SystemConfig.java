@@ -50,6 +50,12 @@ public class SystemConfig {
     @Value("${internal.buffer.length}")
     private Integer internalBufferLength;
 
+    @Value("${connection.manager.clean.interval}")
+    private Integer connectionManagerCleanInterval;
+
+    @Value("${connection.manager.idleTimeout}")
+    private Integer connectionManagerIdleTimeout;
+
     @Value("${use.system.properties}")
     private boolean useSystemProperties;
 
@@ -100,4 +106,11 @@ public class SystemConfig {
         return internalBufferLength;
     }
 
+    public Integer getConnectionManagerCleanInterval() {
+        return connectionManagerCleanInterval;
+    }
+
+    public Integer getConnectionManagerIdleTimeout() {
+        return connectionManagerIdleTimeout;
+    }
 }
