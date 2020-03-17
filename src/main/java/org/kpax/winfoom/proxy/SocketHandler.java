@@ -134,9 +134,7 @@ class SocketHandler {
                 handleNonConnectRequest(request, inputBuffer);
             }
 
-            if (logger.isDebugEnabled()) {
-                logger.debug("End processing request line {}", requestLine);
-            }
+            logger.debug("End processing request line {}", requestLine);
         } catch (ConnectionClosedException | HttpException e) {
 
             // This is a client error,
@@ -269,7 +267,7 @@ class SocketHandler {
             HttpEntity entity = new PseudoBufferedHttpEntity(inputBuffer, request,
                     systemConfig.getInternalBufferLength());
             ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
-        } else if (logger.isDebugEnabled()) {
+        } else {
             logger.debug("No enclosing entity");
         }
 
@@ -283,13 +281,9 @@ class SocketHandler {
             for (Header header : request.getAllHeaders()) {
                 if (bannedHeaders.contains(header.getName())) {
                     request.removeHeader(header);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Request header {} removed", header);
-                    }
+                    logger.debug("Request header {} removed", header);
                 } else {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Allow request header {}", header);
-                    }
+                    logger.debug("Allow request header {}", header);
                 }
             }
 
@@ -335,9 +329,7 @@ class SocketHandler {
                             }
                         } else {
                             localSocketChannel.write(header);
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Done writing response header: {}", header);
-                            }
+                            logger.debug("Done writing response header: {}", header);
                         }
                     }
 

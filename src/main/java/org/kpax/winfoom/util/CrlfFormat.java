@@ -24,6 +24,11 @@ public final class CrlfFormat {
     private CrlfFormat() {
     }
 
+    /**
+     * Calls the <code>input.toString()</code> and appends CRLF.
+     * @param input The object to be formatted (not null).
+     * @return The resulted string as bytes.
+     */
     public static byte[] format(Object input) {
         Validate.notNull(input, "input cannot be null");
         return (input + CRLF).getBytes();

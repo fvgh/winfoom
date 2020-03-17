@@ -64,10 +64,10 @@ public final class HttpUtils {
 
     public static URI parseUri(String url) throws URISyntaxException {
         int index = url.indexOf("?");
-        if (index > -1 && index < url.length()) {
+        if (index > -1) {
             URIBuilder uriBuilder = new URIBuilder(url.substring(0, index));
-            List<NameValuePair> nvps = URLEncodedUtils.parse(url.substring(index + 1), StandardCharsets.UTF_8);
-            uriBuilder.addParameters(nvps);
+            List<NameValuePair> nameValuePairs = URLEncodedUtils.parse(url.substring(index + 1), StandardCharsets.UTF_8);
+            uriBuilder.addParameters(nameValuePairs);
             return uriBuilder.build();
         }
         return new URIBuilder(url).build();
@@ -142,10 +142,8 @@ public final class HttpUtils {
 
     public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode, String reasonPhrase) {
         Validate.notNull(protocolVersion, "protocolVersion cannot be null");
-        if (StringUtils.isEmpty(reasonPhrase)) {
-            reasonPhrase = EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH);
-        }
-        return new BasicStatusLine(protocolVersion, httpCode, reasonPhrase);
+        return new BasicStatusLine(protocolVersion, httpCode,
+                StringUtils.isEmpty(reasonPhrase) ? EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
     }
 
 }

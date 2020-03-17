@@ -123,13 +123,13 @@ public class HttpConfiguration {
     ApplicationListener<AfterServerStopEvent> onServerStopEventApplicationListener() {
         return event -> {
             logger.info("Close expired/idle connections");
-            connectionManager().closeExpiredConnections();
-            connectionManager().closeIdleConnections(0, TimeUnit.SECONDS);
+            PoolingHttpClientConnectionManager connectionManager = connectionManager();
+            connectionManager.closeExpiredConnections();
+            connectionManager.closeIdleConnections(0, TimeUnit.SECONDS);
         };
     }
 
-    @Scheduled(fixedRateString = "#{systemConfig.connectionManagerCleanInterval * 1000}",
-            initialDelayString = "#{systemConfig.connectionManagerCleanInterval * 1000}")
+    @Scheduled(fixedRateString = "#{systemConfig.connectionManagerCleanInterval * 1000}")
     void cleanUpConnectionManager() {
         if (proxyContext.isStarted()) {
             logger.debug("Execute connection manager pool clean up task");
