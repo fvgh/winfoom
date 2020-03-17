@@ -164,7 +164,7 @@ public class MainController {
             testConnErrMessage = Message.error("Wrong proxy host!");
         } catch (HttpHostConnectException e) {
             testConnErrMessage = Message.error("Wrong proxy port!");
-        } catch (IOException e) {
+        } catch (Exception e) {
             testConnErrMessage = Message.error(e.getMessage());
         }
 
