@@ -1,6 +1,9 @@
 sudo: false
 
 language: java
+os: [
+  linux
+]
 jdk:
   - oraclejdk11
 
