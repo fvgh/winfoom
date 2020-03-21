@@ -1,6 +1,8 @@
 # winfoom
 ### Basic Proxy Facade for NTLM and Kerberos proxies
 
+[![Build Status](https://travis-ci.com/ecovaci/winfoom.svg?branch=master)](https://travis-ci.com/github/ecovaci/winfoom)
+
 Winfoom is a HTTP(s) proxy server facade that allows applications to authenticate through a NTML/Kerberos authenticated proxy server, typically used in corporate environments, 
 without having to deal with the actual handshake.
 
