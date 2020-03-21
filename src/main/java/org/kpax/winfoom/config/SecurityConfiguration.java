@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
 public class SecurityConfiguration {
 
     @Bean
-    public CredentialsProvider credentialsProvider () {
+    public CredentialsProvider credentialsProvider() {
         return new WindowsCredentialsProvider(new SystemDefaultCredentialsProvider());
     }
 

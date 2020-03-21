@@ -38,7 +38,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.security.auth.login.CredentialException;
-import java.io.IOException;
 import java.net.UnknownHostException;
 
 /**

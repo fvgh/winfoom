@@ -28,16 +28,16 @@ public class FoomApplicationTest {
 
     private static final Logger logger = LoggerFactory.getLogger(FoomApplicationTest.class);
 
+    public static void main(String[] args) {
+        SpringApplication.run(FoomApplicationTest.class, args);
+    }
+
     @Bean
     @Primary
     public CredentialsProvider credentialsProvider() {
         BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(TestConstants.USERNAME, TestConstants.PASSWORD));
         return credentialsProvider;
-    }
-
-    public static void main(String[] args) {
-        SpringApplication.run(FoomApplicationTest.class, args);
     }
 
 }

@@ -51,9 +51,11 @@ public class GuiUtils {
     public static void showErrorMessage(String text, Stage stage) {
         showMessage(Message.MessageType.ERROR, text, stage);
     }
+
     public static void showWarningMessage(String text, Stage stage) {
         showMessage(Message.MessageType.WARNING, text, stage);
     }
+
     public static void showInfoMessage(String text, Stage stage) {
         showMessage(Message.MessageType.INFO, text, stage);
     }

@@ -26,7 +26,7 @@ import java.net.URISyntaxException;
 class HttpUtilsTests {
 
     @Test
-    void parseUri_noQueryParams_ParseOk () throws URISyntaxException {
+    void parseUri_noQueryParams_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people";
         URI result = HttpUtils.parseUri(uri);
         Assertions.assertEquals(uri, result.toString());
@@ -34,7 +34,7 @@ class HttpUtilsTests {
     }
 
     @Test
-    void parseUri_oneQueryParam_ParseOk () throws URISyntaxException {
+    void parseUri_oneQueryParam_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?meIncluded=not";
         URI result = HttpUtils.parseUri(uri);
         Assertions.assertEquals(uri, result.toString());
@@ -43,7 +43,7 @@ class HttpUtilsTests {
     }
 
     @Test
-    void parseUri_multipleQueryParam_ParseOk () throws URISyntaxException {
+    void parseUri_multipleQueryParam_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?meIncluded=not&youIncluded=maybe";
         URI result = HttpUtils.parseUri(uri);
         Assertions.assertEquals(uri, result.toString());
@@ -52,7 +52,7 @@ class HttpUtilsTests {
     }
 
     @Test
-    void parseUri_noQueryParamQuestionMark_ParseOk () throws URISyntaxException {
+    void parseUri_noQueryParamQuestionMark_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?";
         URI result = HttpUtils.parseUri(uri);
         Assertions.assertEquals("http://happy/people", result.toString());

@@ -26,6 +26,7 @@ public final class CrlfFormat {
 
     /**
      * Calls the <code>input.toString()</code> and appends CRLF.
+     *
      * @param input The object to be formatted (not null).
      * @return The resulted string as bytes.
      */

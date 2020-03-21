@@ -45,6 +45,20 @@ public class SplashFrame extends JFrame {
         contentPane.add(getProgressBar(), BorderLayout.SOUTH);
     }
 
+    /**
+     * Launch the application (for testing).
+     */
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+                SplashFrame frame = new SplashFrame();
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     private Canvas getCanvas() {
         if (canvas == null) {
             canvas = new Canvas() {
@@ -71,20 +85,6 @@ public class SplashFrame extends JFrame {
             progressBar.setIndeterminate(true);
         }
         return progressBar;
-    }
-
-    /**
-     * Launch the application (for testing).
-     */
-    public static void main(String[] args) {
-        EventQueue.invokeLater(() -> {
-            try {
-                SplashFrame frame = new SplashFrame();
-                frame.setVisible(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
     }
 
 }

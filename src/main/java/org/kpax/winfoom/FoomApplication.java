@@ -20,7 +20,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.awt.*;
 
 /**
- *  The entry point for Winfoom application.
+ * The entry point for Winfoom application.
  */
 @SpringBootApplication
 public class FoomApplication {
@@ -49,10 +49,10 @@ public class FoomApplication {
         Application.launch(FxApplication.class, args);
     }
 
-    public static void closeSplashScreen () {
+    public static void closeSplashScreen() {
         if (splashFrame != null) {
             EventQueue.invokeLater(() ->
-            splashFrame.dispose());
+                    splashFrame.dispose());
         }
     }
 
