@@ -14,6 +14,7 @@ package org.kpax.winfoom.util;
 
 import javafx.application.Platform;
 import javafx.scene.Cursor;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
@@ -124,14 +125,14 @@ public class GuiUtils {
                         .forEach(java.awt.Window::dispose));
     }
 
-    public static void executeRunnable(Runnable runnable, Stage stage) {
-        stage.getScene().setCursor(Cursor.WAIT);
+    public static void executeRunnable(Runnable runnable, Scene scene) {
+        scene.setCursor(Cursor.WAIT);
         Thread thread = new Thread(() -> {
             try {
                 runnable.run();
             } finally {
                 Platform.runLater(() ->
-                        stage.getScene().setCursor(Cursor.DEFAULT));
+                        scene.setCursor(Cursor.DEFAULT));
             }
         });
         thread.setDaemon(true);

@@ -133,7 +133,7 @@ public class MainController {
             } else {
                 startedMode(false);
             }
-        }, fxApplication.getPrimaryStage());
+        }, fxApplication.getPrimaryStage().getScene());
     }
 
     private boolean isValidInput() {
