@@ -17,13 +17,15 @@ An example of such facade for NTLM proxies is [CNTLM](http://cntlm.sourceforge.n
 Winfoom is a Java application and comes with a release that includes a Java environment [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.5%2B10/OpenJDK11U-jdk_x64_windows_hotspot_11.0.5_10.msi),
 so you don't have to install anything. 
 
-Starting with v1.2.0, the release contains the following executable files:
+Starting with v1.5.1, the release contains a single executable file: `launch.bat`. 
+Available commands:
  
 * `launch.bat` launches the application using the bundled JRE.
-* `launch_debug.bat` launches the application using the bundled JRE in debug mode.
-* `launch_system_jre.bat` launches the application using your system JRE - you'll need a JRE v.11 (at least).
+* `launch.bat --debug` launches the application using the bundled JRE in debug mode.
+* `launch.bat --systemjre` launches the application using your system JRE - you'll need a JRE v.11 (at least).
+* `launch.bat --debug --systemjre` combines the last two above.
 
-The installation is pretty basic, just unzip the content of the released archive then, double click on, let's say, `launch.bat` file.
+The installation is pretty basic, just unzip the content of the released archive then double click on `launch.bat` file.
 
 The application log file is placed under `logs` directory.
 
