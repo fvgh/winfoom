@@ -130,7 +130,7 @@ class SocketHandler {
 
             logger.debug("End processing request line {}", requestLine);
         } catch (Exception e) {
-            if (HttpUtils.isClientException(e)) {
+            if (HttpUtils.isClientException(e.getClass())) {
                 logger.debug("Client error", e);
             } else {
                 logger.error("Error on handling local socket connection", e);

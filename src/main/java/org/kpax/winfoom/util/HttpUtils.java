@@ -156,8 +156,8 @@ public final class HttpUtils {
                 StringUtils.isEmpty(reasonPhrase) ? EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
     }
 
-    public  static boolean isClientException (Exception e) {
-        return CLIENT_EXCEPTIONS.contains(e);
+    public  static boolean isClientException (Class<? extends Exception> e) {
+        return CLIENT_EXCEPTIONS.stream().anyMatch(c -> c.isAssignableFrom(e));
     }
 
 }

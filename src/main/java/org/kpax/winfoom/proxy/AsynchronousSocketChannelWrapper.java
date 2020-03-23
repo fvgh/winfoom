@@ -72,7 +72,7 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     }
 
     public void writelnError(Exception e) throws IOException {
-        if (HttpUtils.isClientException(e)) {
+        if (HttpUtils.isClientException(e.getClass())) {
             writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
         } else {
             writeln(HttpUtils.toStatusLine(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
