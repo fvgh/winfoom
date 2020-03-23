@@ -23,7 +23,7 @@ Available commands:
 * `launch.bat` launches the application using the bundled JRE.
 * `launch.bat --debug` launches the application using the bundled JRE in debug mode.
 * `launch.bat --systemjre` launches the application using your system JRE - you'll need a JRE v.11 (at least).
-* `launch.bat --debug --systemjre` combines the last two above.
+* `launch.bat --debug --systemjre`  launches the application using your system JRE in debug mode.
 
 The installation is pretty basic, just unzip the content of the released archive then double click on `launch.bat` file.
 
