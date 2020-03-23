@@ -66,6 +66,10 @@ public class HttpConfiguration {
     @Autowired
     private ProxyContext proxyContext;
 
+    /**
+     *
+     * @return The HTTP connection manager.
+     */
     @Bean
     PoolingHttpClientConnectionManager connectionManager() {
         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
@@ -108,6 +112,11 @@ public class HttpConfiguration {
         return builder;
     }
 
+    /**
+     * Configure the <code>HttpClientBuilder</code> instance
+     * with the user's values.
+     * @return The <code>ApplicationListener<BeforeServerStartEvent></code> instance.
+     */
     @Bean
     ApplicationListener<BeforeServerStartEvent> onServerStartEventApplicationListener() {
         return event -> {
@@ -119,6 +128,10 @@ public class HttpConfiguration {
         };
     }
 
+    /**
+     * Purges the pooled HTTP connection manager after stopping the local proxy.
+     * @return The <code>ApplicationListener<AfterServerStopEvent></code> instance.
+     */
     @Bean
     ApplicationListener<AfterServerStopEvent> onServerStopEventApplicationListener() {
         return event -> {
@@ -129,6 +142,9 @@ public class HttpConfiguration {
         };
     }
 
+    /**
+     * A job that closes the idle/expired HTTP connections.
+     */
     @Scheduled(fixedRateString = "#{systemConfig.connectionManagerCleanInterval * 1000}")
     void cleanUpConnectionManager() {
         if (proxyContext.isStarted()) {
