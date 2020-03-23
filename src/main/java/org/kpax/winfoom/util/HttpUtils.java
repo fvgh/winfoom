@@ -17,6 +17,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -39,10 +40,7 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -52,14 +50,26 @@ public final class HttpUtils {
 
     public static final String HTTP_CONNECT = "CONNECT";
 
+    private static final List<Class> CLIENT_EXCEPTIONS = new ArrayList<>();
+
+    static {
+        CLIENT_EXCEPTIONS.add(HttpException.class);
+        CLIENT_EXCEPTIONS.add(ClientProtocolException.class);
+        CLIENT_EXCEPTIONS.add(ConnectionClosedException.class);
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
     private HttpUtils() {
     }
 
-    public static Pair<String, Integer> parseConnectUri(String uri) throws NumberFormatException {
-        String[] split = uri.split(":");
-        return new ImmutablePair<>(split[0], Integer.parseInt(split[1]));
+    public static Pair<String, Integer> parseConnectUri(String uri) throws HttpException {
+        try {
+            String[] split = uri.split(":");
+            return new ImmutablePair<>(split[0], Integer.parseInt(split[1]));
+        } catch (Exception e) {
+            throw new HttpException("Cannot parse CONNECT uri", e);
+        }
     }
 
     public static URI parseUri(String url) throws URISyntaxException {
@@ -144,6 +154,10 @@ public final class HttpUtils {
         Validate.notNull(protocolVersion, "protocolVersion cannot be null");
         return new BasicStatusLine(protocolVersion, httpCode,
                 StringUtils.isEmpty(reasonPhrase) ? EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
+    }
+
+    public  static boolean isClientException (Exception e) {
+        return CLIENT_EXCEPTIONS.contains(e);
     }
 
 }

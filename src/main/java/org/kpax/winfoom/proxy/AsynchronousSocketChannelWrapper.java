@@ -14,7 +14,9 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.Validate;
+import org.apache.http.HttpStatus;
 import org.kpax.winfoom.util.CrlfFormat;
+import org.kpax.winfoom.util.HttpUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -67,6 +69,18 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     public void writeln() throws IOException {
         outputStream.write(CrlfFormat.CRLF.getBytes());
+    }
+
+    public void writelnError(Exception e) throws IOException {
+        if (HttpUtils.isClientException(e)) {
+            writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
+        } else {
+            writeln(HttpUtils.toStatusLine(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
+        }
+    }
+
+    public void writelnError(int statusCode, Exception e) throws IOException {
+        writeln(HttpUtils.toStatusLine(statusCode, e.getMessage()));
     }
 
     @Override

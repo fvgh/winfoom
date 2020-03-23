@@ -15,7 +15,6 @@ package org.kpax.winfoom.proxy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -113,14 +112,9 @@ class SocketHandler {
             HttpRequest request;
             try {
                 request = requestParser.parse();
-            } catch (HttpException e) {
-                localSocketChannel.writeln(
-                        HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST));
-                throw e;
             } catch (Exception e) {
                 if (!(e instanceof ConnectionClosedException)) {
-                    localSocketChannel.writeln(
-                            HttpUtils.toStatusLine(HttpStatus.SC_INTERNAL_SERVER_ERROR));
+                    localSocketChannel.writelnError(e);
                 }
                 throw e;
             }
@@ -135,14 +129,12 @@ class SocketHandler {
             }
 
             logger.debug("End processing request line {}", requestLine);
-        } catch (ConnectionClosedException | HttpException e) {
-
-            // This is a client error,
-            // not an application error,
-            // therefore we only debug it.
-            logger.debug(e.getMessage(), e);
-        } catch (Throwable e) {
-            logger.error("Error on handling local socket connection", e);
+        } catch (Exception e) {
+            if (HttpUtils.isClientException(e)) {
+                logger.debug("Client error", e);
+            } else {
+                logger.error("Error on handling local socket connection", e);
+            }
         } finally {
             FoomIOUtils.close(localSocketChannel);
         }
@@ -163,14 +155,12 @@ class SocketHandler {
 
             // Get host and port
             hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
-        } catch (Exception e) {
+        } catch (HttpException e) {
 
             // We give back to the client
             // a Bad Request status line
             // since the connect line is bad.
-            localSocketChannel.writeln(
-                    HttpUtils.toStatusLine(
-                            requestLine.getProtocolVersion(), HttpStatus.SC_BAD_REQUEST, e.getMessage()));
+            localSocketChannel.writelnError(e);
             throw e;
         }
 
@@ -233,10 +223,8 @@ class SocketHandler {
 
                     // No response from the remote proxy,
                     // therefore we give back to the client
-                    // an Internal Server Error status line
-                    localSocketChannel.writeln(
-                            HttpUtils.toStatusLine(
-                                    requestLine.getProtocolVersion(), HttpStatus.SC_INTERNAL_SERVER_ERROR, tre.getMessage()));
+                    // an 502 Bad Gateway
+                    localSocketChannel.writelnError(HttpStatus.SC_BAD_GATEWAY, tre);
                 }
             } catch (Exception e) {
                 logger.error("Error on sending error response", e);
@@ -294,15 +282,8 @@ class SocketHandler {
                 CloseableHttpResponse response;
                 try {
                     response = httpClient.execute(target, request);
-                } catch (ClientProtocolException e) {
-                    localSocketChannel.writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
-                    throw e;
                 } catch (Exception e) {
-
-                    // No remote response, therefore we give back
-                    // to the client an Internal Server Error status line
-                    localSocketChannel.writeln(HttpUtils.toStatusLine(requestLine.getProtocolVersion(),
-                            HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
+                    localSocketChannel.writelnError(e);
                     throw e;
                 }
                 try {
