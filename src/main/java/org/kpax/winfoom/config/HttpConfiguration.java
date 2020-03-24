@@ -67,7 +67,6 @@ public class HttpConfiguration {
     private ProxyContext proxyContext;
 
     /**
-     *
      * @return The HTTP connection manager.
      */
     @Bean
@@ -115,6 +114,7 @@ public class HttpConfiguration {
     /**
      * Configure the <code>HttpClientBuilder</code> instance
      * with the user's values.
+     *
      * @return The <code>ApplicationListener<BeforeServerStartEvent></code> instance.
      */
     @Bean
@@ -130,6 +130,7 @@ public class HttpConfiguration {
 
     /**
      * Purges the pooled HTTP connection manager after stopping the local proxy.
+     *
      * @return The <code>ApplicationListener<AfterServerStopEvent></code> instance.
      */
     @Bean

@@ -51,14 +51,13 @@ public final class HttpUtils {
     public static final String HTTP_CONNECT = "CONNECT";
 
     private static final List<Class> CLIENT_EXCEPTIONS = new ArrayList<>();
+    private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
     static {
         CLIENT_EXCEPTIONS.add(HttpException.class);
         CLIENT_EXCEPTIONS.add(ClientProtocolException.class);
         CLIENT_EXCEPTIONS.add(ConnectionClosedException.class);
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
     private HttpUtils() {
     }
@@ -153,10 +152,11 @@ public final class HttpUtils {
     public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode, String reasonPhrase) {
         Validate.notNull(protocolVersion, "protocolVersion cannot be null");
         return new BasicStatusLine(protocolVersion, httpCode,
-                StringUtils.isEmpty(reasonPhrase) ? EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
+                StringUtils.isEmpty(reasonPhrase) ?
+                        EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
     }
 
-    public  static boolean isClientException (Class<? extends Exception> e) {
+    public static boolean isClientException(Class<? extends Exception> e) {
         return CLIENT_EXCEPTIONS.stream().anyMatch(c -> c.isAssignableFrom(e));
     }
 
