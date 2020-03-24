@@ -147,7 +147,7 @@ public final class HttpUtils {
     }
 
     public static BasicStatusLine toStatusLine(int httpCode, String reasonPhrase) {
-        return toStatusLine(HttpVersion.HTTP_1_1, httpCode, null);
+        return toStatusLine(HttpVersion.HTTP_1_1, httpCode, reasonPhrase);
     }
 
     public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode, String reasonPhrase) {

@@ -169,7 +169,7 @@ class SocketHandlerTests {
     }
 
     @Test
-    void request_Connect_True() throws IOException {
+    void request_Connect_200OK() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
                 .setProxy(localProxy).build()) {
@@ -177,6 +177,20 @@ class SocketHandlerTests {
             HttpRequest request = new BasicHttpRequest("CONNECT", "localhost:" + remoteServer.getLocalPort());
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+            }
+        }
+    }
+
+    @Test
+    void request_ConnectMalformedUri_400BadRequest() throws IOException {
+        HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
+                .setProxy(localProxy).build()) {
+            HttpHost target = HttpHost.create("http://localhost:" + remoteServer.getLocalPort());
+            HttpRequest request = new BasicHttpRequest("CONNECT", "/");
+            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
+                assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
+                assertEquals("Cannot parse CONNECT uri", response.getStatusLine().getReasonPhrase());
             }
         }
     }
@@ -190,7 +204,6 @@ class SocketHandlerTests {
         }
         remoteProxyServer.stop();
         remoteServer.stop();
-
     }
 
 }
