@@ -116,7 +116,6 @@ public final class HttpUtils {
         try (CloseableHttpClient httpClient = WinHttpClients.createDefault()) {
             HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
             HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
-
             RequestConfig config = RequestConfig.custom()
                     .setProxy(proxy)
                     .build();
@@ -124,11 +123,12 @@ public final class HttpUtils {
             request.setConfig(config);
             logger.info("Executing request " + request.getRequestLine() + " to " + target + " via " + proxy);
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                logger.info("Test response status {}", response.getStatusLine());
-                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                StatusLine statusLine = response.getStatusLine();
+                logger.info("Test response status {}", statusLine);
+                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
                     logger.info("Test OK");
-                } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
-                    throw new CredentialException();
+                } else if (statusLine.getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
+                    throw new CredentialException(statusLine.getReasonPhrase());
                 }
             }
         } catch (Exception e) {
