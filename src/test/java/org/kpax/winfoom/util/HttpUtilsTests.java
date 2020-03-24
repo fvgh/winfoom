@@ -13,6 +13,7 @@
 package org.kpax.winfoom.util;
 
 import org.apache.http.HttpException;
+import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -76,8 +77,8 @@ class HttpUtilsTests {
 
     @Test
     void isClientException_TunnelRefusedException_True () {
-        boolean isClientException = HttpUtils.isClientException(IOException.class);
-        Assertions.assertFalse(isClientException);
+        boolean isClientException = HttpUtils.isClientException(TunnelRefusedException.class);
+        Assertions.assertTrue(isClientException);
     }
 
 }
