@@ -49,19 +49,20 @@ public final class HttpUtils {
 
     public static final String HTTP_CONNECT = "CONNECT";
 
-    private static final List<Class> CLIENT_EXCEPTIONS = new ArrayList<>();
-
-    private static final List<Class> GATEWAY_EXCEPTIONS = new ArrayList<>();
-
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
-    static {
-        CLIENT_EXCEPTIONS.add(org.apache.http.HttpException.class);
-        CLIENT_EXCEPTIONS.add(org.apache.http.client.ClientProtocolException.class);
-        CLIENT_EXCEPTIONS.add(org.apache.http.ConnectionClosedException.class);
+    private static final List<Class> clientExceptions = new ArrayList<>();
 
-        GATEWAY_EXCEPTIONS.add(org.apache.http.conn.HttpHostConnectException.class);
-        GATEWAY_EXCEPTIONS.add(java.net.ConnectException.class);
+    private static final List<Class> gatewayExceptions = new ArrayList<>();
+
+
+    static {
+        clientExceptions.add(org.apache.http.HttpException.class);
+        clientExceptions.add(org.apache.http.client.ClientProtocolException.class);
+        clientExceptions.add(org.apache.http.ConnectionClosedException.class);
+
+        gatewayExceptions.add(org.apache.http.conn.HttpHostConnectException.class);
+        gatewayExceptions.add(java.net.ConnectException.class);
     }
 
     private HttpUtils() {
@@ -162,11 +163,11 @@ public final class HttpUtils {
     }
 
     public static boolean isClientException(Class<? extends Exception> e) {
-        return CLIENT_EXCEPTIONS.stream().anyMatch(c -> c.isAssignableFrom(e));
+        return clientExceptions.stream().anyMatch(c -> c.isAssignableFrom(e));
     }
 
     public static boolean isGatewayException(Class<? extends Exception> e) {
-        return GATEWAY_EXCEPTIONS.stream().anyMatch(c -> c.isAssignableFrom(e));
+        return gatewayExceptions.stream().anyMatch(c -> c.isAssignableFrom(e));
     }
 
 }
