@@ -32,7 +32,7 @@ import java.io.*;
  */
 class PseudoBufferedHttpEntity extends AbstractHttpEntity {
 
-    private static final Logger logger = LoggerFactory.getLogger(PseudoBufferedHttpEntity.class);
+    private final Logger logger = LoggerFactory.getLogger(PseudoBufferedHttpEntity.class);
 
     private final SessionInputBufferImpl inputBuffer;
 

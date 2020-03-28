@@ -34,7 +34,7 @@ import java.nio.file.Paths;
 @Component
 @PropertySource(value = "file:${user.dir}/config/user.properties", name = "userProperties")
 public class UserConfig {
-    private static final Logger logger = LoggerFactory.getLogger(UserConfig.class);
+    private final Logger logger = LoggerFactory.getLogger(UserConfig.class);
 
     @Value("${local.port:3129}")
     private Integer localPort;

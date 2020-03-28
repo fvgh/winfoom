@@ -40,7 +40,7 @@ import java.nio.channels.CompletionHandler;
 @Component
 public class LocalProxyServer implements Closeable {
 
-    private static final Logger logger = LoggerFactory.getLogger(LocalProxyServer.class);
+    private final Logger logger = LoggerFactory.getLogger(LocalProxyServer.class);
 
     @Autowired
     private SystemConfig systemConfig;

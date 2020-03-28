@@ -55,7 +55,7 @@ import java.util.concurrent.Future;
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 class SocketHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
 
     /**
      * These headers will be removed from client's response if there is an enclosing
