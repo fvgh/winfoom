@@ -17,7 +17,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -51,12 +50,18 @@ public final class HttpUtils {
     public static final String HTTP_CONNECT = "CONNECT";
 
     private static final List<Class> CLIENT_EXCEPTIONS = new ArrayList<>();
+
+    private static final List<Class> GATEWAY_EXCEPTIONS = new ArrayList<>();
+
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
     static {
-        CLIENT_EXCEPTIONS.add(HttpException.class);
-        CLIENT_EXCEPTIONS.add(ClientProtocolException.class);
-        CLIENT_EXCEPTIONS.add(ConnectionClosedException.class);
+        CLIENT_EXCEPTIONS.add(org.apache.http.HttpException.class);
+        CLIENT_EXCEPTIONS.add(org.apache.http.client.ClientProtocolException.class);
+        CLIENT_EXCEPTIONS.add(org.apache.http.ConnectionClosedException.class);
+
+        GATEWAY_EXCEPTIONS.add(org.apache.http.conn.HttpHostConnectException.class);
+        GATEWAY_EXCEPTIONS.add(java.net.ConnectException.class);
     }
 
     private HttpUtils() {
@@ -158,6 +163,10 @@ public final class HttpUtils {
 
     public static boolean isClientException(Class<? extends Exception> e) {
         return CLIENT_EXCEPTIONS.stream().anyMatch(c -> c.isAssignableFrom(e));
+    }
+
+    public static boolean isGatewayException(Class<? extends Exception> e) {
+        return GATEWAY_EXCEPTIONS.stream().anyMatch(c -> c.isAssignableFrom(e));
     }
 
 }

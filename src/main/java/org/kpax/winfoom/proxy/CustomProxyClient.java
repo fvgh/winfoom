@@ -132,8 +132,14 @@ class CustomProxyClient {
         HttpResponse response;
         while (true) {
             if (!connection.isOpen()) {
-                final Socket socket = HttpUtils.tuneSocket(new Socket(proxy.getHostName(),
-                        proxy.getPort()), systemConfig.getSocketBufferSize());
+                final Socket socket;
+                try {
+                    socket = HttpUtils.tuneSocket(
+                            new Socket(proxy.getHostName(), proxy.getPort()), systemConfig.getSocketBufferSize());
+                } catch (Exception e) {
+                    socketChannelWrapper.writelnError(e);
+                    throw e;
+                }
                 connection.bind(socket);
             }
 

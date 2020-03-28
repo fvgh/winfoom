@@ -74,6 +74,8 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     public void writelnError(Exception e) throws IOException {
         if (HttpUtils.isClientException(e.getClass())) {
             writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
+        } else if (HttpUtils.isGatewayException(e.getClass())) {
+            writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_GATEWAY, "Cannot connect to the remote proxy server"));
         } else {
             writeln(HttpUtils.toStatusLine(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
         }

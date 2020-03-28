@@ -335,7 +335,7 @@ class SocketHandler {
 
             } catch (org.apache.http.client.ClientProtocolException e) {
                 logger.debug("Error in the HTTP protocol", e);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.error("Error on executing HTTP request", e);
             }
             logger.debug("End handling non-connect request {}", requestLine);
