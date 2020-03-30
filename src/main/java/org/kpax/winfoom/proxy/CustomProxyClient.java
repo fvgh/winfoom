@@ -132,15 +132,14 @@ class CustomProxyClient {
         HttpResponse response;
         while (true) {
             if (!connection.isOpen()) {
-                final Socket socket;
                 try {
-                    socket = HttpUtils.tuneSocket(
-                            new Socket(proxy.getHostName(), proxy.getPort()), systemConfig.getSocketBufferSize());
+                    Socket socket = new Socket(proxy.getHostName(), proxy.getPort());
+                    HttpUtils.tuneSocket(socket, systemConfig.getSocketBufferSize());
+                    connection.bind(socket);
                 } catch (Exception e) {
                     socketChannelWrapper.writelnError(e);
                     throw e;
                 }
-                connection.bind(socket);
             }
 
             this.authenticator.generateAuthResponse(connect, this.proxyAuthState, context);

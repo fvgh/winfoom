@@ -110,11 +110,10 @@ public final class HttpUtils {
         return new BasicHeader(name, value);
     }
 
-    public static Socket tuneSocket(final Socket socket, int bufferSize) throws SocketException {
+    public static void tuneSocket(final Socket socket, int bufferSize) throws SocketException {
         socket.setTcpNoDelay(true);
         socket.setReceiveBufferSize(bufferSize);
         socket.setSendBufferSize(bufferSize);
-        return socket;
     }
 
     public static void testProxyConfig(final UserConfig userConfig)
