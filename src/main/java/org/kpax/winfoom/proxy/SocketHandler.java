@@ -90,7 +90,7 @@ class SocketHandler {
     private AsynchronousSocketChannelWrapper localSocketChannel;
 
     SocketHandler bind(AsynchronousSocketChannel socketChannel) {
-        Assert.isNull(localSocketChannel, "Socket already binded!");
+        Assert.isNull(localSocketChannel, "Socket already bound!");
         this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
         return this;
     }
@@ -120,15 +120,10 @@ class SocketHandler {
         } catch (Exception e) {
             try {
                 localSocketChannel.writelnError(e);
-            } catch (Exception ex) {
-                logger.debug("Error on writing client's error response", e);
+            } catch (Exception writeErrorException) {
+                logger.debug("Error on writing client's error response", writeErrorException);
             }
-
-            if (HttpUtils.isClientException(e.getClass())) {
-                logger.debug("Client error", e);
-            } else {
-                logger.error("Proxy error", e);
-            }
+            logger.debug("Error on processing request", e);
         } finally {
             LocalIOUtils.close(localSocketChannel);
         }
