@@ -31,7 +31,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
 import org.kpax.winfoom.TestConstants;
-import org.kpax.winfoom.util.FoomIOUtils;
+import org.kpax.winfoom.util.LocalIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
 
 import java.io.ByteArrayInputStream;
@@ -78,7 +78,7 @@ class PseudoBufferedHttpEntityTests {
                 try (AsynchronousSocketChannelWrapper localSocketChannel = new AsynchronousSocketChannelWrapper(socketChanel)) {
                     HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
                     SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics,
-                            FoomIOUtils.DEFAULT_BUFFER_SIZE);
+                            LocalIOUtils.DEFAULT_BUFFER_SIZE);
                     inputBuffer.bind(localSocketChannel.getInputStream());
 
                     HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);

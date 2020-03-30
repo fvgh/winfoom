@@ -18,6 +18,7 @@ import org.apache.http.HttpVersion;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.conn.ManagedHttpClientConnection;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
@@ -100,9 +101,9 @@ class CustomProxyClientTests {
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
         AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
-        Socket socket = applicationContext.getBean(CustomProxyClient.class)
+        ManagedHttpClientConnection connection = applicationContext.getBean(CustomProxyClient.class)
                 .tunnel(proxy, target, HttpVersion.HTTP_1_1, socketChannelWrapper);
-        socket.close();
+        connection.close();
     }
 
     @Test
@@ -115,9 +116,9 @@ class CustomProxyClientTests {
         AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(org.apache.http.impl.execchain.TunnelRefusedException.class, () -> {
-            Socket socket = applicationContext.getBean(CustomProxyClient.class)
+            ManagedHttpClientConnection connection = applicationContext.getBean(CustomProxyClient.class)
                     .tunnel(proxy, target, HttpVersion.HTTP_1_1, socketChannelWrapper);
-            socket.close();
+            connection.close();
         });
     }
 
@@ -130,9 +131,9 @@ class CustomProxyClientTests {
         AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(java.net.UnknownHostException.class, () -> {
-            Socket socket = applicationContext.getBean(CustomProxyClient.class)
+            ManagedHttpClientConnection connection = applicationContext.getBean(CustomProxyClient.class)
                     .tunnel(proxy, target, HttpVersion.HTTP_1_1, socketChannelWrapper);
-            socket.close();
+            connection.close();
         });
     }
 

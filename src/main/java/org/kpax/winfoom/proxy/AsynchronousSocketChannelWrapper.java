@@ -14,7 +14,6 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpStatus;
 import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.HttpUtils;
@@ -40,40 +39,42 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     private final OutputStream outputStream;
 
-    public AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel) {
+    private boolean responseAvailable;
+
+    AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel) {
         Validate.notNull(socketChannel, "socketChannel cannot be null");
         this.socketChannel = socketChannel;
         inputStream = new SocketChannelInputStream();
         outputStream = new SocketChannelOutputStream();
     }
 
-    public AsynchronousSocketChannel getSocketChannel() {
+    AsynchronousSocketChannel getSocketChannel() {
         return socketChannel;
     }
 
-    public InputStream getInputStream() {
+    InputStream getInputStream() {
         return inputStream;
     }
 
-    public OutputStream getOutputStream() {
+    OutputStream getOutputStream() {
         return outputStream;
     }
 
-    public void write(Object obj) throws IOException {
+    void write(Object obj) throws IOException {
         outputStream.write(CrlfFormat.format(obj));
     }
 
-    public void writeln(Object obj) throws IOException {
+    void writeln(Object obj) throws IOException {
         write(obj);
         writeln();
     }
 
-    public void writeln() throws IOException {
+    void writeln() throws IOException {
         outputStream.write(CrlfFormat.CRLF.getBytes());
     }
 
-    public void writelnError(Exception e) throws IOException {
-        if (HttpUtils.isWritableException(e.getClass())) {
+    void writelnError(Exception e) throws IOException {
+        if (!responseAvailable && HttpUtils.isWritableException(e.getClass())) {
             if (HttpUtils.isClientException(e.getClass())) {
                 writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
             } else if (HttpUtils.isGatewayException(e.getClass())) {
@@ -84,7 +85,7 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         }
     }
 
-    public void writelnError(int statusCode, Exception e) throws IOException {
+    void writelnError(int statusCode, Exception e) throws IOException {
         writeln(HttpUtils.toStatusLine(statusCode, e.getMessage()));
     }
 
@@ -93,8 +94,16 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         socketChannel.close();
     }
 
-    public boolean isOpen() {
+    boolean isOpen() {
         return socketChannel.isOpen();
+    }
+
+    boolean isResponseAvailable() {
+        return responseAvailable;
+    }
+
+    void markResponseAvailable() {
+        this.responseAvailable = true;
     }
 
     private class SocketChannelInputStream extends InputStream {

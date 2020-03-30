@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.conn.ManagedHttpClientConnection;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.execchain.TunnelRefusedException;
@@ -27,7 +28,7 @@ import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.util.FoomIOUtils;
+import org.kpax.winfoom.util.LocalIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,14 +38,11 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.net.URI;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
@@ -56,8 +54,6 @@ import java.util.concurrent.Future;
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 class SocketHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
-
     /**
      * These headers will be removed from client's response if there is an enclosing
      * entity.
@@ -67,13 +63,14 @@ class SocketHandler {
             HttpHeaders.CONTENT_TYPE,
             HttpHeaders.CONTENT_ENCODING,
             HttpHeaders.PROXY_AUTHORIZATION);
-
     /**
      * These headers will be removed from client's response if there is no enclosing
      * entity (it means the request has no body).
      */
     private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(
             HttpHeaders.PROXY_AUTHORIZATION);
+
+    private final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
 
     @Autowired
     private SystemConfig systemConfig;
@@ -104,36 +101,36 @@ class SocketHandler {
             // Prepare request parsing (this is the client's request)
             HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
             SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics,
-                    FoomIOUtils.DEFAULT_BUFFER_SIZE);
+                    LocalIOUtils.DEFAULT_BUFFER_SIZE);
             inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
             HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
-            HttpRequest request;
-            try {
-                request = requestParser.parse();
-            } catch (Exception e) {
-                localSocketChannel.writelnError(e);
-                if (HttpUtils.isClientException(e.getClass())) {
-                    logger.debug("Client error", e);
-                } else {
-                    logger.error("Proxy error", e);
-                }
-                return;
-            }
-
+            HttpRequest request = requestParser.parse();
             RequestLine requestLine = request.getRequestLine();
             logger.debug("Start processing request line {}", requestLine);
+
             if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
                 handleConnect(requestLine);
             } else {
                 handleNonConnectRequest(request, inputBuffer);
             }
+
             logger.debug("End processing request line {}", requestLine);
         } catch (Exception e) {
-            logger.error("Error on handling request", e);
+            try {
+                localSocketChannel.writelnError(e);
+            } catch (Exception ex) {
+                logger.debug("Error on writing client's error response", e);
+            }
+
+            if (HttpUtils.isClientException(e.getClass())) {
+                logger.debug("Client error", e);
+            } else {
+                logger.error("Proxy error", e);
+            }
         } finally {
-            FoomIOUtils.close(localSocketChannel);
+            LocalIOUtils.close(localSocketChannel);
         }
     }
 
@@ -149,17 +146,14 @@ class SocketHandler {
         Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
         HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
-        Socket socket = null;
-        try {
-            // Creates a tunnel through proxy.
-            socket = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(),
-                    localSocketChannel);
 
-            final OutputStream socketOutputStream = socket.getOutputStream();
+        try (ManagedHttpClientConnection connection = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(),
+                localSocketChannel)) {
+            final OutputStream socketOutputStream = connection.getSocket().getOutputStream();
             Future<?> copyToSocketFuture = proxyContext.executeAsync(
-                    () -> FoomIOUtils.copyQuietly(localSocketChannel.getInputStream(),
+                    () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
                             socketOutputStream));
-            FoomIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
+            LocalIOUtils.copyQuietly(connection.getSocket().getInputStream(), localSocketChannel.getOutputStream());
             if (!copyToSocketFuture.isDone()) {
                 try {
 
@@ -171,11 +165,12 @@ class SocketHandler {
             }
         } catch (TunnelRefusedException tre) {
             HttpResponse errorResponse = tre.getResponse();
+
             StatusLine errorStatusLine = errorResponse.getStatusLine();
             logger.debug("errorStatusLine {}", errorStatusLine);
             localSocketChannel.write(errorStatusLine);
 
-            logger.debug("Start writing error headers");
+            logger.debug("Write error headers");
             for (Header header : errorResponse.getAllHeaders()) {
                 localSocketChannel.write(header);
             }
@@ -185,18 +180,10 @@ class SocketHandler {
 
             HttpEntity entity = errorResponse.getEntity();
             if (entity != null) {
-                logger.debug("Start writing error entity content");
+                logger.debug("Write error entity content");
                 entity.writeTo(localSocketChannel.getOutputStream());
-                logger.debug("End writing error entity content");
             }
             EntityUtils.consume(entity);
-        } catch (Exception e) {
-
-            // Give an error response to the client
-            localSocketChannel.writelnError(e);
-            logger.error("Error on creating proxy tunnel", e);
-        } finally {
-            FoomIOUtils.close(socket);
         }
     }
 
@@ -221,10 +208,7 @@ class SocketHandler {
             logger.debug("No enclosing entity");
         }
 
-        // Create the CloseableHttpClient instance
-        CloseableHttpClient httpClient = httpClientBuilder.build();
-
-        try {
+        try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
             List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?
                     ENTITY_BANNED_HEADERS : DEFAULT_BANNED_HEADERS;
             // Remove banned headers
@@ -238,75 +222,54 @@ class SocketHandler {
             }
 
             // Execute the request
-            try {
-                CloseableHttpResponse response;
-                try {
-                    URI uri = HttpUtils.parseUri(requestLine.getUri());
-                    HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
-                    response = httpClient.execute(target, request);
-                } catch (Exception e) {
-                    localSocketChannel.writelnError(e);
-                    logger.debug("Client error", e);
-                    return;
-                }
+            URI uri = HttpUtils.parseUri(requestLine.getUri());
+            HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
 
-                try {
-                    String statusLine = response.getStatusLine().toString();
-                    logger.debug("Response status line: {}", statusLine);
+            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
+                logger.debug("Response status line: {}", response.getStatusLine());
 
-                    localSocketChannel.write(statusLine);
+                // We have a response
+                localSocketChannel.markResponseAvailable();
 
-                    logger.debug("Done writing status line, now write response headers");
+                logger.debug("Write status line");
+                localSocketChannel.write(response.getStatusLine());
 
-                    for (Header header : response.getAllHeaders()) {
-                        if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
+                logger.debug("Write response headers");
+                for (Header header : httpClient.execute(target, request).getAllHeaders()) {
+                    if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
 
-                            // Strip 'chunked' from Transfer-Encoding header's value
-                            // since the response is not chunked
-                            String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
-                            if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                                localSocketChannel.write(
-                                        HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
-                                                nonChunkedTransferEncoding));
-                                logger.debug("Add chunk-striped header response");
-                            } else {
-                                logger.debug("Remove transfer encoding chunked header response");
-                            }
+                        // Strip 'chunked' from Transfer-Encoding header's value
+                        // since the response is not chunked
+                        String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
+                        if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
+                            localSocketChannel.write(
+                                    HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
+                                            nonChunkedTransferEncoding));
+                            logger.debug("Add chunk-striped header response");
                         } else {
-                            localSocketChannel.write(header);
-                            logger.debug("Done writing response header: {}", header);
+                            logger.debug("Remove transfer encoding chunked header response");
                         }
+                    } else {
+                        localSocketChannel.write(header);
+                        logger.debug("Done writing response header: {}", header);
                     }
-
-                    // Empty line marking the end
-                    // of header's section
-                    localSocketChannel.writeln();
-
-                    // Now write the request body, if any
-                    HttpEntity entity = response.getEntity();
-                    if (entity != null) {
-                        logger.debug("Start writing entity content");
-                        entity.writeTo(localSocketChannel.getOutputStream());
-                        logger.debug("End writing entity content");
-
-                        // Make sure the entity is fully consumed
-                        EntityUtils.consume(entity);
-                    }
-
-                } finally {
-                    FoomIOUtils.close(response);
                 }
 
-            } catch (Exception e) {
-                if (HttpUtils.isClientException(e.getClass())) {
-                    logger.debug("Client error", e);
-                } else {
-                    logger.error("Proxy error", e);
+                // Empty line marking the end
+                // of header's section
+                localSocketChannel.writeln();
+
+                // Now write the request body, if any
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    logger.debug("Start writing entity content");
+                    entity.writeTo(localSocketChannel.getOutputStream());
+                    logger.debug("End writing entity content");
+
+                    // Make sure the entity is fully consumed
+                    EntityUtils.consume(entity);
                 }
             }
-            logger.debug("End handling non-connect request {}", requestLine);
-        } finally {
-            FoomIOUtils.close(httpClient);
         }
     }
 

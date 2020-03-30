@@ -27,13 +27,13 @@ import java.util.Iterator;
 /**
  * @author Eugen Covaci
  */
-public final class FoomIOUtils extends IOUtils {
+public final class LocalIOUtils extends IOUtils {
 
     public static final int DEFAULT_BUFFER_SIZE = 4 * 1024;
 
-    private static final Logger logger = LoggerFactory.getLogger(FoomIOUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(LocalIOUtils.class);
 
-    private FoomIOUtils() {
+    private LocalIOUtils() {
     }
 
     /**
@@ -80,15 +80,11 @@ public final class FoomIOUtils extends IOUtils {
         if (closeables != null) {
             for (Closeable closable : closeables) {
                 if (closable != null) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Close {}", closable.getClass());
-                    }
+                    logger.debug("Close {}", closable.getClass());
                     try {
                         closable.close();
                     } catch (Exception e) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Fail to close: " + closable.getClass().getName(), e);
-                        }
+                        logger.debug("Fail to close: " + closable.getClass().getName(), e);
                     }
                 }
             }

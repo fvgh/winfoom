@@ -43,7 +43,7 @@ import org.apache.http.protocol.*;
 import org.apache.http.util.Args;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.util.FoomIOUtils;
+import org.kpax.winfoom.util.LocalIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,8 +100,8 @@ class CustomProxyClient {
                 .build();
     }
 
-    public Socket tunnel(final HttpHost proxy, final HttpHost target,
-                         final ProtocolVersion protocolVersion, final AsynchronousSocketChannelWrapper socketChannelWrapper)
+    public ManagedHttpClientConnection tunnel(final HttpHost proxy, final HttpHost target,
+                                              final ProtocolVersion protocolVersion, final AsynchronousSocketChannelWrapper socketChannelWrapper)
             throws IOException, HttpException {
         Args.notNull(proxy, "Proxy host");
         Args.notNull(target, "Target host");
@@ -157,7 +157,7 @@ class CustomProxyClient {
                         EntityUtils.consume(response.getEntity());
                     } else {
                         logger.debug("Close tunnel connection");
-                        FoomIOUtils.close(connection);
+                        LocalIOUtils.close(connection);
                     }
                     // discard previous auth header
                     connect.removeHeaders(AUTH.PROXY_AUTH_RESP);
@@ -170,6 +170,9 @@ class CustomProxyClient {
 
         }
 
+        // We have a response
+        socketChannelWrapper.markResponseAvailable();
+
         final int status = response.getStatusLine().getStatusCode();
         logger.debug("Tunnel final status code: {}", status);
 
@@ -181,7 +184,7 @@ class CustomProxyClient {
                 response.setEntity(new BufferedHttpEntity(entity));
             }
             logger.debug("Close tunnel connection");
-            FoomIOUtils.close(connection);
+            LocalIOUtils.close(connection);
             throw new TunnelRefusedException("CONNECT refused by proxy: " + response.getStatusLine(), response);
         }
 
@@ -189,10 +192,17 @@ class CustomProxyClient {
         socketChannelWrapper.write(response.getStatusLine());
 
         // Write an empty line as separator
-        socketChannelWrapper.writeln();
-        logger.debug("Done writing empty line");
+        // Convert a potential error to handle it as
+        // client connection
+        try {
+            socketChannelWrapper.writeln();
+            logger.debug("Done writing empty line");
+        } catch (IOException e) {
+            LocalIOUtils.close(connection);
+            throw new ConnectionClosedException(e.getMessage());
+        }
 
-        return connection.getSocket();
+        return connection;
     }
 
 }
