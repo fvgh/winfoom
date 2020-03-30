@@ -55,14 +55,19 @@ public final class HttpUtils {
 
     private static final List<Class> gatewayExceptions = new ArrayList<>();
 
+    private static final List<Class> nonWritableExceptions = new ArrayList<>();
+
 
     static {
         clientExceptions.add(org.apache.http.HttpException.class);
         clientExceptions.add(org.apache.http.client.ClientProtocolException.class);
         clientExceptions.add(org.apache.http.ConnectionClosedException.class);
+        clientExceptions.add(java.net.URISyntaxException.class);
 
         gatewayExceptions.add(org.apache.http.conn.HttpHostConnectException.class);
         gatewayExceptions.add(java.net.ConnectException.class);
+
+        nonWritableExceptions.add(org.apache.http.ConnectionClosedException.class);
     }
 
     private HttpUtils() {
@@ -126,7 +131,7 @@ public final class HttpUtils {
                     .build();
             HttpGet request = new HttpGet("/");
             request.setConfig(config);
-            logger.info("Executing request " + request.getRequestLine() + " to " + target + " via " + proxy);
+            logger.info("Executing request {} to {} via {}", target, proxy, request.getRequestLine());
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 StatusLine statusLine = response.getStatusLine();
                 logger.info("Test response status {}", statusLine);
@@ -167,6 +172,10 @@ public final class HttpUtils {
 
     public static boolean isGatewayException(Class<? extends Exception> e) {
         return gatewayExceptions.stream().anyMatch(c -> c.isAssignableFrom(e));
+    }
+
+    public static boolean isWritableException(Class<? extends Exception> e) {
+        return nonWritableExceptions.stream().noneMatch(c -> c.isAssignableFrom(e));
     }
 
 }

@@ -18,6 +18,7 @@ import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
@@ -91,7 +92,6 @@ class SocketHandler {
 
     private AsynchronousSocketChannelWrapper localSocketChannel;
 
-
     SocketHandler bind(AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already binded!");
         this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
@@ -113,28 +113,25 @@ class SocketHandler {
             try {
                 request = requestParser.parse();
             } catch (Exception e) {
-                if (!(e instanceof ConnectionClosedException)) {
-                    localSocketChannel.writelnError(e);
+                localSocketChannel.writelnError(e);
+                if (HttpUtils.isClientException(e.getClass())) {
+                    logger.debug("Client error", e);
+                } else {
+                    logger.error("Proxy error", e);
                 }
-                throw e;
+                return;
             }
 
             RequestLine requestLine = request.getRequestLine();
             logger.debug("Start processing request line {}", requestLine);
-
             if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
                 handleConnect(requestLine);
             } else {
                 handleNonConnectRequest(request, inputBuffer);
             }
-
             logger.debug("End processing request line {}", requestLine);
         } catch (Exception e) {
-            if (HttpUtils.isClientException(e.getClass())) {
-                logger.debug("Client error", e);
-            } else {
-                logger.error("Error on handling local socket connection", e);
-            }
+            logger.error("Error on handling request", e);
         } finally {
             FoomIOUtils.close(localSocketChannel);
         }
@@ -149,21 +146,7 @@ class SocketHandler {
      */
     private void handleConnect(RequestLine requestLine) throws Exception {
         logger.debug("Handle proxy connect request");
-
-        Pair<String, Integer> hostPort;
-        try {
-
-            // Get host and port
-            hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
-        } catch (HttpException e) {
-
-            // We give back to the client
-            // a Bad Request status line
-            // since the connect line is bad.
-            localSocketChannel.writelnError(e);
-            throw e;
-        }
-
+        Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
         HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
         Socket socket = null;
@@ -182,57 +165,36 @@ class SocketHandler {
 
                     // Wait for async copy to finish
                     copyToSocketFuture.get();
-                } catch (ExecutionException e) {
-
-                    // If the cause is an IOException
-                    // we throw it as it is, otherwise
-                    // we wrap it into an IOException
-                    if (e.getCause() instanceof IOException) {
-                        throw (IOException) e.getCause();
-                    }
-                    throw new IOException("Error on writing to socket", e.getCause());
                 } catch (Exception e) {
-                    throw new IOException("Error on writing to socket", e);
+                    logger.debug("Error on writing to socket", e);
                 }
             }
-        } catch (org.apache.http.impl.execchain.TunnelRefusedException tre) {
-            try {
-                HttpResponse errorResponse = tre.getResponse();
-                if (errorResponse != null) {
-                    StatusLine errorStatusLine = errorResponse.getStatusLine();
-                    logger.debug("errorStatusLine {}", errorStatusLine);
+        } catch (TunnelRefusedException tre) {
+            HttpResponse errorResponse = tre.getResponse();
+            StatusLine errorStatusLine = errorResponse.getStatusLine();
+            logger.debug("errorStatusLine {}", errorStatusLine);
+            localSocketChannel.write(errorStatusLine);
 
-                    localSocketChannel.write(errorStatusLine);
-
-                    logger.debug("Start writing error headers");
-                    for (Header header : errorResponse.getAllHeaders()) {
-                        localSocketChannel.write(header);
-                    }
-
-                    // Empty line between headers and the body
-                    localSocketChannel.writeln();
-
-                    HttpEntity entity = errorResponse.getEntity();
-                    if (entity != null) {
-                        logger.debug("Start writing error entity content");
-                        entity.writeTo(localSocketChannel.getOutputStream());
-                        logger.debug("End writing error entity content");
-                    }
-                    EntityUtils.consume(entity);
-                } else {
-
-                    // No response from the remote proxy,
-                    // therefore we give back to the client
-                    // an 502 Bad Gateway
-                    localSocketChannel.writelnError(HttpStatus.SC_BAD_GATEWAY, tre);
-                }
-            } catch (Exception e) {
-                logger.error("Error on sending error response", e);
+            logger.debug("Start writing error headers");
+            for (Header header : errorResponse.getAllHeaders()) {
+                localSocketChannel.write(header);
             }
-        } catch (IOException e) {
-            logger.debug("Error on reading/writing through proxy tunnel", e);
+
+            // Empty line between headers and the body
+            localSocketChannel.writeln();
+
+            HttpEntity entity = errorResponse.getEntity();
+            if (entity != null) {
+                logger.debug("Start writing error entity content");
+                entity.writeTo(localSocketChannel.getOutputStream());
+                logger.debug("End writing error entity content");
+            }
+            EntityUtils.consume(entity);
         } catch (Exception e) {
-            logger.error("Error on creating/handling proxy tunnel", e);
+
+            // Give an error response to the client
+            localSocketChannel.writelnError(e);
+            logger.error("Error on creating proxy tunnel", e);
         } finally {
             FoomIOUtils.close(socket);
         }
@@ -277,15 +239,17 @@ class SocketHandler {
 
             // Execute the request
             try {
-                URI uri = HttpUtils.parseUri(requestLine.getUri());
-                HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
                 CloseableHttpResponse response;
                 try {
+                    URI uri = HttpUtils.parseUri(requestLine.getUri());
+                    HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
                     response = httpClient.execute(target, request);
                 } catch (Exception e) {
                     localSocketChannel.writelnError(e);
-                    throw e;
+                    logger.debug("Client error", e);
+                    return;
                 }
+
                 try {
                     String statusLine = response.getStatusLine().toString();
                     logger.debug("Response status line: {}", statusLine);
@@ -333,10 +297,12 @@ class SocketHandler {
                     FoomIOUtils.close(response);
                 }
 
-            } catch (org.apache.http.client.ClientProtocolException e) {
-                logger.debug("Error in the HTTP protocol", e);
             } catch (Exception e) {
-                logger.error("Error on executing HTTP request", e);
+                if (HttpUtils.isClientException(e.getClass())) {
+                    logger.debug("Client error", e);
+                } else {
+                    logger.error("Proxy error", e);
+                }
             }
             logger.debug("End handling non-connect request {}", requestLine);
         } finally {
