@@ -17,6 +17,8 @@ import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpStatus;
 import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.HttpUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -32,6 +34,8 @@ import java.util.concurrent.ExecutionException;
  * @author Eugen Covaci
  */
 class AsynchronousSocketChannelWrapper implements Closeable {
+
+    private final Logger logger = LoggerFactory.getLogger(AsynchronousSocketChannelWrapper.class);
 
     private final AsynchronousSocketChannel socketChannel;
 
@@ -71,22 +75,12 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         outputStream.write(CrlfFormat.CRLF.getBytes());
     }
 
-    void writelnError(Exception e, RequestStateContext.RequestState requestState) throws IOException {
-        if (requestState.isEqualsOrBefore(RequestStateContext.RequestState.EXECUTED)) {
-            if (requestState.isEqualsOrBefore(RequestStateContext.RequestState.INITIATED)) {
-                if (HttpUtils.isGatewayException(e.getClass())) {
-                    writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_GATEWAY, "Cannot connect to the remote proxy server"));
-                } else {
-                    writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
-                }
-            } else {
-                writeln(HttpUtils.toStatusLine(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
-            }
+    void writelnError(int statusCode, Exception e) {
+        try {
+            writeln(HttpUtils.toStatusLine(statusCode, e.getMessage()));
+        } catch (Exception ex) {
+            logger.debug("Error on writing response error", ex);
         }
-    }
-
-    void writelnError(int statusCode, Exception e) throws IOException {
-        writeln(HttpUtils.toStatusLine(statusCode, e.getMessage()));
     }
 
     @Override

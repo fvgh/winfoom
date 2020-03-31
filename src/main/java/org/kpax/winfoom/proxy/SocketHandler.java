@@ -16,7 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.conn.ManagedHttpClientConnection;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.execchain.TunnelRefusedException;
@@ -38,12 +37,12 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import java.io.OutputStream;
+import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Future;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -89,8 +88,6 @@ class SocketHandler {
 
     private AsynchronousSocketChannelWrapper localSocketChannel;
 
-    private RequestStateContext requestStateContext = new RequestStateContext();
-
     SocketHandler bind(AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already binded!");
         this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
@@ -107,12 +104,8 @@ class SocketHandler {
             inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
-            HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
-            HttpRequest request = requestParser.parse();
+            HttpRequest request = parseRequest(inputBuffer);
             RequestLine requestLine = request.getRequestLine();
-
-            // Request initialized, move to the next state
-            requestStateContext.nextState();
 
             logger.debug("Start processing request line {}", requestLine);
 
@@ -123,16 +116,25 @@ class SocketHandler {
             }
 
             logger.debug("End processing request line {}", requestLine);
+        } catch (HttpException e) {
+            localSocketChannel.writelnError(HttpStatus.SC_BAD_REQUEST, e);
+            logger.debug("Client error", e);
+        }  catch (ConnectException e) {
+            localSocketChannel.writelnError(HttpStatus.SC_BAD_GATEWAY, e);
+            logger.debug("Connection error", e);
         } catch (Exception e) {
-            try {
-                localSocketChannel.writelnError(e, requestStateContext.getState());
-            } catch (Exception ex) {
-                logger.debug("Error on writing client's error response", e);
-            }
-
-            logger.debug("Error on processing request", e);
+            localSocketChannel.writelnError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+            logger.debug("Local proxy error", e);
         } finally {
             LocalIOUtils.close(localSocketChannel);
+        }
+    }
+
+    private HttpRequest parseRequest (SessionInputBufferImpl inputBuffer) throws HttpException {
+        try {
+            return ((HttpMessageParser<HttpRequest>) new DefaultHttpRequestParser(inputBuffer)).parse();
+        } catch (Exception e) {
+            throw new HttpException("Error on parsing request", e);
         }
     }
 
@@ -149,64 +151,50 @@ class SocketHandler {
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
         HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
 
-        try (ManagedHttpClientConnection connection = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(),
-                localSocketChannel)) {
+        try (Tunnel tunnel = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion())) {
 
-            // Request executed OK, move to the next state
-            requestStateContext.nextState();
-
-            // Write an empty line as separator,
-            // then initiate the client - remote proxy conversation
             try {
+                logger.debug("Write status line");
+                localSocketChannel.write(tunnel.getStatusLine());
+
+                logger.debug("Write empty line");
                 localSocketChannel.writeln();
-                logger.debug("Done writing empty line");
 
-                final OutputStream socketOutputStream = connection.getSocket().getOutputStream();
-                Future<?> copyToSocketFuture = proxyContext.executeAsync(
-                        () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
-                                socketOutputStream));
-                LocalIOUtils.copyQuietly(connection.getSocket().getInputStream(), localSocketChannel.getOutputStream());
-                if (!copyToSocketFuture.isDone()) {
-                    try {
-
-                        // Wait for async copy to finish
-                        copyToSocketFuture.get();
-                    } catch (Exception e) {
-                        logger.debug("Error on writing to socket", e);
-                    }
-                }
+                logger.debug("Start full duplex communication");
+                tunnel.fullDuplex(localSocketChannel);
             } catch (Exception e) {
                 logger.debug("Error on handling CONNECT", e);
             }
 
-            // Response processed, move to the next state
-            requestStateContext.nextState();
-
         } catch (TunnelRefusedException tre) {
-            // Request executed with error response,
-            // move to the next state
-            requestStateContext.nextState();
+            logger.debug("The tunnel request was rejected by the proxy host", tre);
+            writeHttpResponse(tre.getResponse());
+        }
 
-            HttpResponse errorResponse = tre.getResponse();
+    }
 
-            StatusLine errorStatusLine = errorResponse.getStatusLine();
-            logger.debug("errorStatusLine {}", errorStatusLine);
-            localSocketChannel.write(errorStatusLine);
+    private void writeHttpResponse (HttpResponse httpResponse) {
+        try {
+            StatusLine statusLine = httpResponse.getStatusLine();
+            logger.debug("Write statusLine {}", statusLine);
+            localSocketChannel.write(statusLine);
 
-            logger.debug("Write error headers");
-            for (Header header : errorResponse.getAllHeaders()) {
+            logger.debug("Write headers");
+            for (Header header : httpResponse.getAllHeaders()) {
                 localSocketChannel.write(header);
             }
 
             // Empty line between headers and the body
             localSocketChannel.writeln();
 
-            HttpEntity entity = errorResponse.getEntity();
+            HttpEntity entity = httpResponse.getEntity();
             if (entity != null) {
-                logger.debug("Write error entity content");
+                logger.debug("Write entity content");
                 entity.writeTo(localSocketChannel.getOutputStream());
             }
             EntityUtils.consume(entity);
+        } catch (Exception e) {
+            logger.debug("Error on writing response", e);
         }
     }
 
@@ -249,52 +237,48 @@ class SocketHandler {
             HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                logger.debug("Response status line: {}", response.getStatusLine());
+                logger.debug("Write status line: {}", response.getStatusLine());
+                try {
+                    localSocketChannel.write(response.getStatusLine());
 
-                // Request executed OK, move to the next state
-                requestStateContext.nextState();
-
-                logger.debug("Write status line");
-                localSocketChannel.write(response.getStatusLine());
-
-                logger.debug("Write response headers");
-                for (Header header : httpClient.execute(target, request).getAllHeaders()) {
-                    if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
-
-                        // Strip 'chunked' from Transfer-Encoding header's value
-                        // since the response is not chunked
-                        String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
-                        if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                            localSocketChannel.write(
-                                    HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
-                                            nonChunkedTransferEncoding));
-                            logger.debug("Add chunk-striped header response");
+                    logger.debug("Write response headers");
+                    for (Header header : response.getAllHeaders()) {
+                        if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
+                            // Strip 'chunked' from Transfer-Encoding header's value
+                            // since the response is not chunked
+                            String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
+                            if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
+                                localSocketChannel.write(
+                                        HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
+                                                nonChunkedTransferEncoding));
+                                logger.debug("Add chunk-striped header response");
+                            } else {
+                                logger.debug("Remove transfer encoding chunked header response");
+                            }
                         } else {
-                            logger.debug("Remove transfer encoding chunked header response");
+                            logger.debug("Write response header: {}", header);
+                            localSocketChannel.write(header);
                         }
-                    } else {
-                        localSocketChannel.write(header);
-                        logger.debug("Done writing response header: {}", header);
                     }
+
+                    // Empty line marking the end
+                    // of header's section
+                    localSocketChannel.writeln();
+
+                    // Now write the request body, if any
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+                        logger.debug("Start writing entity content");
+                        entity.writeTo(localSocketChannel.getOutputStream());
+                        logger.debug("End writing entity content");
+
+                        // Make sure the entity is fully consumed
+                        EntityUtils.consume(entity);
+                    }
+                } catch (Exception e) {
+                    logger.debug("Error on handling non CONNECT response", e);
                 }
 
-                // Empty line marking the end
-                // of header's section
-                localSocketChannel.writeln();
-
-                // Now write the request body, if any
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    logger.debug("Start writing entity content");
-                    entity.writeTo(localSocketChannel.getOutputStream());
-                    logger.debug("End writing entity content");
-
-                    // Make sure the entity is fully consumed
-                    EntityUtils.consume(entity);
-                }
-
-                // Response processed, move to the next state
-                requestStateContext.nextState();
             }
         }
     }

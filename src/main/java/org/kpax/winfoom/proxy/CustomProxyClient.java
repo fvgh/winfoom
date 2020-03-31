@@ -74,6 +74,9 @@ class CustomProxyClient {
     @Autowired
     private CredentialsProvider credentialsProvider;
 
+    @Autowired
+    private ProxyContext proxyContext;
+
     private HttpProcessor httpProcessor;
     private HttpRequestExecutor requestExec;
     private ProxyAuthenticationStrategy proxyAuthStrategy;
@@ -100,12 +103,11 @@ class CustomProxyClient {
                 .build();
     }
 
-    public ManagedHttpClientConnection tunnel(final HttpHost proxy, final HttpHost target,
-                                              final ProtocolVersion protocolVersion, final AsynchronousSocketChannelWrapper socketChannelWrapper)
+    public Tunnel tunnel(final HttpHost proxy, final HttpHost target,
+                         final ProtocolVersion protocolVersion)
             throws IOException, HttpException {
         Args.notNull(proxy, "Proxy host");
         Args.notNull(target, "Target host");
-        Args.notNull(socketChannelWrapper, "socketChannelWrapper");
         HttpHost host = target;
         if (host.getPort() <= 0) {
             host = new HttpHost(host.getHostName(), 80, host.getSchemeName());
@@ -185,10 +187,7 @@ class CustomProxyClient {
             throw new TunnelRefusedException("CONNECT refused by proxy: " + response.getStatusLine(), response);
         }
 
-        // Write the status line
-        socketChannelWrapper.write(response.getStatusLine());
-
-        return connection;
+        return new Tunnel(connection, response, proxyContext);
     }
 
 }

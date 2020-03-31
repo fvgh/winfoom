@@ -101,9 +101,9 @@ class CustomProxyClientTests {
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
         AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
-        ManagedHttpClientConnection connection = applicationContext.getBean(CustomProxyClient.class)
-                .tunnel(proxy, target, HttpVersion.HTTP_1_1, socketChannelWrapper);
-        connection.close();
+        Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)
+                .tunnel(proxy, target, HttpVersion.HTTP_1_1);
+        tunnel.close();
     }
 
     @Test
@@ -116,9 +116,9 @@ class CustomProxyClientTests {
         AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(org.apache.http.impl.execchain.TunnelRefusedException.class, () -> {
-            ManagedHttpClientConnection connection = applicationContext.getBean(CustomProxyClient.class)
-                    .tunnel(proxy, target, HttpVersion.HTTP_1_1, socketChannelWrapper);
-            connection.close();
+            Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)
+                    .tunnel(proxy, target, HttpVersion.HTTP_1_1);
+            tunnel.close();
         });
     }
 
@@ -131,9 +131,9 @@ class CustomProxyClientTests {
         AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(java.net.UnknownHostException.class, () -> {
-            ManagedHttpClientConnection connection = applicationContext.getBean(CustomProxyClient.class)
-                    .tunnel(proxy, target, HttpVersion.HTTP_1_1, socketChannelWrapper);
-            connection.close();
+            Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)
+                    .tunnel(proxy, target, HttpVersion.HTTP_1_1);
+            tunnel.close();
         });
     }
 

@@ -51,13 +51,6 @@ public final class HttpUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
-    private static final List<Class> gatewayExceptions = new ArrayList<>();
-
-    static {
-        gatewayExceptions.add(org.apache.http.conn.HttpHostConnectException.class);
-        gatewayExceptions.add(java.net.ConnectException.class);
-    }
-
     private HttpUtils() {
     }
 
@@ -152,10 +145,6 @@ public final class HttpUtils {
         return new BasicStatusLine(protocolVersion, httpCode,
                 StringUtils.isEmpty(reasonPhrase) ?
                         EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
-    }
-
-    public static boolean isGatewayException(Class<? extends Exception> e) {
-        return gatewayExceptions.stream().anyMatch(c -> c.isAssignableFrom(e));
     }
 
 }
