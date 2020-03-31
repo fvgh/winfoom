@@ -170,9 +170,6 @@ class CustomProxyClient {
 
         }
 
-        // We have a response
-        socketChannelWrapper.markResponseAvailable();
-
         final int status = response.getStatusLine().getStatusCode();
         logger.debug("Tunnel final status code: {}", status);
 
@@ -190,17 +187,6 @@ class CustomProxyClient {
 
         // Write the status line
         socketChannelWrapper.write(response.getStatusLine());
-
-        // Write an empty line as separator
-        // Convert a potential error to handle it as
-        // client connection
-        try {
-            socketChannelWrapper.writeln();
-            logger.debug("Done writing empty line");
-        } catch (IOException e) {
-            LocalIOUtils.close(connection);
-            throw new ConnectionClosedException(e.getMessage());
-        }
 
         return connection;
     }

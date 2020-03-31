@@ -28,8 +28,8 @@ import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.util.LocalIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,6 +89,8 @@ class SocketHandler {
 
     private AsynchronousSocketChannelWrapper localSocketChannel;
 
+    private RequestStateContext requestStateContext = new RequestStateContext();
+
     SocketHandler bind(AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already binded!");
         this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
@@ -108,6 +110,10 @@ class SocketHandler {
             HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
             HttpRequest request = requestParser.parse();
             RequestLine requestLine = request.getRequestLine();
+
+            // Request initialized, move to the next state
+            requestStateContext.nextState();
+
             logger.debug("Start processing request line {}", requestLine);
 
             if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
@@ -119,16 +125,12 @@ class SocketHandler {
             logger.debug("End processing request line {}", requestLine);
         } catch (Exception e) {
             try {
-                localSocketChannel.writelnError(e);
+                localSocketChannel.writelnError(e, requestStateContext.getState());
             } catch (Exception ex) {
                 logger.debug("Error on writing client's error response", e);
             }
 
-            if (HttpUtils.isClientException(e.getClass())) {
-                logger.debug("Client error", e);
-            } else {
-                logger.error("Proxy error", e);
-            }
+            logger.debug("Error on processing request", e);
         } finally {
             LocalIOUtils.close(localSocketChannel);
         }
@@ -149,21 +151,42 @@ class SocketHandler {
 
         try (ManagedHttpClientConnection connection = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion(),
                 localSocketChannel)) {
-            final OutputStream socketOutputStream = connection.getSocket().getOutputStream();
-            Future<?> copyToSocketFuture = proxyContext.executeAsync(
-                    () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
-                            socketOutputStream));
-            LocalIOUtils.copyQuietly(connection.getSocket().getInputStream(), localSocketChannel.getOutputStream());
-            if (!copyToSocketFuture.isDone()) {
-                try {
 
-                    // Wait for async copy to finish
-                    copyToSocketFuture.get();
-                } catch (Exception e) {
-                    logger.debug("Error on writing to socket", e);
+            // Request executed OK, move to the next state
+            requestStateContext.nextState();
+
+            // Write an empty line as separator,
+            // then initiate the client - remote proxy conversation
+            try {
+                localSocketChannel.writeln();
+                logger.debug("Done writing empty line");
+
+                final OutputStream socketOutputStream = connection.getSocket().getOutputStream();
+                Future<?> copyToSocketFuture = proxyContext.executeAsync(
+                        () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
+                                socketOutputStream));
+                LocalIOUtils.copyQuietly(connection.getSocket().getInputStream(), localSocketChannel.getOutputStream());
+                if (!copyToSocketFuture.isDone()) {
+                    try {
+
+                        // Wait for async copy to finish
+                        copyToSocketFuture.get();
+                    } catch (Exception e) {
+                        logger.debug("Error on writing to socket", e);
+                    }
                 }
+            } catch (Exception e) {
+                logger.debug("Error on handling CONNECT", e);
             }
+
+            // Response processed, move to the next state
+            requestStateContext.nextState();
+
         } catch (TunnelRefusedException tre) {
+            // Request executed with error response,
+            // move to the next state
+            requestStateContext.nextState();
+
             HttpResponse errorResponse = tre.getResponse();
 
             StatusLine errorStatusLine = errorResponse.getStatusLine();
@@ -228,8 +251,8 @@ class SocketHandler {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 logger.debug("Response status line: {}", response.getStatusLine());
 
-                // We have a response
-                localSocketChannel.markResponseAvailable();
+                // Request executed OK, move to the next state
+                requestStateContext.nextState();
 
                 logger.debug("Write status line");
                 localSocketChannel.write(response.getStatusLine());
@@ -269,6 +292,9 @@ class SocketHandler {
                     // Make sure the entity is fully consumed
                     EntityUtils.consume(entity);
                 }
+
+                // Response processed, move to the next state
+                requestStateContext.nextState();
             }
         }
     }

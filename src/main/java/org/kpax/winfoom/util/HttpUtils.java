@@ -51,23 +51,11 @@ public final class HttpUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
-    private static final List<Class> clientExceptions = new ArrayList<>();
-
     private static final List<Class> gatewayExceptions = new ArrayList<>();
 
-    private static final List<Class> nonWritableExceptions = new ArrayList<>();
-
-
     static {
-        clientExceptions.add(org.apache.http.HttpException.class);
-        clientExceptions.add(org.apache.http.client.ClientProtocolException.class);
-        clientExceptions.add(org.apache.http.ConnectionClosedException.class);
-        clientExceptions.add(java.net.URISyntaxException.class);
-
         gatewayExceptions.add(org.apache.http.conn.HttpHostConnectException.class);
         gatewayExceptions.add(java.net.ConnectException.class);
-
-        nonWritableExceptions.add(org.apache.http.ConnectionClosedException.class);
     }
 
     private HttpUtils() {
@@ -166,16 +154,8 @@ public final class HttpUtils {
                         EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
     }
 
-    public static boolean isClientException(Class<? extends Exception> e) {
-        return clientExceptions.stream().anyMatch(c -> c.isAssignableFrom(e));
-    }
-
     public static boolean isGatewayException(Class<? extends Exception> e) {
         return gatewayExceptions.stream().anyMatch(c -> c.isAssignableFrom(e));
-    }
-
-    public static boolean isWritableException(Class<? extends Exception> e) {
-        return nonWritableExceptions.stream().noneMatch(c -> c.isAssignableFrom(e));
     }
 
 }

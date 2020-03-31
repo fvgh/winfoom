@@ -39,8 +39,6 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     private final OutputStream outputStream;
 
-    private boolean responseAvailable;
-
     AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel) {
         Validate.notNull(socketChannel, "socketChannel cannot be null");
         this.socketChannel = socketChannel;
@@ -73,12 +71,14 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         outputStream.write(CrlfFormat.CRLF.getBytes());
     }
 
-    void writelnError(Exception e) throws IOException {
-        if (!responseAvailable && HttpUtils.isWritableException(e.getClass())) {
-            if (HttpUtils.isClientException(e.getClass())) {
-                writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
-            } else if (HttpUtils.isGatewayException(e.getClass())) {
-                writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_GATEWAY, "Cannot connect to the remote proxy server"));
+    void writelnError(Exception e, RequestStateContext.RequestState requestState) throws IOException {
+        if (requestState.isEqualsOrBefore(RequestStateContext.RequestState.EXECUTED)) {
+            if (requestState.isEqualsOrBefore(RequestStateContext.RequestState.INITIATED)) {
+                if (HttpUtils.isGatewayException(e.getClass())) {
+                    writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_GATEWAY, "Cannot connect to the remote proxy server"));
+                } else {
+                    writeln(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()));
+                }
             } else {
                 writeln(HttpUtils.toStatusLine(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage()));
             }
@@ -96,14 +96,6 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     boolean isOpen() {
         return socketChannel.isOpen();
-    }
-
-    boolean isResponseAvailable() {
-        return responseAvailable;
-    }
-
-    void markResponseAvailable() {
-        this.responseAvailable = true;
     }
 
     private class SocketChannelInputStream extends InputStream {

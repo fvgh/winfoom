@@ -62,23 +62,4 @@ class HttpUtilsTests {
         Assertions.assertNull(result.getQuery());
     }
 
-
-    @Test
-    void isClientException_HttpException_True () {
-        boolean isClientException = HttpUtils.isClientException(HttpException.class);
-        Assertions.assertTrue(isClientException);
-    }
-
-    @Test
-    void isClientException_IOException_False () {
-        boolean isClientException = HttpUtils.isClientException(IOException.class);
-        Assertions.assertFalse(isClientException);
-    }
-
-    @Test
-    void isClientException_TunnelRefusedException_True () {
-        boolean isClientException = HttpUtils.isClientException(TunnelRefusedException.class);
-        Assertions.assertTrue(isClientException);
-    }
-
 }
