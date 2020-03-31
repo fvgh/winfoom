@@ -108,13 +108,11 @@ class SocketHandler {
             RequestLine requestLine = request.getRequestLine();
 
             logger.debug("Start processing request line {}", requestLine);
-
             if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
                 handleConnect(requestLine);
             } else {
                 handleNonConnectRequest(request, inputBuffer);
             }
-
             logger.debug("End processing request line {}", requestLine);
         } catch (HttpException e) {
             localSocketChannel.writelnError(HttpStatus.SC_BAD_REQUEST, e);
@@ -152,7 +150,6 @@ class SocketHandler {
         HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
 
         try (Tunnel tunnel = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion())) {
-
             try {
                 logger.debug("Write status line");
                 localSocketChannel.write(tunnel.getStatusLine());
@@ -165,7 +162,6 @@ class SocketHandler {
             } catch (Exception e) {
                 logger.debug("Error on handling CONNECT", e);
             }
-
         } catch (TunnelRefusedException tre) {
             logger.debug("The tunnel request was rejected by the proxy host", tre);
             writeHttpResponse(tre.getResponse());
@@ -235,7 +231,6 @@ class SocketHandler {
             // Execute the request
             URI uri = HttpUtils.parseUri(requestLine.getUri());
             HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
-
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 logger.debug("Write status line: {}", response.getStatusLine());
                 try {
