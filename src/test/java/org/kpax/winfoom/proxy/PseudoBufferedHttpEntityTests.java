@@ -31,8 +31,8 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
 import org.kpax.winfoom.TestConstants;
-import org.kpax.winfoom.util.LocalIOUtils;
 import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.LocalIOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -124,9 +124,9 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new StringEntity("12345"));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 EntityUtils.consume(response.getEntity());
-                assertEquals(response.getFirstHeader("Entity-Repeatable").getValue(), "false");
+                assertEquals("false", response.getFirstHeader("Entity-Repeatable").getValue());
             }
         }
     }
@@ -140,9 +140,9 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new StringEntity("12345"));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 EntityUtils.consume(response.getEntity());
-                assertEquals(response.getFirstHeader("Entity-Repeatable").getValue(), "true");
+                assertEquals("true", response.getFirstHeader("Entity-Repeatable").getValue());
             }
         }
     }
@@ -156,9 +156,9 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new StringEntity("12345"));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 EntityUtils.consume(response.getEntity());
-                assertEquals(response.getFirstHeader("Entity-Repeatable").getValue(), "true");
+                assertEquals("true", response.getFirstHeader("Entity-Repeatable").getValue());
             }
         }
     }
@@ -172,9 +172,9 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new InputStreamEntity(new ByteArrayInputStream("12345".getBytes())));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 EntityUtils.consume(response.getEntity());
-                assertEquals(response.getFirstHeader("Entity-Repeatable").getValue(), "false");
+                assertEquals("false", response.getFirstHeader("Entity-Repeatable").getValue());
             }
         }
     }
@@ -188,9 +188,9 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new InputStreamEntity(new ByteArrayInputStream("12345".getBytes())));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 EntityUtils.consume(response.getEntity());
-                assertEquals(response.getFirstHeader("Entity-Repeatable").getValue(), "false");
+                assertEquals("false", response.getFirstHeader("Entity-Repeatable").getValue());
             }
         }
     }
@@ -204,9 +204,9 @@ class PseudoBufferedHttpEntityTests {
             HttpPost request = new HttpPost("/");
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 EntityUtils.consume(response.getEntity());
-                assertEquals(response.getFirstHeader("Entity-Repeatable").getValue(), "true");
+                assertEquals("true", response.getFirstHeader("Entity-Repeatable").getValue());
             }
         }
     }
@@ -223,7 +223,7 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new StringEntity(requestBody));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 String responseBody = EntityUtils.toString(response.getEntity());
                 assertEquals(requestBody, responseBody);
             }
@@ -241,7 +241,7 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new StringEntity(requestBody));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 HttpEntity responseEntity = response.getEntity();
                 String responseBody = EntityUtils.toString(responseEntity);
                 assertEquals(requestBody, responseBody);
@@ -259,7 +259,7 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new StringEntity(requestBody));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 String responseBody = EntityUtils.toString(response.getEntity());
                 assertNotEquals(requestBody, responseBody);
             }
@@ -276,7 +276,7 @@ class PseudoBufferedHttpEntityTests {
             request.setEntity(new StringEntity(requestBody));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 String responseBody = EntityUtils.toString(response.getEntity());
                 assertNotEquals(requestBody, responseBody);
             }

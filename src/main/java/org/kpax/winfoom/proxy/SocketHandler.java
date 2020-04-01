@@ -37,8 +37,10 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
@@ -88,7 +90,7 @@ class SocketHandler {
     private AsynchronousSocketChannelWrapper localSocketChannel;
 
     SocketHandler bind(final AsynchronousSocketChannel socketChannel) {
-        Assert.isNull(localSocketChannel, "Socket already binded!");
+        Assert.isNull(localSocketChannel, "Socket already bound!");
         this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
         return this;
     }
@@ -142,7 +144,7 @@ class SocketHandler {
      * @param requestLine The first line of the request.
      * @throws Exception
      */
-    private void handleConnect(final RequestLine requestLine) throws Exception {
+    private void handleConnect(final RequestLine requestLine) throws HttpException, IOException {
         logger.debug("Handle proxy connect request");
         Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
@@ -158,7 +160,7 @@ class SocketHandler {
     }
 
     /**
-     * It handles the tunnel's response.<br>
+     * Handles the tunnel's response.<br>
      * <b>It should not throw any exception!</b>
      *
      * @param tunnel The tunnel's instance
@@ -215,7 +217,8 @@ class SocketHandler {
      * @param inputBuffer It buffers input data in an internal byte array for optimal input performance.
      * @throws Exception
      */
-    private void handleNonConnectRequest(final HttpRequest request, final SessionInputBufferImpl inputBuffer) throws Exception {
+    private void handleNonConnectRequest(final HttpRequest request, final SessionInputBufferImpl inputBuffer)
+            throws IOException, URISyntaxException {
         RequestLine requestLine = request.getRequestLine();
         logger.debug("Handle non-connect request {}", requestLine);
 
@@ -229,9 +232,9 @@ class SocketHandler {
             logger.debug("No enclosing entity");
         }
 
+        // Remove banned headers
         List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?
                 ENTITY_BANNED_HEADERS : DEFAULT_BANNED_HEADERS;
-        // Remove banned headers
         for (Header header : request.getAllHeaders()) {
             if (bannedHeaders.contains(header.getName())) {
                 request.removeHeader(header);
@@ -254,7 +257,7 @@ class SocketHandler {
     }
 
     /**
-     * It handles the Http response for non-CONNECT requests.<br>
+     * Handles the Http response for non-CONNECT requests.<br>
      * <b>It should not throw any exception!</b>
      *
      * @param response The Http response.
