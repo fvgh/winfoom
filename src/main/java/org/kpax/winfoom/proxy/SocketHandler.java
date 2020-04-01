@@ -115,13 +115,13 @@ class SocketHandler {
                 handleNonConnectRequest(request, inputBuffer);
             }
             logger.debug("End processing request line {}", requestLine);
-        } catch (HttpException e) {
+        } catch (HttpException e) {// There is something wrong with this request
             localSocketChannel.writelnError(HttpStatus.SC_BAD_REQUEST, e);
             logger.debug("Client error", e);
-        } catch (ConnectException e) {
+        } catch (ConnectException e) {// Cannot connect to the remote proxy
             localSocketChannel.writelnError(HttpStatus.SC_BAD_GATEWAY, e);
             logger.debug("Connection error", e);
-        } catch (Exception e) {
+        } catch (Exception e) {// Any other error
             localSocketChannel.writelnError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
             logger.debug("Local proxy error", e);
         } finally {
