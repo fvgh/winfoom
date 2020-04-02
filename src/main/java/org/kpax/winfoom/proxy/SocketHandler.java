@@ -15,6 +15,7 @@ package org.kpax.winfoom.proxy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -22,7 +23,6 @@ import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
-import org.apache.http.io.HttpMessageParser;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
@@ -97,24 +97,15 @@ class SocketHandler {
 
     void handleRequest() {
         logger.debug("Connection received");
-
-        // The protocol version, used when
-        // there is no response for the client
-        ProtocolVersion protocolVersion = HttpVersion.HTTP_1_1;
-
         try {
             // Prepare request parsing (this is the client's request)
-            HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
-            SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics, LocalIOUtils.DEFAULT_BUFFER_SIZE);
+            SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(
+                    new HttpTransportMetricsImpl(), LocalIOUtils.DEFAULT_BUFFER_SIZE);
             inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
             HttpRequest request = parseRequest(inputBuffer);
-
             RequestLine requestLine = request.getRequestLine();
-
-            // Set the client's protocol version
-            protocolVersion = requestLine.getProtocolVersion();
 
             logger.debug("Start processing request {}", requestLine);
 
@@ -125,14 +116,14 @@ class SocketHandler {
             }
 
             logger.debug("End processing request {}", requestLine);
-        } catch (HttpException e) {// There is something wrong with this request
-            localSocketChannel.writelnError(protocolVersion, HttpStatus.SC_BAD_REQUEST, e);
+        } catch (HttpException | ClientProtocolException e) {// There is something wrong with this request
+            localSocketChannel.writelnError(HttpStatus.SC_BAD_REQUEST, e);
             logger.debug("Client error", e);
         } catch (ConnectException e) {// Cannot connect to the remote proxy
-            localSocketChannel.writelnError(protocolVersion, HttpStatus.SC_BAD_GATEWAY, e);
+            localSocketChannel.writelnError(HttpStatus.SC_BAD_GATEWAY, e);
             logger.debug("Connection error", e);
         } catch (Exception e) {// Any other error
-            localSocketChannel.writelnError(protocolVersion, HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+            localSocketChannel.writelnError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
             logger.debug("Local proxy error", e);
         } finally {
             LocalIOUtils.close(localSocketChannel);
@@ -142,7 +133,7 @@ class SocketHandler {
 
     private HttpRequest parseRequest(final SessionInputBufferImpl inputBuffer) throws HttpException {
         try {
-            return ((HttpMessageParser<HttpRequest>) new DefaultHttpRequestParser(inputBuffer)).parse();
+            return new DefaultHttpRequestParser(inputBuffer).parse();
         } catch (Exception e) {
             throw new HttpException("Error on parsing request", e);
         }
