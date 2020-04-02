@@ -83,11 +83,6 @@ public class AppFrame extends JFrame {
     private JMenu mnHelp;
     private JMenuItem mntmAbout;
 
-    private final DirtyTextFieldDocumentListener dirtyTextFieldDocumentListener = new DirtyTextFieldDocumentListener();
-    private final DirtyChangeListener dirtyChangeListener = new DirtyChangeListener();
-
-    private volatile boolean dirtyForm;
-
     /**
      * Create the frame.
      */
@@ -212,10 +207,6 @@ public class AppFrame extends JFrame {
         mainContentPane.add(getBtnPanel(), gbcBtnPanel);
 
         initDataBindings();
-
-        // After data bindings, the form is dirty
-        // so we reset the dirty state
-        dirtyForm = false;
     }
 
     // ---------- Labels
@@ -247,8 +238,6 @@ public class AppFrame extends JFrame {
         }
         return testUrlLabel;
     }
-
-
 
     // ------- End Labels
 
@@ -370,7 +359,6 @@ public class AppFrame extends JFrame {
         JTextField textField = new JTextField();
         textField.setPreferredSize(new Dimension(220, 25));
         textField.setMinimumSize(new Dimension(6, 25));
-        textField.getDocument().addDocumentListener(dirtyTextFieldDocumentListener);
         return textField;
     }
 
@@ -380,7 +368,6 @@ public class AppFrame extends JFrame {
         jSpinner.setMinimumSize(new Dimension(32, 25));
         jSpinner.setEditor(new JSpinner.NumberEditor(jSpinner, "#"));
         SwingUtils.commitsOnValidEdit(jSpinner);
-        jSpinner.addChangeListener(dirtyChangeListener);
         return jSpinner;
     }
 
@@ -471,15 +458,6 @@ public class AppFrame extends JFrame {
                 try {
                     localProxyServer.start();
                     getBtnStop().setEnabled(true);
-
-                    if (dirtyForm) {
-                        try {
-                            logger.info("Save the user's settings");
-                            userConfig.save();
-                        } catch (Exception e) {
-                            logger.error("Error on saving the user's settings to the configuration file", e);
-                        }
-                    }
                 } catch (Exception e) {
                     logger.error("Error on starting proxy server", e);
                     enableInput();
@@ -518,53 +496,4 @@ public class AppFrame extends JFrame {
         }
     }
 
-    private void handleDirtyForm() {
-        if (!dirtyForm) {
-            synchronized (this) {
-                if (!dirtyForm) {
-                    dirtyForm = true;
-                    if (isVisible()) {
-                        logger.info("Now remove dirty listeners");
-                        removeDirtyListeners(getContentPane());
-                    }
-                }
-            }
-        }
-    }
-
-    private void removeDirtyListeners(Container root) {
-        for (java.awt.Component comp : root.getComponents()) {
-            if (comp instanceof JTextField) {
-                ((JTextField) comp).getDocument().removeDocumentListener(dirtyTextFieldDocumentListener);
-            } else if (comp instanceof JSpinner) {
-                ((JSpinner) comp).removeChangeListener(dirtyChangeListener);
-            } else if (comp instanceof Container) {
-                removeDirtyListeners((Container) comp);
-            }
-        }
-    }
-
-    private class DirtyTextFieldDocumentListener implements DocumentListener {
-
-        public void changedUpdate(DocumentEvent e) {
-            handleDirtyForm();
-        }
-
-        public void removeUpdate(DocumentEvent e) {
-            handleDirtyForm();
-        }
-
-        public void insertUpdate(DocumentEvent e) {
-            handleDirtyForm();
-        }
-
-    }
-
-    private class DirtyChangeListener implements ChangeListener {
-
-        public void stateChanged(ChangeEvent e) {
-            handleDirtyForm();
-        }
-
-    }
 }
