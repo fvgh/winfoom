@@ -14,7 +14,8 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
+import org.apache.http.ProtocolVersion;
 import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
@@ -76,8 +77,13 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     }
 
     void writelnError(int statusCode, Exception e) {
+        writelnError(HttpVersion.HTTP_1_1, statusCode, e);
+    }
+
+    void writelnError(ProtocolVersion protocolVersion, int statusCode, Exception e) {
+        Validate.notNull(e, "Exception cannot be null");
         try {
-            writeln(HttpUtils.toStatusLine(statusCode, e.getMessage()));
+            writeln(HttpUtils.toStatusLine(protocolVersion, statusCode, e.getMessage()));
         } catch (Exception ex) {
             logger.debug("Error on writing response error", ex);
         }

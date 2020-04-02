@@ -75,6 +75,7 @@ public class LocalProxyServer implements Closeable {
         logger.info("Start local proxy server with userConfig {}", userConfig);
 
         applicationEventPublisher.publishEvent(new BeforeServerStartEvent(this));
+
         try {
             serverSocket = AsynchronousServerSocketChannel.open()
                     .bind(new InetSocketAddress(userConfig.getLocalPort()));

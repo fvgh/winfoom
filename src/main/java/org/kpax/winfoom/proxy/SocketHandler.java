@@ -97,36 +97,47 @@ class SocketHandler {
 
     void handleRequest() {
         logger.debug("Connection received");
+
+        // The protocol version, used when
+        // there is no response for the client
+        ProtocolVersion protocolVersion = HttpVersion.HTTP_1_1;
+
         try {
             // Prepare request parsing (this is the client's request)
             HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
-            SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics,
-                    LocalIOUtils.DEFAULT_BUFFER_SIZE);
+            SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics, LocalIOUtils.DEFAULT_BUFFER_SIZE);
             inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
             HttpRequest request = parseRequest(inputBuffer);
+
             RequestLine requestLine = request.getRequestLine();
 
-            logger.debug("Start processing request line {}", requestLine);
+            // Set the client's protocol version
+            protocolVersion = requestLine.getProtocolVersion();
+
+            logger.debug("Start processing request {}", requestLine);
+
             if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
                 handleConnect(requestLine);
             } else {
                 handleNonConnectRequest(request, inputBuffer);
             }
-            logger.debug("End processing request line {}", requestLine);
+
+            logger.debug("End processing request {}", requestLine);
         } catch (HttpException e) {// There is something wrong with this request
-            localSocketChannel.writelnError(HttpStatus.SC_BAD_REQUEST, e);
+            localSocketChannel.writelnError(protocolVersion, HttpStatus.SC_BAD_REQUEST, e);
             logger.debug("Client error", e);
         } catch (ConnectException e) {// Cannot connect to the remote proxy
-            localSocketChannel.writelnError(HttpStatus.SC_BAD_GATEWAY, e);
+            localSocketChannel.writelnError(protocolVersion, HttpStatus.SC_BAD_GATEWAY, e);
             logger.debug("Connection error", e);
         } catch (Exception e) {// Any other error
-            localSocketChannel.writelnError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+            localSocketChannel.writelnError(protocolVersion, HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
             logger.debug("Local proxy error", e);
         } finally {
             LocalIOUtils.close(localSocketChannel);
         }
+
     }
 
     private HttpRequest parseRequest(final SessionInputBufferImpl inputBuffer) throws HttpException {
@@ -251,7 +262,7 @@ class SocketHandler {
             HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 logger.debug("Write status line: {}", response.getStatusLine());
-                handleNonConnectRequest(response);
+                handleNonConnectResponse(response);
             }
         }
     }
@@ -262,7 +273,7 @@ class SocketHandler {
      *
      * @param response The Http response.
      */
-    private void handleNonConnectRequest(final CloseableHttpResponse response) {
+    private void handleNonConnectResponse(final CloseableHttpResponse response) {
         try {
             localSocketChannel.write(response.getStatusLine());
 

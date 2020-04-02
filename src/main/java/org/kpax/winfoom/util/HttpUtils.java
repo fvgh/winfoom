@@ -39,7 +39,10 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -104,6 +107,7 @@ public final class HttpUtils {
 
     public static void testProxyConfig(final UserConfig userConfig)
             throws IOException, CredentialException {
+        logger.info("Test proxy config {}", userConfig);
         try (CloseableHttpClient httpClient = WinHttpClients.createDefault()) {
             HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
             HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
@@ -145,6 +149,10 @@ public final class HttpUtils {
         return new BasicStatusLine(protocolVersion, httpCode,
                 StringUtils.isEmpty(reasonPhrase) ?
                         EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
+    }
+
+    public static boolean isValidPort (int port) {
+        return port > 0 && port < 65536;
     }
 
 }

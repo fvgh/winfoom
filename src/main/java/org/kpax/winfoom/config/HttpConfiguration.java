@@ -153,6 +153,9 @@ public class HttpConfiguration {
             PoolingHttpClientConnectionManager connectionManager = connectionManager();
             connectionManager.closeExpiredConnections();
             connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
+            if (logger.isDebugEnabled()) {
+                logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
+            }
         }
     }
 
