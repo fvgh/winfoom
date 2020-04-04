@@ -12,11 +12,14 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.entity.BufferedHttpEntity;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.execchain.TunnelRefusedException;
@@ -24,6 +27,7 @@ import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
@@ -37,7 +41,9 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import javax.security.auth.login.CredentialException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -104,25 +110,30 @@ class SocketHandler {
             inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
-            HttpRequest request = parseRequest(inputBuffer);
+            HttpRequest request = new DefaultHttpRequestParser(inputBuffer).parse();
             RequestLine requestLine = request.getRequestLine();
 
             logger.debug("Start processing request {}", requestLine);
-
             if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
                 handleConnect(requestLine);
             } else {
                 handleNonConnectRequest(request, inputBuffer);
             }
-
             logger.debug("End processing request {}", requestLine);
-        } catch (HttpException | ClientProtocolException e) {// There is something wrong with this request
+
+        } catch (HttpException | ClientProtocolException | URISyntaxException e) {
+
+            // There is something wrong with this request
             localSocketChannel.writelnError(HttpStatus.SC_BAD_REQUEST, e);
             logger.debug("Client error", e);
-        } catch (ConnectException e) {// Cannot connect to the remote proxy
+        } catch (ConnectException e) {
+
+            // Cannot connect to the remote proxy
             localSocketChannel.writelnError(HttpStatus.SC_BAD_GATEWAY, e);
             logger.debug("Connection error", e);
-        } catch (Exception e) {// Any other error
+        } catch (Exception e) {
+
+            // Any other error
             localSocketChannel.writelnError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
             logger.debug("Local proxy error", e);
         } finally {
@@ -131,20 +142,13 @@ class SocketHandler {
 
     }
 
-    private HttpRequest parseRequest(final SessionInputBufferImpl inputBuffer) throws HttpException {
-        try {
-            return new DefaultHttpRequestParser(inputBuffer).parse();
-        } catch (Exception e) {
-            throw new HttpException("Error on parsing request", e);
-        }
-    }
-
     /**
      * Creates a tunnel through proxy, then let the client and the remote proxy
      * communicate via the local socket channel instance.
      *
      * @param requestLine The first line of the request.
-     * @throws Exception
+     * @throws HttpException
+     * @throws IOException
      */
     private void handleConnect(final RequestLine requestLine) throws HttpException, IOException {
         logger.debug("Handle proxy connect request");
@@ -178,7 +182,7 @@ class SocketHandler {
             logger.debug("Start full duplex communication");
             tunnel.fullDuplex(localSocketChannel);
         } catch (Exception e) {
-            logger.debug("Error on handling CONNECT", e);
+            logger.debug("Error on handling CONNECT response", e);
         }
     }
 
@@ -217,19 +221,22 @@ class SocketHandler {
      *
      * @param request     The request to handle.
      * @param inputBuffer It buffers input data in an internal byte array for optimal input performance.
-     * @throws Exception
+     * @throws IOException
+     * @throws URISyntaxException
      */
     private void handleNonConnectRequest(final HttpRequest request, final SessionInputBufferImpl inputBuffer)
-            throws IOException, URISyntaxException {
+            throws IOException, URISyntaxException, CredentialException {
         RequestLine requestLine = request.getRequestLine();
         logger.debug("Handle non-connect request {}", requestLine);
 
-        // Set our streaming entity
+        // Set the streaming entity
         if (request instanceof BasicHttpEntityEnclosingRequest) {
             logger.debug("Create and set PseudoBufferedHttpEntity instance");
-            HttpEntity entity = new PseudoBufferedHttpEntity(inputBuffer, request,
-                    systemConfig.getInternalBufferLength());
-            ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
+
+          /*  HttpEntity entity = new InputStreamEntity(new SessionInputStream(inputBuffer),
+                    HttpUtils.getContentLength(request),
+                    HttpUtils.getContentType(request));*/
+            ((BasicHttpEntityEnclosingRequest) request).setEntity(new BufferedHttpEntity(((BasicHttpEntityEnclosingRequest) request).getEntity()));
         } else {
             logger.debug("No enclosing entity");
         }
@@ -248,11 +255,12 @@ class SocketHandler {
 
         try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
 
-            // Execute the request
+            // Extract URI
             URI uri = HttpUtils.parseUri(requestLine.getUri());
             HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                logger.debug("Write status line: {}", response.getStatusLine());
+                // Execute the request
                 handleNonConnectResponse(response);
             }
         }
@@ -266,6 +274,9 @@ class SocketHandler {
      */
     private void handleNonConnectResponse(final CloseableHttpResponse response) {
         try {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Write status line: {}", response.getStatusLine());
+            }
             localSocketChannel.write(response.getStatusLine());
 
             logger.debug("Write response headers");
@@ -304,6 +315,25 @@ class SocketHandler {
             }
         } catch (Exception e) {
             logger.debug("Error on handling non CONNECT response", e);
+        }
+    }
+
+    private class SessionInputStream extends InputStream {
+
+        private SessionInputBufferImpl inputBuffer;
+
+        public SessionInputStream(SessionInputBufferImpl inputBuffer) {
+            this.inputBuffer = inputBuffer;
+        }
+
+        @Override
+        public int read() throws IOException {
+            throw new NotImplementedException("Do not use it");
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return this.inputBuffer.read(b, off, len);
         }
     }
 

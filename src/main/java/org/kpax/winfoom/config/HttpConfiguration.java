@@ -18,7 +18,6 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
@@ -29,7 +28,10 @@ import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
 import org.apache.http.impl.client.*;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
+import org.apache.http.protocol.HttpRequestExecutor;
 import org.kpax.winfoom.event.AfterServerStopEvent;
 import org.kpax.winfoom.event.BeforeServerStartEvent;
 import org.kpax.winfoom.proxy.ProxyContext;
@@ -100,8 +102,7 @@ public class HttpConfiguration {
                 .setConnectionManager(connectionManager())
                 .setConnectionManagerShared(true)
                 .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
-                .setServiceUnavailableRetryStrategy(new ProxyAuthenticationRequiredRetryStrategy())
-                .setRetryHandler(new RepeatableHttpRequestRetryHandler())
+                .disableAutomaticRetries()
                 .disableRedirectHandling()
                 .disableCookieManagement();
 
@@ -173,44 +174,6 @@ public class HttpConfiguration {
                 .setProxy(proxy)
                 .setCircularRedirectsAllowed(true)
                 .build();
-    }
-
-    private class ProxyAuthenticationRequiredRetryStrategy implements ServiceUnavailableRetryStrategy {
-
-        @Override
-        public boolean retryRequest(HttpResponse response, int executionCount, HttpContext context) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            HttpRequest request = HttpClientContext.adapt(context).getRequest();
-
-            /*
-            Repeat the request on 407 Proxy Authentication Required error code
-            but only if the request has no body or a repeatable one.
-             */
-            return statusCode == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED
-                    && executionCount < systemConfig.getRepeatsOnFailure()
-                    && (!(request instanceof HttpEntityEnclosingRequest)
-                    || ((HttpEntityEnclosingRequest) request).getEntity().isRepeatable());
-        }
-
-        @Override
-        public long getRetryInterval() {
-            return 0;
-        }
-    }
-
-    private class RepeatableHttpRequestRetryHandler extends DefaultHttpRequestRetryHandler {
-
-        @Override
-        protected boolean handleAsIdempotent(HttpRequest request) {
-
-            /*
-            Allow repeating also when
-            the request has a repeatable body
-             */
-            return !(request instanceof HttpEntityEnclosingRequest)
-                    || ((HttpEntityEnclosingRequest) request).getEntity().isRepeatable();
-        }
-
     }
 
 }

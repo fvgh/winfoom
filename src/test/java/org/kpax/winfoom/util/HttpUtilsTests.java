@@ -12,12 +12,12 @@
 
 package org.kpax.winfoom.util;
 
-import org.apache.http.HttpException;
-import org.apache.http.impl.execchain.TunnelRefusedException;
+import org.apache.http.HttpRequest;
+import org.apache.http.entity.ContentType;
+import org.apache.http.message.BasicHttpRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -60,6 +60,34 @@ class HttpUtilsTests {
         URI result = HttpUtils.parseUri(uri);
         Assertions.assertEquals("http://happy/people", result.toString());
         Assertions.assertNull(result.getQuery());
+    }
+
+    @Test
+    void parseContentType_withCharset_NoError() {
+        HttpRequest request = new BasicHttpRequest("GET", "/");
+        request.addHeader("Content-Type", "text/plain; charset=ISO-8859-1");
+        ContentType contentType = HttpUtils.getContentType(request);
+        Assertions.assertEquals("text/plain", contentType.getMimeType());
+        Assertions.assertEquals("ISO-8859-1", contentType.getCharset().name());
+    }
+
+    @Test
+    void parseContentType_NoCharset_NoError() {
+        HttpRequest request = new BasicHttpRequest("GET", "/");
+        request.addHeader("Content-Type", "text/plain");
+        ContentType contentType = HttpUtils.getContentType(request);
+        Assertions.assertEquals("text/plain", contentType.getMimeType());
+        Assertions.assertNull(contentType.getCharset());
+    }
+
+
+    @Test
+    void parseContentType_NoCharsetOtherToken_NoError() {
+        HttpRequest request = new BasicHttpRequest("GET", "/");
+        request.addHeader("Content-Type", "text/plain; x=y; z=k");
+        ContentType contentType = HttpUtils.getContentType(request);
+        Assertions.assertEquals("text/plain", contentType.getMimeType());
+        Assertions.assertNull(contentType.getCharset());
     }
 
 }

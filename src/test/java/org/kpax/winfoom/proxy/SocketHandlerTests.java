@@ -22,7 +22,6 @@ import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
@@ -40,7 +39,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationListener;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -62,8 +60,7 @@ import static org.mockito.Mockito.when;
 @ActiveProfiles("test")
 @SpringBootTest(classes = FoomApplicationTest.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Timeout(10)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Timeout(5)
 class SocketHandlerTests {
 
     @MockBean
@@ -97,9 +94,7 @@ class SocketHandlerTests {
     void before() throws IOException {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
-
         publisher.publishEvent(new BeforeServerStartEvent(this));
-
         remoteProxyServer = DefaultHttpProxyServer.bootstrap()
                 .withPort(PROXY_PORT)
                 .withName("AuthenticatedUpstreamProxy")
@@ -161,7 +156,6 @@ class SocketHandlerTests {
     }
 
     @Test
-    @Order(1)
     void request_NonConnect_True() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build()) {
@@ -176,13 +170,12 @@ class SocketHandlerTests {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                 String responseBody = EntityUtils.toString(response.getEntity());
-                assertEquals( "12345", responseBody);
+                assertEquals("12345", responseBody);
             }
         }
     }
 
     @Test
-    @Order(2)
     void request_Connect_200OK() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
@@ -196,7 +189,6 @@ class SocketHandlerTests {
     }
 
     @Test
-    @Order(3)
     void request_ConnectMalformedUri_400BadRequest() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
@@ -211,16 +203,16 @@ class SocketHandlerTests {
     }
 
     @Test
-    @Order(4)
-    void request_NonConnectRemoteProxyStopped_502BadGateway() throws IOException {
-        // Stop the remote proxy
+    void request_NonConnectNoRemoteProxy_502BadGateway() throws IOException {
         remoteProxyServer.stop();
-
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create()
-                .setDefaultCredentialsProvider(credentialsProvider).setProxy(localProxy).build()) {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build()) {
+            RequestConfig config = RequestConfig.custom()
+                    .setProxy(localProxy)
+                    .build();
             HttpHost target = HttpHost.create("http://localhost:" + remoteServer.getLocalPort());
             HttpPost request = new HttpPost("/post");
+            request.setConfig(config);
             request.setEntity(new StringEntity("whatever"));
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {

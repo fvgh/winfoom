@@ -41,7 +41,6 @@ class Tunnel implements Closeable {
     Tunnel(ManagedHttpClientConnection connection, HttpResponse response, ProxyContext proxyContext) {
         Validate.notNull(connection, "connection cannot be null");
         Validate.notNull(response, "response cannot be null");
-        Validate.notNull(proxyContext, "proxyContext cannot be null");
         this.connection = connection;
         this.response = response;
         this.proxyContext = proxyContext;

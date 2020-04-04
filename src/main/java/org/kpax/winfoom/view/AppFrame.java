@@ -33,10 +33,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.security.auth.login.CredentialException;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -50,6 +46,8 @@ public class AppFrame extends JFrame {
     private static final long serialVersionUID = 4009799697210970761L;
 
     private static final Logger logger = LoggerFactory.getLogger(AppFrame.class);
+
+    private static final int ICON_SIZE = 16;
 
     @Autowired
     private ConfigurableApplicationContext applicationContext;
@@ -278,7 +276,7 @@ public class AppFrame extends JFrame {
     private JButton getBtnStart() {
         if (btnStart == null) {
             btnStart = new JButton("Start");
-            btnStart.setIcon(new ImageIcon("config/img/system-run.png"));
+            btnStart.setIcon(new TunedImageIcon("config/img/arrow-right.png"));
             btnStart.addActionListener(e -> startServer());
         }
         return btnStart;
@@ -288,7 +286,7 @@ public class AppFrame extends JFrame {
         if (btnStop == null) {
             btnStop = new JButton("Stop");
             btnStop.addActionListener(e -> stopServer());
-            btnStop.setIcon(new ImageIcon("config/img/process-stop.png"));
+            btnStop.setIcon(new TunedImageIcon("config/img/process-stop.png"));
             btnStop.setEnabled(false);
         }
         return btnStop;
@@ -327,7 +325,7 @@ public class AppFrame extends JFrame {
     private JMenuItem getMntmExit() {
         if (mntmExit == null) {
             mntmExit = new JMenuItem("Exit");
-            mntmExit.setIcon(new ImageIcon("config/img/application-exit.png"));
+            mntmExit.setIcon(new TunedImageIcon("config/img/application-exit.png"));
             mntmExit.addActionListener(e -> shutdownApp());
         }
         return mntmExit;
@@ -344,7 +342,7 @@ public class AppFrame extends JFrame {
     private JMenuItem getMntmAbout() {
         if (mntmAbout == null) {
             mntmAbout = new JMenuItem("About");
-            mntmAbout.setIcon(new ImageIcon("config/img/dialog-information.png"));
+            mntmAbout.setIcon(new TunedImageIcon("config/img/dialog-information.png"));
             mntmAbout.addActionListener(e -> SwingUtils.showInfoMessage(this, "About", "Winfoom - Basic Proxy Facade" +
                     "\nVersion: " + systemConfig.getReleaseVersion()
                     + "\nProject home page: https://github.com/ecovaci/winfoom"
@@ -493,6 +491,30 @@ public class AppFrame extends JFrame {
             logger.info("Now shutdown application");
             applicationContext.close();
             dispose();
+        }
+    }
+
+    private class TunedImageIcon extends ImageIcon {
+
+        TunedImageIcon(String filename) {
+            super(filename);
+        }
+
+        public int getIconHeight() {
+            return ICON_SIZE;
+        }
+
+        public int getIconWidth() {
+            return ICON_SIZE;
+        }
+
+        public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            g2d.drawImage(getImage(), x, y, c);
+            g2d.dispose();
         }
     }
 

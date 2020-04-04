@@ -23,7 +23,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.event.BeforeServerStartEvent;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -32,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -65,9 +63,6 @@ class CustomProxyClientTests {
     @Autowired
     private CredentialsProvider credentialsProvider;
 
-    @Autowired
-    private ApplicationEventPublisher publisher;
-
     private HttpProxyServer proxyServer;
 
     @BeforeEach
@@ -78,10 +73,6 @@ class CustomProxyClientTests {
 
     @BeforeAll
     void beforeClass() {
-        when(userConfig.getProxyHost()).thenReturn("localhost");
-        when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
-
-        publisher.publishEvent(new BeforeServerStartEvent(this));
         proxyServer = DefaultHttpProxyServer.bootstrap()
                 .withAddress(new InetSocketAddress("localhost", PROXY_PORT))
                 .withName("AuthenticatedUpstreamProxy")

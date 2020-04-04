@@ -71,10 +71,6 @@ public class ProxyContext implements AutoCloseable {
         return localProxyServer.isStarted();
     }
 
-    public int getActiveTasksCount () {
-        return threadPool.getActiveCount();
-    }
-
     @Override
     public void close() {
         logger.info("Close all context's resources");

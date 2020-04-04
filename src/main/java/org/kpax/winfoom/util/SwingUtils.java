@@ -90,9 +90,9 @@ public class SwingUtils {
         showMessage(parentComponent, title, message, JOptionPane.WARNING_MESSAGE);
     }
 
-    public static void executeRunnable(final Runnable runnable,final JFrame frame) {
-		Validate.notNull(runnable, "runnable cannot be null");
-		Validate.notNull(frame, "frame cannot be null");
+    public static void executeRunnable(final Runnable runnable, final JFrame frame) {
+        Validate.notNull(runnable, "runnable cannot be null");
+        Validate.notNull(frame, "frame cannot be null");
         frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         Thread thread = new Thread(() -> {
             try {

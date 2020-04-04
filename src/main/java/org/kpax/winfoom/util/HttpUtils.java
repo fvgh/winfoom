@@ -22,6 +22,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.EnglishReasonPhraseCatalog;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.WinHttpClients;
@@ -151,8 +152,26 @@ public final class HttpUtils {
                         EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
     }
 
-    public static boolean isValidPort (int port) {
+    public static boolean isValidPort(int port) {
         return port > 0 && port < 65536;
+    }
+
+    public static ContentType getContentType(HttpRequest request) {
+        Header contentTypeHeader = request.getFirstHeader(HttpHeaders.CONTENT_TYPE);
+        Validate.isTrue(contentTypeHeader != null, "No Content-Type header found");
+        String[] tokens = contentTypeHeader.getValue().split(";");
+        Validate.isTrue(tokens.length > 0, "Wrong content-type format");
+        String contentType = tokens[0].trim();
+        String charset = null;
+        if (tokens.length > 1) {
+            for (int i = 1; i < tokens.length; i++) {
+                tokens[i] = tokens[i].trim();
+                if (tokens[i].startsWith("charset=")) {
+                    charset = tokens[i].substring("charset=".length());
+                }
+            }
+        }
+        return ContentType.create(contentType, charset);
     }
 
 }
