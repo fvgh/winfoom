@@ -27,6 +27,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.UserConfig;
@@ -60,6 +61,7 @@ import static org.mockito.Mockito.when;
 @ActiveProfiles("test")
 @SpringBootTest(classes = FoomApplicationTest.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestMethodOrder(OrderAnnotation.class)
 @Timeout(5)
 class SocketHandlerTests {
 
@@ -156,6 +158,7 @@ class SocketHandlerTests {
     }
 
     @Test
+    @Order(1)
     void request_NonConnect_True() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build()) {
@@ -176,6 +179,7 @@ class SocketHandlerTests {
     }
 
     @Test
+    @Order(2)
     void request_Connect_200OK() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
@@ -189,6 +193,7 @@ class SocketHandlerTests {
     }
 
     @Test
+    @Order(3)
     void request_ConnectMalformedUri_400BadRequest() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
@@ -203,6 +208,7 @@ class SocketHandlerTests {
     }
 
     @Test
+    @Order(4)
     void request_NonConnectNoRemoteProxy_502BadGateway() throws IOException {
         remoteProxyServer.stop();
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
