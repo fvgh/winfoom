@@ -74,9 +74,6 @@ class CustomProxyClient {
     @Autowired
     private CredentialsProvider credentialsProvider;
 
-    @Autowired
-    private ProxyContext proxyContext;
-
     private HttpProcessor httpProcessor;
     private HttpRequestExecutor requestExec;
     private ProxyAuthenticationStrategy proxyAuthStrategy;
@@ -187,7 +184,7 @@ class CustomProxyClient {
             throw new TunnelRefusedException("CONNECT refused by proxy: " + response.getStatusLine(), response);
         }
 
-        return new Tunnel(connection, response, proxyContext);
+        return new Tunnel(connection, response);
     }
 
 }

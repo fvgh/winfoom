@@ -44,12 +44,15 @@ import org.springframework.util.Assert;
 import javax.security.auth.login.CredentialException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ConnectException;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -164,6 +167,23 @@ class SocketHandler {
         }
 
     }
+    
+    void fullDuplex(Tunnel tunnel, AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
+        Socket socket = tunnel.getSocket();
+		final OutputStream socketOutputStream = socket.getOutputStream();
+        Future<?> localToSocket = proxyContext.executeAsync(
+                () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
+                        socketOutputStream));
+        LocalIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
+        if (!localToSocket.isDone()) {
+            try {
+                // Wait for async copy to finish
+                localToSocket.get();
+            } catch (Exception e) {
+                logger.debug("Error on writing to socket", e);
+            }
+        }
+    }
 
     /**
      * Handles the tunnel's response.<br>
@@ -180,7 +200,7 @@ class SocketHandler {
             localSocketChannel.writeln();
 
             logger.debug("Start full duplex communication");
-            tunnel.fullDuplex(localSocketChannel);
+            fullDuplex(tunnel, localSocketChannel);
         } catch (Exception e) {
             logger.debug("Error on handling CONNECT response", e);
         }

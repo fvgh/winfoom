@@ -36,14 +36,12 @@ class Tunnel implements Closeable {
 
     private ManagedHttpClientConnection connection;
     private HttpResponse response;
-    private ProxyContext proxyContext;
 
-    Tunnel(ManagedHttpClientConnection connection, HttpResponse response, ProxyContext proxyContext) {
+    Tunnel(ManagedHttpClientConnection connection, HttpResponse response) {
         Validate.notNull(connection, "connection cannot be null");
         Validate.notNull(response, "response cannot be null");
         this.connection = connection;
         this.response = response;
-        this.proxyContext = proxyContext;
     }
 
     ManagedHttpClientConnection getConnection() {
@@ -61,24 +59,6 @@ class Tunnel implements Closeable {
     StatusLine getStatusLine() {
         return response.getStatusLine();
     }
-
-    void fullDuplex(AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
-        Socket socket = getSocket();
-        final OutputStream socketOutputStream = socket.getOutputStream();
-        Future<?> localToSocket = proxyContext.executeAsync(
-                () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
-                        socketOutputStream));
-        LocalIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
-        if (!localToSocket.isDone()) {
-            try {
-                // Wait for async copy to finish
-                localToSocket.get();
-            } catch (Exception e) {
-                logger.debug("Error on writing to socket", e);
-            }
-        }
-    }
-
 
     @Override
     public void close() {

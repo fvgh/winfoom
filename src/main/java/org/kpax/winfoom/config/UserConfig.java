@@ -12,6 +12,10 @@
 
 package org.kpax.winfoom.config;
 
+import java.nio.file.Paths;
+
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -24,9 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.nio.file.Paths;
 
 /**
  * @author Eugen Covaci

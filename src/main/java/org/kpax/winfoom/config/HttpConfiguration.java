@@ -12,26 +12,17 @@
 
 package org.kpax.winfoom.config;
 
-import org.apache.http.*;
-import org.apache.http.auth.AuthSchemeProvider;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.http.HttpHost;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.ServiceUnavailableRetryStrategy;
-import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
-import org.apache.http.impl.auth.BasicSchemeFactory;
-import org.apache.http.impl.auth.DigestSchemeFactory;
-import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
-import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
-import org.apache.http.impl.client.*;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpCoreContext;
-import org.apache.http.protocol.HttpRequestExecutor;
 import org.kpax.winfoom.event.AfterServerStopEvent;
 import org.kpax.winfoom.event.BeforeServerStartEvent;
 import org.kpax.winfoom.proxy.ProxyContext;
@@ -44,136 +35,125 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import java.util.concurrent.TimeUnit;
-
 /**
- * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
- * Created on 11/20/2019
+ * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com} Created on
+ *         11/20/2019
  */
 @EnableScheduling
 @Configuration
 public class HttpConfiguration {
 
-    private final Logger logger = LoggerFactory.getLogger(HttpConfiguration.class);
+	private final Logger logger = LoggerFactory.getLogger(HttpConfiguration.class);
 
-    @Autowired
-    private SystemConfig systemConfig;
+	@Autowired
+	private SystemConfig systemConfig;
 
-    @Autowired
-    private UserConfig userConfig;
+	@Autowired
+	private UserConfig userConfig;
 
-    @Autowired
-    private CredentialsProvider credentialsProvider;
+	@Autowired
+	private CredentialsProvider credentialsProvider;
 
-    @Autowired
-    private ProxyContext proxyContext;
+	@Autowired
+	private ProxyContext proxyContext;
 
-    /**
-     * @return The HTTP connection manager.
-     */
-    @Bean
-    PoolingHttpClientConnectionManager connectionManager() {
-        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+	/**
+	 * @return The HTTP connection manager.
+	 */
+	@Bean
+	PoolingHttpClientConnectionManager connectionManager() {
+		PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
 
-        logger.info("Configure connection manager");
-        if (systemConfig.getMaxConnections() != null) {
-            connectionManager.setMaxTotal(systemConfig.getMaxConnections());
-        }
-        if (systemConfig.getMaxConnectionsPerRoute() != null) {
-            connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
-        }
+		logger.info("Configure connection manager");
+		if (systemConfig.getMaxConnections() != null) {
+			connectionManager.setMaxTotal(systemConfig.getMaxConnections());
+		}
+		if (systemConfig.getMaxConnectionsPerRoute() != null) {
+			connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
+		}
 
-        return connectionManager;
-    }
+		return connectionManager;
+	}
 
-    @Bean
-    HttpClientBuilder httpClientBuilder() {
-        final Registry<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
-                .register(AuthSchemes.BASIC, new BasicSchemeFactory())
-                .register(AuthSchemes.DIGEST, new DigestSchemeFactory())
-                .register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(null))
-                .register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(null))
-                .build();
-        HttpClientBuilder builder = WinHttpClients.custom()
-                .setDefaultCredentialsProvider(credentialsProvider)
-                .setDefaultAuthSchemeRegistry(authSchemeRegistry)
-                .setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy())
-                .setDefaultSocketConfig(socketConfig())
-                .setConnectionManager(connectionManager())
-                .setConnectionManagerShared(true)
-                .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
-                .disableAutomaticRetries()
-                .disableRedirectHandling()
-                .disableCookieManagement();
+	@Bean
+	HttpClientBuilder httpClientBuilder() {
+		HttpClientBuilder builder = WinHttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
+				.setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy())
+				.setDefaultSocketConfig(socketConfig())
+				.setConnectionManager(connectionManager())
+				.setConnectionManagerShared(true)
+				.disableAutomaticRetries()
+				.disableRedirectHandling()
+				.disableCookieManagement();
 
-        if (systemConfig.isUseSystemProperties()) {
-            builder.useSystemProperties();
-        }
-        return builder;
-    }
+		if (systemConfig.isUseSystemProperties()) {
+			builder.useSystemProperties();
+		}
+		return builder;
+	}
 
-    /**
-     * Configure the <code>HttpClientBuilder</code> instance
-     * with the user's values.
-     *
-     * @return The <code>ApplicationListener<BeforeServerStartEvent></code> instance.
-     */
-    @Bean
-    ApplicationListener<BeforeServerStartEvent> onServerStartEventApplicationListener() {
-        return event -> {
-            logger.info("Set http builder's request config");
-            RequestConfig requestConfig = createRequestConfig();
-            httpClientBuilder()
-                    .setDefaultRequestConfig(requestConfig)
-                    .setRoutePlanner(new DefaultProxyRoutePlanner(requestConfig.getProxy()));
-        };
-    }
+	/**
+	 * Configure the <code>HttpClientBuilder</code> instance with the user's values.
+	 *
+	 * @return The <code>ApplicationListener<BeforeServerStartEvent></code>
+	 *         instance.
+	 */
+	@Bean
+	ApplicationListener<BeforeServerStartEvent> onServerStartEventApplicationListener() {
+		return event -> {
+			logger.info("Set http builder's request config");
+			RequestConfig requestConfig = createRequestConfig();
+			httpClientBuilder()
+					.setDefaultRequestConfig(requestConfig)
+					.setRoutePlanner(new DefaultProxyRoutePlanner(requestConfig.getProxy()));
+		};
+	}
 
-    /**
-     * Purges the pooled HTTP connection manager after stopping the local proxy.
-     *
-     * @return The <code>ApplicationListener<AfterServerStopEvent></code> instance.
-     */
-    @Bean
-    ApplicationListener<AfterServerStopEvent> onServerStopEventApplicationListener() {
-        return event -> {
-            logger.info("Close expired/idle connections");
-            PoolingHttpClientConnectionManager connectionManager = connectionManager();
-            connectionManager.closeExpiredConnections();
-            connectionManager.closeIdleConnections(0, TimeUnit.SECONDS);
-        };
-    }
+	/**
+	 * Purges the pooled HTTP connection manager after stopping the local proxy.
+	 *
+	 * @return The <code>ApplicationListener<AfterServerStopEvent></code> instance.
+	 */
+	@Bean
+	ApplicationListener<AfterServerStopEvent> onServerStopEventApplicationListener() {
+		return event -> {
+			logger.info("Close expired/idle connections");
+			PoolingHttpClientConnectionManager connectionManager = connectionManager();
+			connectionManager.closeExpiredConnections();
+			connectionManager.closeIdleConnections(0, TimeUnit.SECONDS);
+		};
+	}
 
-    /**
-     * A job that closes the idle/expired HTTP connections.
-     */
-    @Scheduled(fixedRateString = "#{systemConfig.connectionManagerCleanInterval * 1000}")
-    void cleanUpConnectionManager() {
-        if (proxyContext.isStarted()) {
-            logger.debug("Execute connection manager pool clean up task");
-            PoolingHttpClientConnectionManager connectionManager = connectionManager();
-            connectionManager.closeExpiredConnections();
-            connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
-            if (logger.isDebugEnabled()) {
-                logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
-            }
-        }
-    }
+	/**
+	 * A job that closes the idle/expired HTTP connections.
+	 */
+	@Scheduled(fixedRateString = "#{systemConfig.connectionManagerCleanInterval * 1000}")
+	void cleanUpConnectionManager() {
+		if (proxyContext.isStarted()) {
+			logger.debug("Execute connection manager pool clean up task");
+			PoolingHttpClientConnectionManager connectionManager = connectionManager();
+			connectionManager.closeExpiredConnections();
+			connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
+			if (logger.isDebugEnabled()) {
+				logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
+			}
+		}
+	}
 
-    private SocketConfig socketConfig() {
-        return SocketConfig.custom()
-                .setTcpNoDelay(true)
-                .setSndBufSize(systemConfig.getSocketBufferSize())
-                .setRcvBufSize(systemConfig.getSocketBufferSize())
-                .build();
-    }
+	private SocketConfig socketConfig() {
+		return SocketConfig.custom()
+				.setTcpNoDelay(true)
+				.setSndBufSize(systemConfig.getSocketBufferSize())
+				.setRcvBufSize(systemConfig.getSocketBufferSize())
+				.build();
+	}
 
-    private RequestConfig createRequestConfig() {
-        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-        return RequestConfig.custom()
-                .setProxy(proxy)
-                .setCircularRedirectsAllowed(true)
-                .build();
-    }
+	private RequestConfig createRequestConfig() {
+		HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
+		return RequestConfig.custom()
+				.setProxy(proxy)
+				.setCircularRedirectsAllowed(true)
+				.build();
+	}
 
 }

@@ -16,7 +16,9 @@ import org.springframework.context.ApplicationEvent;
 
 public class BeforeServerStartEvent extends ApplicationEvent {
 
-    public BeforeServerStartEvent(Object source) {
+	private static final long serialVersionUID = 7809167232378062404L;
+
+	public BeforeServerStartEvent(Object source) {
         super(source);
     }
 }

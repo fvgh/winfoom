@@ -16,7 +16,9 @@ import org.springframework.context.ApplicationEvent;
 
 public class AfterServerStopEvent extends ApplicationEvent {
 
-    public AfterServerStopEvent(Object source) {
+	private static final long serialVersionUID = 3549068287479006890L;
+
+	public AfterServerStopEvent(Object source) {
         super(source);
     }
 }
