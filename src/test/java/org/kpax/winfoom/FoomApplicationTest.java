@@ -12,10 +12,11 @@
 
 package org.kpax.winfoom;
 
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
+
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.CredentialsProvider;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -36,7 +37,8 @@ public class FoomApplicationTest {
     @Primary
     public CredentialsProvider credentialsProvider() {
         BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(TestConstants.USERNAME, TestConstants.PASSWORD));
+        credentialsProvider.setCredentials(new AuthScope(null, -1),
+                new UsernamePasswordCredentials(TestConstants.USERNAME, TestConstants.PASSWORD.toCharArray()));
         return credentialsProvider;
     }
 

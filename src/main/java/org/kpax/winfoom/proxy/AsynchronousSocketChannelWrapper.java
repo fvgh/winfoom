@@ -14,8 +14,8 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.HttpVersion;
-import org.apache.http.ProtocolVersion;
+import org.apache.hc.core5.http.HttpVersion;
+import org.apache.hc.core5.http.ProtocolVersion;
 import org.kpax.winfoom.util.CrlfFormat;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;

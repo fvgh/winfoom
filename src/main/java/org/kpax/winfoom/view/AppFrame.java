@@ -13,7 +13,7 @@
 package org.kpax.winfoom.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.conn.HttpHostConnectException;
+import org.apache.hc.client5.http.HttpHostConnectException;
 import org.jdesktop.beansbinding.AutoBinding;
 import org.jdesktop.beansbinding.BeanProperty;
 import org.jdesktop.beansbinding.BindingGroup;

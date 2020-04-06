@@ -12,36 +12,29 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.http.*;
-import org.apache.http.auth.AUTH;
-import org.apache.http.auth.AuthSchemeProvider;
-import org.apache.http.auth.AuthState;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.AuthSchemes;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.protocol.RequestClientConnControl;
-import org.apache.http.config.ConnectionConfig;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.ManagedHttpClientConnection;
-import org.apache.http.conn.routing.HttpRoute;
-import org.apache.http.conn.routing.RouteInfo.LayerType;
-import org.apache.http.conn.routing.RouteInfo.TunnelType;
-import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.impl.DefaultConnectionReuseStrategy;
-import org.apache.http.impl.auth.BasicSchemeFactory;
-import org.apache.http.impl.auth.DigestSchemeFactory;
-import org.apache.http.impl.auth.HttpAuthenticator;
-import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
-import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
-import org.apache.http.impl.client.ProxyAuthenticationStrategy;
-import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
-import org.apache.http.impl.execchain.TunnelRefusedException;
-import org.apache.http.message.BasicHttpRequest;
-import org.apache.http.protocol.*;
-import org.apache.http.util.Args;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.HttpRoute;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.TunnelRefusedException;
+import org.apache.hc.client5.http.impl.auth.BasicSchemeFactory;
+import org.apache.hc.client5.http.impl.auth.DigestSchemeFactory;
+import org.apache.hc.client5.http.impl.auth.HttpAuthenticator;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+
+import org.apache.hc.client5.http.impl.io.ManagedHttpClientConnectionFactory;
+import org.apache.hc.client5.http.impl.win.WindowsNTLMSchemeFactory;
+import org.apache.hc.client5.http.impl.win.WindowsNegotiateSchemeFactory;
+import org.apache.hc.client5.http.io.ManagedHttpClientConnection;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.client5.http.protocol.RequestClientConnControl;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.config.RegistryBuilder;
+import org.apache.hc.core5.http.impl.DefaultConnectionReuseStrategy;
+import org.apache.hc.core5.http.impl.io.HttpRequestExecutor;
+import org.apache.hc.core5.http.io.entity.BufferedHttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicHttpRequest;
+import org.apache.hc.core5.http.protocol.*;
+import org.apache.hc.core5.util.Args;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
@@ -66,13 +59,13 @@ import java.net.Socket;
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 class CustomProxyClient {
 
-    private final Logger logger = LoggerFactory.getLogger(CustomProxyClient.class);
+ /*   private final Logger logger = LoggerFactory.getLogger(CustomProxyClient.class);
 
     @Autowired
     private SystemConfig systemConfig;
 
     @Autowired
-    private CredentialsProvider credentialsProvider;
+    private HttpClientBuilder httpClientBuilder;
 
     @Autowired
     private ProxyContext proxyContext;
@@ -188,6 +181,6 @@ class CustomProxyClient {
         }
 
         return new Tunnel(connection, response, proxyContext);
-    }
+    }*/
 
 }

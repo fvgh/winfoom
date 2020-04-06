@@ -13,18 +13,16 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.Validate;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
-import org.apache.http.conn.ManagedHttpClientConnection;
+import org.apache.hc.client5.http.io.ManagedHttpClientConnection;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.message.StatusLine;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
-import java.util.concurrent.Future;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
@@ -35,15 +33,13 @@ class Tunnel implements Closeable {
     private final Logger logger = LoggerFactory.getLogger(Tunnel.class);
 
     private ManagedHttpClientConnection connection;
-    private HttpResponse response;
-    private ProxyContext proxyContext;
+    private ClassicHttpResponse response;
 
-    Tunnel(ManagedHttpClientConnection connection, HttpResponse response, ProxyContext proxyContext) {
+    Tunnel(ManagedHttpClientConnection connection, ClassicHttpResponse response) {
         Validate.notNull(connection, "connection cannot be null");
         Validate.notNull(response, "response cannot be null");
         this.connection = connection;
         this.response = response;
-        this.proxyContext = proxyContext;
     }
 
     ManagedHttpClientConnection getConnection() {
@@ -54,31 +50,13 @@ class Tunnel implements Closeable {
         return connection.getSocket();
     }
 
-    HttpResponse getResponse() {
+    ClassicHttpResponse getResponse() {
         return response;
     }
 
     StatusLine getStatusLine() {
-        return response.getStatusLine();
+        return new StatusLine(response);
     }
-
-    void fullDuplex(AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
-        Socket socket = getSocket();
-        final OutputStream socketOutputStream = socket.getOutputStream();
-        Future<?> localToSocket = proxyContext.executeAsync(
-                () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
-                        socketOutputStream));
-        LocalIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
-        if (!localToSocket.isDone()) {
-            try {
-                // Wait for async copy to finish
-                localToSocket.get();
-            } catch (Exception e) {
-                logger.debug("Error on writing to socket", e);
-            }
-        }
-    }
-
 
     @Override
     public void close() {

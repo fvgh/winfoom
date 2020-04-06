@@ -12,9 +12,9 @@
 
 package org.kpax.winfoom.util;
 
-import org.apache.http.HttpRequest;
-import org.apache.http.entity.ContentType;
-import org.apache.http.message.BasicHttpRequest;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.http.message.BasicHttpRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

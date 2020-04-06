@@ -16,19 +16,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.*;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.EnglishReasonPhraseCatalog;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.WinHttpClients;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicStatusLine;
-import org.apache.http.protocol.HTTP;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.win.WinHttpClients;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.impl.EnglishReasonPhraseCatalog;
+import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.http.message.RequestLine;
+import org.apache.hc.core5.http.message.StatusLine;
+import org.apache.hc.core5.net.URIBuilder;
+import org.apache.hc.core5.net.URLEncodedUtils;
 import org.kpax.winfoom.config.UserConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +79,7 @@ public final class HttpUtils {
 
     public static String stripChunked(String value) {
         return Arrays.stream(value.split(","))
-                .filter((item) -> !HTTP.CHUNK_CODING.equalsIgnoreCase(item))
+                .filter((item) -> !"chunked".equalsIgnoreCase(item))
                 .collect(Collectors.joining(","));
     }
 
@@ -107,19 +106,19 @@ public final class HttpUtils {
     }
 
     public static void testProxyConfig(final UserConfig userConfig)
-            throws IOException, CredentialException {
+            throws IOException, CredentialException, URISyntaxException {
         logger.info("Test proxy config {}", userConfig);
         try (CloseableHttpClient httpClient = WinHttpClients.createDefault()) {
             HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
-            HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
+            HttpHost proxy = new HttpHost("http", userConfig.getProxyHost(), userConfig.getProxyPort());
             RequestConfig config = RequestConfig.custom()
                     .setProxy(proxy)
                     .build();
             HttpGet request = new HttpGet("/");
             request.setConfig(config);
-            logger.info("Executing request {} to {} via {}", target, proxy, request.getRequestLine());
+            logger.info("Executing request {} to {} via {}", target, proxy, new RequestLine(request));
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                StatusLine statusLine = response.getStatusLine();
+                StatusLine statusLine = new StatusLine(response);
                 logger.info("Test response status {}", statusLine);
                 if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
                     logger.info("Test OK");
@@ -133,21 +132,21 @@ public final class HttpUtils {
         }
     }
 
-    public static BasicStatusLine toStatusLine(int httpCode) {
+    public static StatusLine toStatusLine(int httpCode) {
         return toStatusLine(HttpVersion.HTTP_1_1, httpCode, null);
     }
 
-    public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode) {
+    public static StatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode) {
         return toStatusLine(protocolVersion, httpCode, null);
     }
 
-    public static BasicStatusLine toStatusLine(int httpCode, String reasonPhrase) {
+    public static StatusLine toStatusLine(int httpCode, String reasonPhrase) {
         return toStatusLine(HttpVersion.HTTP_1_1, httpCode, reasonPhrase);
     }
 
-    public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode, String reasonPhrase) {
+    public static StatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode, String reasonPhrase) {
         Validate.notNull(protocolVersion, "protocolVersion cannot be null");
-        return new BasicStatusLine(protocolVersion, httpCode,
+        return new StatusLine(protocolVersion, httpCode,
                 StringUtils.isEmpty(reasonPhrase) ?
                         EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
     }

@@ -12,26 +12,16 @@
 
 package org.kpax.winfoom.config;
 
-import org.apache.http.*;
-import org.apache.http.auth.AuthSchemeProvider;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.ServiceUnavailableRetryStrategy;
-import org.apache.http.client.config.AuthSchemes;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.config.SocketConfig;
-import org.apache.http.impl.auth.BasicSchemeFactory;
-import org.apache.http.impl.auth.DigestSchemeFactory;
-import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
-import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
-import org.apache.http.impl.client.*;
-import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpCoreContext;
-import org.apache.http.protocol.HttpRequestExecutor;
+import org.apache.hc.client5.http.auth.CredentialsProvider;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.DefaultConnectionKeepAliveStrategy;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.routing.DefaultProxyRoutePlanner;
+import org.apache.hc.client5.http.impl.win.WinHttpClients;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.io.SocketConfig;
+import org.apache.hc.core5.util.TimeValue;
 import org.kpax.winfoom.event.AfterServerStopEvent;
 import org.kpax.winfoom.event.BeforeServerStartEvent;
 import org.kpax.winfoom.proxy.ProxyContext;
@@ -63,9 +53,6 @@ public class HttpConfiguration {
     private UserConfig userConfig;
 
     @Autowired
-    private CredentialsProvider credentialsProvider;
-
-    @Autowired
     private ProxyContext proxyContext;
 
     /**
@@ -88,17 +75,8 @@ public class HttpConfiguration {
 
     @Bean
     HttpClientBuilder httpClientBuilder() {
-        final Registry<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
-                .register(AuthSchemes.BASIC, new BasicSchemeFactory())
-                .register(AuthSchemes.DIGEST, new DigestSchemeFactory())
-                .register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(null))
-                .register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(null))
-                .build();
         HttpClientBuilder builder = WinHttpClients.custom()
-                .setDefaultCredentialsProvider(credentialsProvider)
-                .setDefaultAuthSchemeRegistry(authSchemeRegistry)
-                .setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy())
-                .setDefaultSocketConfig(socketConfig())
+                // .setDefaultSocketConfig(socketConfig())
                 .setConnectionManager(connectionManager())
                 .setConnectionManagerShared(true)
                 .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
@@ -139,8 +117,8 @@ public class HttpConfiguration {
         return event -> {
             logger.info("Close expired/idle connections");
             PoolingHttpClientConnectionManager connectionManager = connectionManager();
-            connectionManager.closeExpiredConnections();
-            connectionManager.closeIdleConnections(0, TimeUnit.SECONDS);
+            connectionManager.closeExpired();
+            connectionManager.closeIdle(TimeValue.ofSeconds(0));
         };
     }
 
@@ -152,8 +130,8 @@ public class HttpConfiguration {
         if (proxyContext.isStarted()) {
             logger.debug("Execute connection manager pool clean up task");
             PoolingHttpClientConnectionManager connectionManager = connectionManager();
-            connectionManager.closeExpiredConnections();
-            connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
+            connectionManager.closeExpired();
+            connectionManager.closeIdle(TimeValue.ofSeconds(systemConfig.getConnectionManagerIdleTimeout()));
             if (logger.isDebugEnabled()) {
                 logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
             }

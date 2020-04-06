@@ -14,7 +14,7 @@ package org.kpax.winfoom.util;
 
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.apache.hc.core5.http.impl.io.SessionInputBufferImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +42,7 @@ public final class LocalIOUtils extends IOUtils {
      * @param inputBuffer The input buffer.
      * @return <code>false</code> iff EOF has been reached.
      */
+/*
     public static boolean isAvailable(SessionInputBufferImpl inputBuffer) {
         try {
             return inputBuffer.hasBufferedData() || inputBuffer.fillBuffer() > -1;
@@ -49,6 +50,7 @@ public final class LocalIOUtils extends IOUtils {
             throw new RuntimeException(e);
         }
     }
+*/
 
     /**
      * Copy from <code>inputStream</code> to <code>outputStream</code> until EOF is

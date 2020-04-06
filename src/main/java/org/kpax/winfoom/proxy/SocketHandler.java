@@ -12,25 +12,21 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.*;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.execchain.TunnelRefusedException;
-import org.apache.http.impl.io.DefaultHttpRequestParser;
-import org.apache.http.impl.io.HttpTransportMetricsImpl;
-import org.apache.http.impl.io.SessionInputBufferImpl;
-import org.apache.http.message.BasicHttpEntityEnclosingRequest;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.ClientProtocolException;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.impl.io.DefaultHttpRequestParser;
+import org.apache.hc.core5.http.impl.io.SessionInputBufferImpl;
+import org.apache.hc.core5.http.io.entity.BufferedHttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.StatusLine;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.exception.TunnelRefusedHttpException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
@@ -43,13 +39,15 @@ import org.springframework.util.Assert;
 
 import javax.security.auth.login.CredentialException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ConnectException;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -86,9 +84,9 @@ class SocketHandler {
 
     @Autowired
     private ProxyContext proxyContext;
-
+/*
     @Autowired
-    private CustomProxyClient proxyClient;
+    private CustomProxyClient proxyClient;*/
 
     @Autowired
     private HttpClientBuilder httpClientBuilder;
@@ -105,16 +103,18 @@ class SocketHandler {
         logger.debug("Connection received");
         try {
             // Prepare request parsing (this is the client's request)
-            SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(
-                    new HttpTransportMetricsImpl(), LocalIOUtils.DEFAULT_BUFFER_SIZE);
-            inputBuffer.bind(localSocketChannel.getInputStream());
+            SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(LocalIOUtils.DEFAULT_BUFFER_SIZE);
+            // inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
-            HttpRequest request = new DefaultHttpRequestParser(inputBuffer).parse();
-            RequestLine requestLine = request.getRequestLine();
+            ClassicHttpRequest request = new DefaultHttpRequestParser().parse(inputBuffer, localSocketChannel.getInputStream());
+
+            System.out.println(request);
+
+            BaseRequestLine requestLine = new BaseRequestLine(request);
 
             logger.debug("Start processing request {}", requestLine);
-            if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
+            if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(request.getMethod())) {
                 handleConnect(requestLine);
             } else {
                 handleNonConnectRequest(request, inputBuffer);
@@ -150,15 +150,16 @@ class SocketHandler {
      * @throws HttpException
      * @throws IOException
      */
-    private void handleConnect(final RequestLine requestLine) throws HttpException, IOException {
+    private void handleConnect(final BaseRequestLine requestLine) throws HttpException, IOException {
         logger.debug("Handle proxy connect request");
-        Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
+        Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri().toString());
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
         HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
 
-        try (Tunnel tunnel = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion())) {
+        ProxyClient proxyClient = new ProxyClient();
+        try (Tunnel tunnel = proxyClient.tunnel(proxy, target)) {
             handleConnectResponse(tunnel);
-        } catch (TunnelRefusedException tre) {
+        } catch (TunnelRefusedHttpException tre) {
             logger.debug("The tunnel request was rejected by the proxy host", tre);
             writeHttpResponse(tre.getResponse());
         }
@@ -180,9 +181,26 @@ class SocketHandler {
             localSocketChannel.writeln();
 
             logger.debug("Start full duplex communication");
-            tunnel.fullDuplex(localSocketChannel);
+            fullDuplex(tunnel, localSocketChannel);
         } catch (Exception e) {
             logger.debug("Error on handling CONNECT response", e);
+        }
+    }
+
+    void fullDuplex(Tunnel tunnel, AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
+        Socket socket = tunnel.getSocket();
+        final OutputStream socketOutputStream = socket.getOutputStream();
+        Future<?> localToSocket = proxyContext.executeAsync(
+                () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
+                        socketOutputStream));
+        LocalIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
+        if (!localToSocket.isDone()) {
+            try {
+                // Wait for async copy to finish
+                localToSocket.get();
+            } catch (Exception e) {
+                logger.debug("Error on writing to socket", e);
+            }
         }
     }
 
@@ -191,14 +209,14 @@ class SocketHandler {
      *
      * @param httpResponse The HTTP response.
      */
-    private void writeHttpResponse(final HttpResponse httpResponse) {
+    private void writeHttpResponse(final ClassicHttpResponse httpResponse) {
         try {
-            StatusLine statusLine = httpResponse.getStatusLine();
+            StatusLine statusLine = new StatusLine(httpResponse);
             logger.debug("Write statusLine {}", statusLine);
             localSocketChannel.write(statusLine);
 
             logger.debug("Write headers");
-            for (Header header : httpResponse.getAllHeaders()) {
+            for (Header header : httpResponse.getHeaders()) {
                 localSocketChannel.write(header);
             }
 
@@ -224,27 +242,23 @@ class SocketHandler {
      * @throws IOException
      * @throws URISyntaxException
      */
-    private void handleNonConnectRequest(final HttpRequest request, final SessionInputBufferImpl inputBuffer)
+    private void handleNonConnectRequest(final ClassicHttpRequest request, final SessionInputBufferImpl inputBuffer)
             throws IOException, URISyntaxException, CredentialException {
-        RequestLine requestLine = request.getRequestLine();
+        BaseRequestLine requestLine = new BaseRequestLine(request);
         logger.debug("Handle non-connect request {}", requestLine);
 
         // Set the streaming entity
-        if (request instanceof BasicHttpEntityEnclosingRequest) {
+        if (request.getEntity() != null) {
             logger.debug("Create and set PseudoBufferedHttpEntity instance");
-
-          /*  HttpEntity entity = new InputStreamEntity(new SessionInputStream(inputBuffer),
-                    HttpUtils.getContentLength(request),
-                    HttpUtils.getContentType(request));*/
-            ((BasicHttpEntityEnclosingRequest) request).setEntity(new BufferedHttpEntity(((BasicHttpEntityEnclosingRequest) request).getEntity()));
+            request.setEntity(new BufferedHttpEntity(request.getEntity()));
         } else {
             logger.debug("No enclosing entity");
         }
 
         // Remove banned headers
-        List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?
+        List<String> bannedHeaders = request.getEntity() != null ?
                 ENTITY_BANNED_HEADERS : DEFAULT_BANNED_HEADERS;
-        for (Header header : request.getAllHeaders()) {
+        for (Header header : request.getHeaders()) {
             if (bannedHeaders.contains(header.getName())) {
                 request.removeHeader(header);
                 logger.debug("Request header {} removed", header);
@@ -256,8 +270,8 @@ class SocketHandler {
         try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
 
             // Extract URI
-            URI uri = HttpUtils.parseUri(requestLine.getUri());
-            HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+            URI uri = HttpUtils.parseUri(requestLine.getUri().toString());
+            HttpHost target = new HttpHost( uri.getScheme(), uri.getHost(), uri.getPort());
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 // Execute the request
@@ -275,12 +289,12 @@ class SocketHandler {
     private void handleNonConnectResponse(final CloseableHttpResponse response) {
         try {
             if (logger.isDebugEnabled()) {
-                logger.debug("Write status line: {}", response.getStatusLine());
+                logger.debug("Write status line: {}", new StatusLine(response));
             }
-            localSocketChannel.write(response.getStatusLine());
+            localSocketChannel.write(new StatusLine(response));
 
             logger.debug("Write response headers");
-            for (Header header : response.getAllHeaders()) {
+            for (Header header : response.getHeaders()) {
                 if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
                     // Strip 'chunked' from Transfer-Encoding header's value
                     // since the response is not chunked
@@ -318,7 +332,7 @@ class SocketHandler {
         }
     }
 
-    private class SessionInputStream extends InputStream {
+/*    private class SessionInputStream extends InputStream {
 
         private SessionInputBufferImpl inputBuffer;
 
@@ -335,6 +349,6 @@ class SocketHandler {
         public int read(byte[] b, int off, int len) throws IOException {
             return this.inputBuffer.read(b, off, len);
         }
-    }
+    }*/
 
 }
