@@ -251,12 +251,12 @@ class SocketHandler {
 
         // Set the streaming entity
         if (request instanceof BasicHttpEntityEnclosingRequest) {
-            logger.debug("Create and set PseudoBufferedHttpEntity instance");
+            logger.debug("Create and set BufferedHttpEntity instance");
 
-          /*  HttpEntity entity = new InputStreamEntity(new SessionInputStream(inputBuffer),
-                    HttpUtils.getContentLength(request),
-                    HttpUtils.getContentType(request));*/
-            ((BasicHttpEntityEnclosingRequest) request).setEntity(new BufferedHttpEntity(((BasicHttpEntityEnclosingRequest) request).getEntity()));
+            BasicHttpEntityEnclosingRequest basicHttpEntityEnclosingRequest = (BasicHttpEntityEnclosingRequest) request;
+            if (basicHttpEntityEnclosingRequest.getEntity() != null) {
+                basicHttpEntityEnclosingRequest.setEntity(new BufferedHttpEntity(basicHttpEntityEnclosingRequest.getEntity()));
+            }
         } else {
             logger.debug("No enclosing entity");
         }

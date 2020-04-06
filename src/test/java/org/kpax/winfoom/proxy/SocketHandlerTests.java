@@ -62,7 +62,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(classes = FoomApplicationTest.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
-@Timeout(5)
+@Timeout(10)
 class SocketHandlerTests {
 
     @MockBean
