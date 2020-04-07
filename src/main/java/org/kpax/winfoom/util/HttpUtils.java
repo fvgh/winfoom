@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.CredentialException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -172,6 +173,12 @@ public final class HttpUtils {
             }
         }
         return ContentType.create(contentType, charset);
+    }
+
+    public static void consumeEntity (HttpEntity httpEntity) throws IOException {
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        httpEntity.writeTo(outStream);
+        outStream.flush();
     }
 
 }

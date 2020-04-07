@@ -12,8 +12,6 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
@@ -24,6 +22,7 @@ import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
@@ -38,7 +37,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Socket;
@@ -63,6 +61,7 @@ class SocketHandler {
      * entity.
      */
     private static final List<String> ENTITY_BANNED_HEADERS = Arrays.asList(
+
             HttpHeaders.CONTENT_LENGTH,
             HttpHeaders.CONTENT_TYPE,
             HttpHeaders.CONTENT_ENCODING,
@@ -95,7 +94,8 @@ class SocketHandler {
 
     SocketHandler bind(final AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already bound!");
-        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
+        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel,
+                systemConfig.getSocketChannelTimeout());
         return this;
     }
 
@@ -163,7 +163,7 @@ class SocketHandler {
 
     }
 
-    void fullDuplex(Tunnel tunnel, AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
+    void fullDuplex(Tunnel tunnel) throws IOException {
         Socket socket = tunnel.getSocket();
         final OutputStream socketOutputStream = socket.getOutputStream();
         Future<?> localToSocket = proxyContext.executeAsync(
@@ -195,7 +195,7 @@ class SocketHandler {
             localSocketChannel.writeln();
 
             logger.debug("Start full duplex communication");
-            fullDuplex(tunnel, localSocketChannel);
+            fullDuplex(tunnel);
         } catch (Exception e) {
             logger.debug("Error on handling CONNECT response", e);
         }
@@ -247,10 +247,15 @@ class SocketHandler {
         // Set the streaming entity
         if (request instanceof HttpEntityEnclosingRequest) {
             logger.debug("Set enclosing entity");
-            RepetableHttpEntity entity = new RepetableHttpEntity(inputBuffer,
-                    userConfig.getCacheDirectory(),
+            RepeatableHttpEntity entity = new RepeatableHttpEntity(inputBuffer,
+                    userConfig.getTempDirectory(),
                     request,
                     systemConfig.getInternalBufferLength());
+            Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
+            if (transferEncoding != null && HTTP.CHUNK_CODING.equalsIgnoreCase(transferEncoding.getValue())) {
+                logger.debug("Mark entity as chunked");
+                entity.setChunked(true);
+            }
             ((HttpEntityEnclosingRequest) request).setEntity(entity);
         } else {
             logger.debug("No enclosing entity");
@@ -273,7 +278,9 @@ class SocketHandler {
 
             // Extract URI
             URI uri = HttpUtils.parseUri(requestLine.getUri());
-            HttpHost target = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+            HttpHost target = new HttpHost(uri.getHost(),
+                    uri.getPort(),
+                    uri.getScheme());
 
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 // Execute the request
@@ -281,7 +288,7 @@ class SocketHandler {
             }
         } finally {
             if (request instanceof HttpEntityEnclosingRequest) {
-                LocalIOUtils.close((RepetableHttpEntity) ((HttpEntityEnclosingRequest) request).getEntity());
+                LocalIOUtils.close((RepeatableHttpEntity) ((HttpEntityEnclosingRequest) request).getEntity());
             }
         }
     }
@@ -299,24 +306,9 @@ class SocketHandler {
             }
             localSocketChannel.write(response.getStatusLine());
 
-            logger.debug("Write response headers");
             for (Header header : response.getAllHeaders()) {
-                if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
-                    // Strip 'chunked' from Transfer-Encoding header's value
-                    // since the response is not chunked
-                    String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
-                    if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                        localSocketChannel.write(
-                                HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
-                                        nonChunkedTransferEncoding));
-                        logger.debug("Add chunk-striped header response");
-                    } else {
-                        logger.debug("Remove transfer encoding chunked header response");
-                    }
-                } else {
-                    logger.debug("Write response header: {}", header);
-                    localSocketChannel.write(header);
-                }
+                logger.debug("Write response header: {}", header);
+                localSocketChannel.write(header);
             }
 
             // Empty line marking the end
@@ -335,25 +327,6 @@ class SocketHandler {
             }
         } catch (Exception e) {
             logger.debug("Error on handling non CONNECT response", e);
-        }
-    }
-
-    private class SessionInputStream extends InputStream {
-
-        private SessionInputBufferImpl inputBuffer;
-
-        public SessionInputStream(SessionInputBufferImpl inputBuffer) {
-            this.inputBuffer = inputBuffer;
-        }
-
-        @Override
-        public int read() throws IOException {
-            throw new NotImplementedException("Do not use it");
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            return this.inputBuffer.read(b, off, len);
         }
     }
 

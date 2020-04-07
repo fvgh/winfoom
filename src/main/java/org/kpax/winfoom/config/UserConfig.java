@@ -51,8 +51,8 @@ public class UserConfig {
     @Value("${proxy.port:0}")
     private Integer proxyPort;
 
-    @Value("${user.home}/.winfoom/cache")
-    private Path cacheDirectory;
+    @Value("${user.home}/.winfoom/temp")
+    private Path tempDirectory;
 
     @PostConstruct
     public void init() throws IOException {
@@ -68,15 +68,15 @@ public class UserConfig {
                 logger.error("Error on getting system proxy", e);
             }
         }
-        logger.info("Check cache directory");
-        if (!Files.exists(cacheDirectory)) {
-            logger.info("Create cache directory {}", cacheDirectory);
-            Files.createDirectories(cacheDirectory);
-        } else if (!Files.isDirectory(cacheDirectory)) {
+        logger.info("Check temp directory");
+        if (!Files.exists(tempDirectory)) {
+            logger.info("Create temp directory {}", tempDirectory);
+            Files.createDirectories(tempDirectory);
+        } else if (!Files.isDirectory(tempDirectory)) {
             throw new IllegalStateException(
-                    String.format("The file [%s] should be a directory, not a regular file", cacheDirectory));
+                    String.format("The file [%s] should be a directory, not a regular file", tempDirectory));
         } else {
-            logger.info("Using cache directory {}", cacheDirectory);
+            logger.info("Using temp directory {}", tempDirectory);
         }
     }
 
@@ -112,8 +112,8 @@ public class UserConfig {
         this.proxyTestUrl = proxyTestUrl;
     }
 
-    public Path getCacheDirectory() {
-        return cacheDirectory;
+    public Path getTempDirectory() {
+        return tempDirectory;
     }
 
     public void save() throws ConfigurationException {

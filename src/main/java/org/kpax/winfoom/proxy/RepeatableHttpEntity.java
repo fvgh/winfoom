@@ -15,6 +15,7 @@ package org.kpax.winfoom.proxy;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
 import org.apache.http.entity.AbstractHttpEntity;
+import org.apache.http.impl.io.ChunkedInputStream;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
@@ -22,21 +23,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/6/2020
  */
-public class RepetableHttpEntity extends AbstractHttpEntity implements Closeable {
+public class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
 
-    private final Logger logger = LoggerFactory.getLogger(RepetableHttpEntity.class);
+    private final Logger logger = LoggerFactory.getLogger(RepeatableHttpEntity.class);
 
     private final SessionInputBufferImpl inputBuffer;
 
-    private final Path cacheDirectory;
+    private final Path tempDirectory;
 
     /**
      * The value of Content-Length header.
@@ -48,16 +51,16 @@ public class RepetableHttpEntity extends AbstractHttpEntity implements Closeable
      */
     private byte[] bufferedBytes;
 
-    private Path filepath;
+    private Path tempFilepath;
 
     private boolean firstTry = true;
 
-    public RepetableHttpEntity(final SessionInputBufferImpl inputBuffer,
-                               final Path cacheDirectory,
-                               final HttpRequest request,
-                               final int internalBufferLength) throws IOException {
+    RepeatableHttpEntity(final SessionInputBufferImpl inputBuffer,
+                         final Path tempDirectory,
+                         final HttpRequest request,
+                         final int internalBufferLength) throws IOException {
         this.inputBuffer = inputBuffer;
-        this.cacheDirectory = cacheDirectory;
+        this.tempDirectory = tempDirectory;
         this.contentType = request.getFirstHeader(HttpHeaders.CONTENT_TYPE);
         this.contentEncoding = request.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
         this.contentLength = HttpUtils.getContentLength(request);
@@ -96,7 +99,27 @@ public class RepetableHttpEntity extends AbstractHttpEntity implements Closeable
 
     @Override
     public InputStream getContent() throws IOException, UnsupportedOperationException {
-        return null;
+        if (bufferedBytes != null) {
+            return new ByteArrayInputStream(bufferedBytes);
+        } else if (contentLength == 0) {
+            return new ByteArrayInputStream(new byte[0]);
+        } else {
+            if (firstTry) {
+                return new InputStream() {
+                    @Override
+                    public int read() throws IOException {
+                        throw new UnsupportedOperationException("Do not use it");
+                    }
+
+                    @Override
+                    public int read(byte[] b, int off, int len) throws IOException {
+                        return inputBuffer.read(b, off, len);
+                    }
+                };
+            } else {
+                return Files.newInputStream(tempFilepath);
+            }
+        }
     }
 
     @Override
@@ -106,27 +129,51 @@ public class RepetableHttpEntity extends AbstractHttpEntity implements Closeable
             outStream.flush();
         } else if (contentLength != 0) {
             if (firstTry) {
-                filepath = cacheDirectory.resolve(LocalIOUtils.generateCacheFilename());
-                try (BufferedOutputStream bufferedOutputStream =  new BufferedOutputStream(
-                        Files.newOutputStream(filepath))) {
+                tempFilepath = tempDirectory.resolve(LocalIOUtils.generateCacheFilename());
+                try (AsynchronousFileChannel tempFileChannel
+                             = AsynchronousFileChannel.open(tempFilepath,
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.CREATE)) {
                     byte[] buffer = new byte[OUTPUT_BUFFER_SIZE];
-                    int length;
-                    if (contentLength < 0) {
-                        // consume until EOF
-                        while (LocalIOUtils.isAvailable(inputBuffer)) {
-                            length = inputBuffer.read(buffer);
-                            if (length == -1) {
-                                break;
-                            }
-                            outStream.write(buffer, 0, length);
-                            outStream.flush();
+                    long position = 0;
 
-                            // Write to file
-                            bufferedOutputStream.write(buffer, 0, length);
+                    if (contentLength < 0) {
+                        if (isChunked()) {
+                            ChunkedInputStream chunkedInputStream = new ChunkedInputStream(inputBuffer);
+
+                            int length;
+                            while ((length = chunkedInputStream.read(buffer)) > 0) {
+
+                                outStream.write(buffer, 0, length);
+                                outStream.flush();
+
+                                // Write to file
+                                tempFileChannel.write(ByteBuffer.wrap(buffer, 0, length), position);
+                                position += length;
+                            }
+                        } else {
+
+                            // consume until EOF
+                            int length;
+                            while (LocalIOUtils.isAvailable(inputBuffer)) {
+                                length = inputBuffer.read(buffer);
+                                if (length == -1) {
+                                    break;
+                                }
+                                outStream.write(buffer, 0, length);
+                                outStream.flush();
+
+                                // Write to file
+                                tempFileChannel.write(ByteBuffer.wrap(buffer, 0, length), position);
+                                position += length;
+                            }
                         }
+
                     } else {
-                        // consume no more than maxLength
+                        int length;
                         long remaining = contentLength;
+
+                        // consume no more than maxLength
                         while (remaining > 0 && LocalIOUtils.isAvailable(inputBuffer)) {
                             length = inputBuffer.read(buffer, 0, (int) Math.min(OUTPUT_BUFFER_SIZE, remaining));
                             if (length == -1) {
@@ -136,8 +183,9 @@ public class RepetableHttpEntity extends AbstractHttpEntity implements Closeable
                             outStream.flush();
                             remaining -= length;
 
-                            // Write to file
-                            bufferedOutputStream.write(buffer, 0, length);
+                            // Write to temp file
+                            tempFileChannel.write(ByteBuffer.wrap(buffer, 0, length), position);
+                            position += length;
                         }
                     }
                 }
@@ -145,8 +193,7 @@ public class RepetableHttpEntity extends AbstractHttpEntity implements Closeable
             } else {
 
                 //read from file
-                InputStream inputStream = Files.newInputStream(filepath);
-                inputStream.transferTo(outStream);
+                Files.newInputStream(tempFilepath).transferTo(outStream);
             }
         }
     }
@@ -158,20 +205,10 @@ public class RepetableHttpEntity extends AbstractHttpEntity implements Closeable
 
     @Override
     public void close() throws IOException {
-        // Delete the cache file
-        if (filepath != null) {
-            Files.deleteIfExists(filepath);
+
+        // Delete the temp file if exists
+        if (tempFilepath != null) {
+            Files.deleteIfExists(tempFilepath);
         }
     }
 }
-/*
-    String filePath = "D:\\tmp\\async_file_write.txt";
-    Path file = Paths.get(filePath);
-    try(AsynchronousFileChannel asyncFile = AsynchronousFileChannel.open(file,
-        StandardOpenOption.WRITE,
-        StandardOpenOption.CREATE)) {
-
-        asyncFile.write(ByteBuffer.wrap("Some text to be written".getBytes()), 0);
-        } catch (IOException e) {
-        e.printStackTrace();
-        }*/
