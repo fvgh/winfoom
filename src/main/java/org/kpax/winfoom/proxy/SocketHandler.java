@@ -18,16 +18,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
-import org.apache.http.message.BasicHttpEntityEnclosingRequest;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
@@ -41,7 +37,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import javax.security.auth.login.CredentialException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -167,10 +162,10 @@ class SocketHandler {
         }
 
     }
-    
+
     void fullDuplex(Tunnel tunnel, AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
         Socket socket = tunnel.getSocket();
-		final OutputStream socketOutputStream = socket.getOutputStream();
+        final OutputStream socketOutputStream = socket.getOutputStream();
         Future<?> localToSocket = proxyContext.executeAsync(
                 () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
                         socketOutputStream));
@@ -245,24 +240,24 @@ class SocketHandler {
      * @throws URISyntaxException
      */
     private void handleNonConnectRequest(final HttpRequest request, final SessionInputBufferImpl inputBuffer)
-            throws IOException, URISyntaxException, CredentialException {
+            throws IOException, URISyntaxException {
         RequestLine requestLine = request.getRequestLine();
         logger.debug("Handle non-connect request {}", requestLine);
 
         // Set the streaming entity
-        if (request instanceof BasicHttpEntityEnclosingRequest) {
-            logger.debug("Create and set BufferedHttpEntity instance");
-
-            BasicHttpEntityEnclosingRequest basicHttpEntityEnclosingRequest = (BasicHttpEntityEnclosingRequest) request;
-            if (basicHttpEntityEnclosingRequest.getEntity() != null) {
-                basicHttpEntityEnclosingRequest.setEntity(new BufferedHttpEntity(basicHttpEntityEnclosingRequest.getEntity()));
-            }
+        if (request instanceof HttpEntityEnclosingRequest) {
+            logger.debug("Set enclosing entity");
+            RepetableHttpEntity entity = new RepetableHttpEntity(inputBuffer,
+                    userConfig.getCacheDirectory(),
+                    request,
+                    systemConfig.getInternalBufferLength());
+            ((HttpEntityEnclosingRequest) request).setEntity(entity);
         } else {
             logger.debug("No enclosing entity");
         }
 
         // Remove banned headers
-        List<String> bannedHeaders = request instanceof BasicHttpEntityEnclosingRequest ?
+        List<String> bannedHeaders = request instanceof HttpEntityEnclosingRequest ?
                 ENTITY_BANNED_HEADERS : DEFAULT_BANNED_HEADERS;
         for (Header header : request.getAllHeaders()) {
             if (bannedHeaders.contains(header.getName())) {
@@ -273,6 +268,7 @@ class SocketHandler {
             }
         }
 
+
         try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
 
             // Extract URI
@@ -282,6 +278,10 @@ class SocketHandler {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 // Execute the request
                 handleNonConnectResponse(response);
+            }
+        } finally {
+            if (request instanceof HttpEntityEnclosingRequest) {
+                LocalIOUtils.close((RepetableHttpEntity) ((HttpEntityEnclosingRequest) request).getEntity());
             }
         }
     }

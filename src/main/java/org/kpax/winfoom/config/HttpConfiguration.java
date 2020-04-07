@@ -78,7 +78,6 @@ public class HttpConfiguration {
 	@Bean
 	HttpClientBuilder httpClientBuilder() {
 		HttpClientBuilder builder = WinHttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
-				.setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy())
 				.setDefaultSocketConfig(socketConfig())
 				.setConnectionManager(connectionManager())
 				.setConnectionManagerShared(true)

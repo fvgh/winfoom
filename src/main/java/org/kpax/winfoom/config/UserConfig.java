@@ -12,10 +12,6 @@
 
 package org.kpax.winfoom.config;
 
-import java.nio.file.Paths;
-
-import javax.annotation.PostConstruct;
-
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -28,6 +24,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @author Eugen Covaci
@@ -49,8 +51,11 @@ public class UserConfig {
     @Value("${proxy.port:0}")
     private Integer proxyPort;
 
+    @Value("${user.home}/.winfoom/cache")
+    private Path cacheDirectory;
+
     @PostConstruct
-    public void init() {
+    public void init() throws IOException {
         if (StringUtils.isEmpty(proxyHost)) {
             try {
                 CommandExecutor.getSystemProxy().ifPresent((s) -> {
@@ -62,6 +67,16 @@ public class UserConfig {
             } catch (Exception e) {
                 logger.error("Error on getting system proxy", e);
             }
+        }
+        logger.info("Check cache directory");
+        if (!Files.exists(cacheDirectory)) {
+            logger.info("Create cache directory {}", cacheDirectory);
+            Files.createDirectories(cacheDirectory);
+        } else if (!Files.isDirectory(cacheDirectory)) {
+            throw new IllegalStateException(
+                    String.format("The file [%s] should be a directory, not a regular file", cacheDirectory));
+        } else {
+            logger.info("Using cache directory {}", cacheDirectory);
         }
     }
 
@@ -95,6 +110,10 @@ public class UserConfig {
 
     public void setProxyTestUrl(String proxyTestUrl) {
         this.proxyTestUrl = proxyTestUrl;
+    }
+
+    public Path getCacheDirectory() {
+        return cacheDirectory;
     }
 
     public void save() throws ConfigurationException {
