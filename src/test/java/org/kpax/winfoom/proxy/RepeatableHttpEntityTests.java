@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Timeout(10)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Disabled
 class RepeatableHttpEntityTests {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
