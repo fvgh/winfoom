@@ -72,7 +72,7 @@ class RepeatableHttpEntityTests {
 
     @BeforeAll
     void before() throws IOException {
-        tempDirectory = Paths.get(System.getProperty("user.dir"), "target", "temp");
+        tempDirectory = Paths.get(System.getProperty("user.dir"), "target");
         Files.createDirectories(tempDirectory);
         logger.info("Using temp directory {}", tempDirectory);
         serverSocket = AsynchronousServerSocketChannel.open()
