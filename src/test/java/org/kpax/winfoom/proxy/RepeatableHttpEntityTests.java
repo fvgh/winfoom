@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 2/29/2020
  */
-@Timeout(5)
+@Timeout(10)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RepeatableHttpEntityTests {
 
