@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Timeout(10)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Disabled
+//@Disabled
 class RepeatableHttpEntityTests {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -72,7 +72,7 @@ class RepeatableHttpEntityTests {
 
     @BeforeAll
     void before() throws IOException {
-        tempDirectory = Paths.get(System.getProperty("user.home"), ".winfoom", "temp");
+        tempDirectory = Paths.get(System.getProperty("user.dir"), "target", "temp");
         Files.createDirectories(tempDirectory);
         logger.info("Using temp directory {}", tempDirectory);
         serverSocket = AsynchronousServerSocketChannel.open()
