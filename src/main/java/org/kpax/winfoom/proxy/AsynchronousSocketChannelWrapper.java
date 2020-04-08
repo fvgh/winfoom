@@ -16,7 +16,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpVersion;
 import org.apache.http.ProtocolVersion;
-import org.kpax.winfoom.util.CrlfFormat;
+import org.kpax.winfoom.util.ObjectFormat;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A helper class that wraps an {@link AsynchronousSocketChannel}.
@@ -65,7 +64,7 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     }
 
     void write(Object obj) throws IOException {
-        outputStream.write(CrlfFormat.format(obj));
+        outputStream.write(ObjectFormat.toCrlf(obj, ObjectFormat.UTF_8));
     }
 
     void writeln(Object obj) throws IOException {
@@ -74,7 +73,7 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     }
 
     void writeln() throws IOException {
-        outputStream.write(CrlfFormat.CRLF.getBytes());
+        outputStream.write(ObjectFormat.CRLF.getBytes());
     }
 
     void writelnError(int statusCode, Exception e) {

@@ -12,10 +12,12 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.execchain.TunnelRefusedException;
@@ -28,6 +30,7 @@ import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,7 +106,11 @@ class SocketHandler {
         try {
             // Prepare request parsing (this is the client's request)
             SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(
-                    new HttpTransportMetricsImpl(), LocalIOUtils.DEFAULT_BUFFER_SIZE);
+                    new HttpTransportMetricsImpl(),
+                    LocalIOUtils.DEFAULT_BUFFER_SIZE,
+                    LocalIOUtils.DEFAULT_BUFFER_SIZE,
+                    MessageConstraints.DEFAULT,
+                    ObjectFormat.UTF_8.newDecoder());
             inputBuffer.bind(localSocketChannel.getInputStream());
 
             // Parse the request (all but the message body )
@@ -306,8 +313,22 @@ class SocketHandler {
             localSocketChannel.write(response.getStatusLine());
 
             for (Header header : response.getAllHeaders()) {
-                logger.debug("Write response header: {}", header);
-                localSocketChannel.write(header);
+                if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
+                    // Strip 'chunked' from Transfer-Encoding header's value
+                    // since the response is not chunked
+                    String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
+                    if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
+                        localSocketChannel.write(
+                                HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
+                                        nonChunkedTransferEncoding));
+                        logger.debug("Add chunk-striped header response");
+                    } else {
+                        logger.debug("Remove transfer encoding chunked header response");
+                    }
+                } else {
+                    logger.debug("Write response header: {}", header);
+                    localSocketChannel.write(header);
+                }
             }
 
             // Empty line marking the end

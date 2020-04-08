@@ -14,25 +14,38 @@ package org.kpax.winfoom.util;
 
 import org.apache.commons.lang3.Validate;
 
+import java.nio.charset.Charset;
+
 /**
  * @author Eugen Covaci
  */
-public final class CrlfFormat {
+public final class ObjectFormat {
 
     public static final String CRLF = "\r\n";
 
-    private CrlfFormat() {
+    public static final Charset UTF_8 = Charset.forName("UTF-8");
+
+    private ObjectFormat() {
     }
 
     /**
-     * Calls the <code>input.toString()</code> and appends CRLF.
+     * @see #toCrlf(Object, Charset)
      *
-     * @param input The object to be formatted (not null).
-     * @return The resulted string as bytes.
      */
-    public static byte[] format(Object input) {
+    public static byte[] toCrlf(Object input) {
         Validate.notNull(input, "input cannot be null");
         return (input + CRLF).getBytes();
+    }
+
+    /**
+     *  Calls the <code>input.toString()</code> and appends CRLF.
+     * @param input The object to be formatted (not null).
+     * @param charset The charset to be used (not null).
+     * @return The resulted string as bytes.
+     */
+    public static byte[] toCrlf(Object input, Charset charset) {
+        Validate.notNull(input, "input cannot be null");
+        return (input + CRLF).getBytes(charset);
     }
 
 }
