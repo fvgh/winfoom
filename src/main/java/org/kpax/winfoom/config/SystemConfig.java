@@ -57,6 +57,9 @@ public class SystemConfig {
     @Value("${connection.manager.idleTimeout}")
     private Integer connectionManagerIdleTimeout;
 
+    @Value("${socket.channel.backlog}")
+    private Integer socketChannelBacklog;
+
     @Value("${use.system.properties}")
     private boolean useSystemProperties;
 
@@ -115,4 +118,7 @@ public class SystemConfig {
         return connectionManagerIdleTimeout;
     }
 
+    public Integer getSocketChannelBacklog() {
+        return socketChannelBacklog;
+    }
 }

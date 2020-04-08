@@ -78,7 +78,7 @@ public class LocalProxyServer implements Closeable {
 
         try {
             serverSocket = AsynchronousServerSocketChannel.open()
-                    .bind(new InetSocketAddress(userConfig.getLocalPort()));
+                    .bind(new InetSocketAddress(userConfig.getLocalPort()), systemConfig.getSocketChannelBacklog());
             serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
 
                 public void completed(AsynchronousSocketChannel socketChanel, Void att) {
