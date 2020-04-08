@@ -94,8 +94,7 @@ class SocketHandler {
 
     SocketHandler bind(final AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already bound!");
-        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel,
-                systemConfig.getSocketChannelTimeout());
+        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
         return this;
     }
 

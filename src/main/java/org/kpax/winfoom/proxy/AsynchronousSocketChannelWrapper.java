@@ -45,13 +45,9 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     private final OutputStream outputStream;
 
-    private final int timeout;
-
-    AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel, int timeout) {
+    AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel) {
         Validate.notNull(socketChannel, "socketChannel cannot be null");
-        Validate.isTrue(timeout > 0, "socketChannel cannot be null");
         this.socketChannel = socketChannel;
-        this.timeout = timeout;
         inputStream = new SocketChannelInputStream();
         outputStream = new SocketChannelOutputStream();
     }
@@ -115,7 +111,6 @@ class AsynchronousSocketChannelWrapper implements Closeable {
             ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
             try {
                 return socketChannel.read(buffer).get();
-               // return socketChannel.read(buffer).get(timeout, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());
             } catch (Exception e) {
@@ -137,7 +132,6 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         public void write(byte[] b, int off, int len) throws IOException {
             ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
             try {
-                //socketChannel.write(buffer).get(timeout, TimeUnit.SECONDS);
                 socketChannel.write(buffer).get();
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());

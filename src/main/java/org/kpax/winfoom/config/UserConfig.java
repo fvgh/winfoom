@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.kpax.winfoom.util.CommandExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
@@ -51,7 +52,6 @@ public class UserConfig {
     @Value("${proxy.port:0}")
     private Integer proxyPort;
 
-    @Value("${user.home}/.winfoom/temp")
     private Path tempDirectory;
 
     @PostConstruct
@@ -78,6 +78,11 @@ public class UserConfig {
         } else {
             logger.info("Using temp directory {}", tempDirectory);
         }
+    }
+
+    @Autowired
+    private void setTempDirectory(@Value("${user.home}") String userHome) {
+        tempDirectory = Paths.get(userHome,".winfoom", "temp");
     }
 
     public Integer getLocalPort() {

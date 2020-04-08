@@ -60,9 +60,6 @@ public class SystemConfig {
     @Value("${use.system.properties}")
     private boolean useSystemProperties;
 
-    @Value("${socket.channel.timeout}")
-    private Integer socketChannelTimeout;
-
     private String releaseVersion;
 
     @PostConstruct
@@ -118,7 +115,4 @@ public class SystemConfig {
         return connectionManagerIdleTimeout;
     }
 
-    public Integer getSocketChannelTimeout() {
-        return socketChannelTimeout;
-    }
 }
