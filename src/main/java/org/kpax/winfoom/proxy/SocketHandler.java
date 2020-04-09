@@ -258,7 +258,8 @@ class SocketHandler {
                     request,
                     systemConfig.getInternalBufferLength());
             Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
-            if (transferEncoding != null && HTTP.CHUNK_CODING.equalsIgnoreCase(transferEncoding.getValue())) {
+            if (transferEncoding != null
+                    && StringUtils.containsIgnoreCase(transferEncoding.getValue(), HTTP.CHUNK_CODING)) {
                 logger.debug("Mark entity as chunked");
                 entity.setChunked(true);
             }
