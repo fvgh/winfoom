@@ -46,6 +46,7 @@ public class FoomApplication {
 				frame.pack();
 				frame.setLocationRelativeTo(null);
 				frame.setVisible(true);
+				frame.focusOnStartButton();
 			} catch (Exception e) {
 				logger.error("GUI error", e);
 			}

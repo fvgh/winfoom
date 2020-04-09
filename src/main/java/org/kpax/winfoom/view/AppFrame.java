@@ -207,6 +207,10 @@ public class AppFrame extends JFrame {
         initDataBindings();
     }
 
+    public void focusOnStartButton() {
+        getBtnStart().requestFocus();
+    }
+
     // ---------- Labels
 
     private JLabel getProxyHostLabel() {
@@ -277,7 +281,10 @@ public class AppFrame extends JFrame {
         if (btnStart == null) {
             btnStart = new JButton("Start");
             btnStart.setIcon(new TunedImageIcon("config/img/arrow-right.png"));
-            btnStart.addActionListener(e -> startServer());
+            btnStart.addActionListener(e -> {
+                startServer();
+                getBtnStop().requestFocus();
+            });
         }
         return btnStart;
     }
@@ -285,7 +292,10 @@ public class AppFrame extends JFrame {
     private JButton getBtnStop() {
         if (btnStop == null) {
             btnStop = new JButton("Stop");
-            btnStop.addActionListener(e -> stopServer());
+            btnStop.addActionListener(e -> {
+                stopServer();
+                focusOnStartButton();
+            });
             btnStop.setIcon(new TunedImageIcon("config/img/process-stop.png"));
             btnStop.setEnabled(false);
         }
