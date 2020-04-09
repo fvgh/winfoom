@@ -194,6 +194,7 @@ public class RepeatableHttpEntity extends AbstractHttpEntity implements Closeabl
 
                 //read from file
                 Files.newInputStream(tempFilepath).transferTo(outStream);
+                outStream.flush();
             }
         }
     }
