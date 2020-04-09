@@ -262,6 +262,20 @@ class SocketHandler {
                     && StringUtils.containsIgnoreCase(transferEncoding.getValue(), HTTP.CHUNK_CODING)) {
                 logger.debug("Mark entity as chunked");
                 entity.setChunked(true);
+
+                // Apache HttpClient adds a Transfer-Encoding header's chunk directive
+                // so remove or strip the existent one of chunk directive
+                request.removeHeader(transferEncoding);
+                String nonChunkedTransferEncoding = HttpUtils.stripChunked(transferEncoding.getValue());
+                if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
+                    request.addHeader(
+                            HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
+                                    nonChunkedTransferEncoding));
+                    logger.debug("Add chunk-striped request header");
+                } else {
+                    logger.debug("Remove transfer encoding chunked request header");
+                }
+
             }
             ((HttpEntityEnclosingRequest) request).setEntity(entity);
         } else {
@@ -279,7 +293,6 @@ class SocketHandler {
                 logger.debug("Allow request header {}", header);
             }
         }
-
 
         try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
 
