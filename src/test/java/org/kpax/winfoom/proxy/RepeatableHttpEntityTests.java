@@ -99,14 +99,12 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
 
                         HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
                         request = requestParser.parse();
-                        System.out.println(request);
                         requestEntity = new RepeatableHttpEntity(inputBuffer, tempDirectory, request,
                                 bufferSize);
                         Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
                         if (transferEncoding != null && HTTP.CHUNK_CODING.equalsIgnoreCase(transferEncoding.getValue())) {
                             requestEntity.setChunked(true);
                         }
-                        System.out.println(requestEntity.isChunked());
                         ((HttpEntityEnclosingRequest) request).setEntity(requestEntity);
                         localSocketChannel.write("HTTP/1.1 200 OK");
                     } catch (Exception e) {
