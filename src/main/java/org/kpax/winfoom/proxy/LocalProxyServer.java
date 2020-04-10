@@ -90,11 +90,7 @@ public class LocalProxyServer implements Closeable {
                     // Tune the socket for better performance.
                     try {
                         applicationContext.getBean(SocketHandler.class)
-                                .bind(socketChanel
-                                        .setOption(StandardSocketOptions.SO_RCVBUF,
-                                                systemConfig.getServerSocketBufferSize())
-                                        .setOption(StandardSocketOptions.SO_SNDBUF,
-                                                systemConfig.getServerSocketBufferSize()))
+                                .bind(socketChanel)
                                 .handleRequest();
                     } catch (Exception e) {
                         logger.error("Error on handling connection", e);

@@ -88,7 +88,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
                 }
 
                 // Handle this connection.
-                try (AsynchronousSocketChannelWrapper localSocketChannel = new AsynchronousSocketChannelWrapper(socketChanel)) {
+                try (AsynchronousSocketChannelWrapper localSocketChannel = new AsynchronousSocketChannelWrapper(socketChanel, 10)) {
                     HttpRequest request;
                     RepeatableHttpEntity requestEntity;
                     try {

@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A helper class that wraps an {@link AsynchronousSocketChannel}.
@@ -44,11 +45,14 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     private final OutputStream outputStream;
 
-    AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel) {
+    private final int socketChannelTimeout;
+
+    AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel, int socketChannelTimeout) {
         Validate.notNull(socketChannel, "socketChannel cannot be null");
         this.socketChannel = socketChannel;
-        inputStream = new SocketChannelInputStream();
-        outputStream = new SocketChannelOutputStream();
+        this.socketChannelTimeout = socketChannelTimeout;
+        inputStream = new SocketChannelInputStream(Thread.currentThread().getName());
+        outputStream = new SocketChannelOutputStream(Thread.currentThread().getName());
     }
 
     AsynchronousSocketChannel getSocketChannel() {
@@ -100,6 +104,12 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     private class SocketChannelInputStream extends InputStream {
 
+        String parentThreadName;
+
+        public SocketChannelInputStream(String parentThreadName) {
+            this.parentThreadName = parentThreadName;
+        }
+
         @Override
         public int read() {
             throw new NotImplementedException("Do not use it");
@@ -109,10 +119,11 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         public int read(byte[] b, int off, int len) throws IOException {
             ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
             try {
-                return socketChannel.read(buffer).get();// FIXME This might hang on misbehaving clients. Timeout is not a solution
+                return socketChannel.read(buffer).get(socketChannelTimeout, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());
             } catch (Exception e) {
+                logger.error("Read error [" + parentThreadName + "]", e);
                 throw new IOException(e);
             }
 
@@ -121,6 +132,12 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     }
 
     private class SocketChannelOutputStream extends OutputStream {
+
+        String parentThreadName;
+
+        public SocketChannelOutputStream(String parentThreadName) {
+            this.parentThreadName = parentThreadName;
+        }
 
         @Override
         public void write(int b) {
@@ -131,10 +148,11 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         public void write(byte[] b, int off, int len) throws IOException {
             ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
             try {
-                socketChannel.write(buffer).get();
+                socketChannel.write(buffer).get(socketChannelTimeout, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());
             } catch (Exception e) {
+                logger.error("Write error [" + parentThreadName + "]", e);
                 throw new IOException(e);
             }
         }

@@ -59,6 +59,9 @@ public class SystemConfig {
     @Value("${socket.channel.backlog}")
     private Integer socketChannelBacklog;
 
+    @Value("${socket.channel.timeout}")
+    private Integer socketChannelTimeout;
+
     @Value("${use.system.properties}")
     private boolean useSystemProperties;
 
@@ -119,5 +122,9 @@ public class SystemConfig {
 
     public Integer getSocketChannelBacklog() {
         return socketChannelBacklog;
+    }
+
+    public Integer getSocketChannelTimeout() {
+        return socketChannelTimeout;
     }
 }

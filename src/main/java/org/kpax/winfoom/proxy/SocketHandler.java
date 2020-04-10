@@ -39,6 +39,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Socket;
@@ -48,6 +49,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -97,7 +99,7 @@ class SocketHandler {
 
     SocketHandler bind(final AsynchronousSocketChannel socketChannel) {
         Assert.isNull(localSocketChannel, "Socket already bound!");
-        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel);
+        this.localSocketChannel = new AsynchronousSocketChannelWrapper(socketChannel, systemConfig.getSocketChannelTimeout());
         return this;
     }
 
@@ -169,23 +171,6 @@ class SocketHandler {
 
     }
 
-    void fullDuplex(Tunnel tunnel) throws IOException {
-        Socket socket = tunnel.getSocket();
-        final OutputStream socketOutputStream = socket.getOutputStream();
-        Future<?> localToSocket = proxyContext.executeAsync(
-                () -> LocalIOUtils.copyQuietly(localSocketChannel.getInputStream(),
-                        socketOutputStream));
-        LocalIOUtils.copyQuietly(socket.getInputStream(), localSocketChannel.getOutputStream());
-        if (!localToSocket.isDone()) {
-            try {
-                // Wait for async copy to finish
-                localToSocket.get();
-            } catch (Exception e) {
-                logger.debug("Error on writing to socket", e);
-            }
-        }
-    }
-
     /**
      * Handles the tunnel's response.<br>
      * <b>It should not throw any exception!</b>
@@ -205,6 +190,29 @@ class SocketHandler {
         } catch (Exception e) {
             logger.debug("Error on handling CONNECT response", e);
         }
+    }
+
+    void fullDuplex(Tunnel tunnel) throws IOException {
+        Socket socket = tunnel.getSocket();
+        final InputStream socketInputStream = socket.getInputStream();
+        Future<?> localToSocket = proxyContext.executeAsync(
+                () -> LocalIOUtils.copyQuietly(socketInputStream, localSocketChannel.getOutputStream()));
+        try {
+            LocalIOUtils.copy(localSocketChannel.getInputStream(),
+                    socket.getOutputStream());
+            if (!localToSocket.isDone()) {
+                try {
+                    // Wait for async copy to finish
+                    localToSocket.get(systemConfig.getSocketChannelTimeout(), TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    logger.debug("Error on writing to socket", e);
+                }
+            }
+        } catch (IOException e) {
+            localToSocket.cancel(true);
+            logger.debug("Error on reading from socket", e);
+        }
+
     }
 
     /**
