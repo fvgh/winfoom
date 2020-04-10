@@ -99,13 +99,4 @@ public class HttpConfiguration {
         }
     }
 
-    @Bean
-    SocketConfig socketConfig() {
-        return SocketConfig.custom()
-                .setTcpNoDelay(true)
-                .setSndBufSize(systemConfig.getSocketBufferSize())
-                .setRcvBufSize(systemConfig.getSocketBufferSize())
-                .build();
-    }
-
 }

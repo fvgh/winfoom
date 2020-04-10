@@ -48,15 +48,11 @@ public class HttpClientBuilderFactory {
     private CredentialsProvider credentialsProvider;
 
     @Autowired
-    private SocketConfig socketConfig;
-
-    @Autowired
     private PoolingHttpClientConnectionManager connectionManager;
 
     HttpClientBuilder createHttpClientBuilder() {
         RequestConfig requestConfig = createRequestConfig();
         HttpClientBuilder builder = WinHttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
-                .setDefaultSocketConfig(socketConfig)
                 .setConnectionManager(connectionManager)
                 .setConnectionManagerShared(true)
                 .setDefaultRequestConfig(requestConfig)
