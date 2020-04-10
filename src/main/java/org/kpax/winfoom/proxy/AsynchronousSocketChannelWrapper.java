@@ -109,7 +109,7 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         public int read(byte[] b, int off, int len) throws IOException {
             ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
             try {
-                return socketChannel.read(buffer).get();// FIXME This hangs on bad requests. Timeout is not a solution
+                return socketChannel.read(buffer).get();// FIXME This might hang on misbehaving clients. Timeout is not a solution
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());
             } catch (Exception e) {
