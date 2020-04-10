@@ -203,7 +203,7 @@ class SocketHandler {
             if (!localToSocket.isDone()) {
                 try {
                     // Wait for async copy to finish
-                    localToSocket.get(systemConfig.getSocketChannelTimeout(), TimeUnit.SECONDS);
+                    localToSocket.get();
                 } catch (Exception e) {
                     logger.debug("Error on writing to socket", e);
                 }
