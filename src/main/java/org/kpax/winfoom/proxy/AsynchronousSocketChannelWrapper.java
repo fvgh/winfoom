@@ -51,8 +51,8 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         Validate.notNull(socketChannel, "socketChannel cannot be null");
         this.socketChannel = socketChannel;
         this.socketChannelTimeout = socketChannelTimeout;
-        inputStream = new SocketChannelInputStream(Thread.currentThread().getName());
-        outputStream = new SocketChannelOutputStream(Thread.currentThread().getName());
+        inputStream = new SocketChannelInputStream();
+        outputStream = new SocketChannelOutputStream();
     }
 
     AsynchronousSocketChannel getSocketChannel() {
@@ -104,12 +104,6 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     private class SocketChannelInputStream extends InputStream {
 
-        String parentThreadName;
-
-        public SocketChannelInputStream(String parentThreadName) {
-            this.parentThreadName = parentThreadName;
-        }
-
         @Override
         public int read() {
             throw new NotImplementedException("Do not use it");
@@ -123,7 +117,6 @@ class AsynchronousSocketChannelWrapper implements Closeable {
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());
             } catch (Exception e) {
-                logger.error("Read error [" + parentThreadName + "]", e);
                 throw new IOException(e);
             }
 
@@ -132,12 +125,6 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     }
 
     private class SocketChannelOutputStream extends OutputStream {
-
-        String parentThreadName;
-
-        public SocketChannelOutputStream(String parentThreadName) {
-            this.parentThreadName = parentThreadName;
-        }
 
         @Override
         public void write(int b) {
@@ -152,7 +139,6 @@ class AsynchronousSocketChannelWrapper implements Closeable {
             } catch (ExecutionException e) {
                 throw new IOException(e.getCause());
             } catch (Exception e) {
-                logger.error("Write error [" + parentThreadName + "]", e);
                 throw new IOException(e);
             }
         }
