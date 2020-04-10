@@ -38,15 +38,6 @@ public class SystemConfig {
     @Value("${max.connections}")
     private Integer maxConnections;
 
-    @Value("${server.socket.buffer.size}")
-    private Integer serverSocketBufferSize;
-
-    @Value("${socket.buffer.size}")
-    private Integer socketBufferSize;
-
-    @Value("${repeats.on.failure}")
-    private Integer repeatsOnFailure;
-
     @Value("${internal.buffer.length}")
     private Integer internalBufferLength;
 
@@ -86,18 +77,6 @@ public class SystemConfig {
 
     public Integer getMaxConnections() {
         return maxConnections;
-    }
-
-    public Integer getServerSocketBufferSize() {
-        return serverSocketBufferSize;
-    }
-
-    public Integer getSocketBufferSize() {
-        return socketBufferSize;
-    }
-
-    public Integer getRepeatsOnFailure() {
-        return repeatsOnFailure;
     }
 
     public String getReleaseVersion() {
