@@ -112,7 +112,7 @@ public final class HttpUtils {
         logger.info("Test proxy config {}", userConfig);
         try (CloseableHttpClient httpClient = WinHttpClients.createDefault()) {
             HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
-            HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
+            HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
             RequestConfig config = RequestConfig.custom()
                     .setProxy(proxy)
                     .build();
