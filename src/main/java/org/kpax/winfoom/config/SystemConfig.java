@@ -12,17 +12,16 @@
 
 package org.kpax.winfoom.config;
 
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
-
-import javax.annotation.PostConstruct;
-
 import org.kpax.winfoom.FoomApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 /**
  * @author Eugen Covaci

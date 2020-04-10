@@ -12,10 +12,6 @@
 
 package org.kpax.winfoom;
 
-import java.awt.EventQueue;
-
-import javax.swing.UIManager;
-
 import org.kpax.winfoom.view.AppFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,34 +19,37 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import javax.swing.*;
+import java.awt.*;
+
 /**
  * The entry point for Winfoom application.
  */
 @SpringBootApplication
 public class FoomApplication {
 
-	private static final Logger logger = LoggerFactory.getLogger(FoomApplication.class);
+    private static final Logger logger = LoggerFactory.getLogger(FoomApplication.class);
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
 
-		try {
-			UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-		} catch (Exception e) {
-			logger.warn("Failed to set Windows L&F, use the default look and feel", e);
-		}
+        try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        } catch (Exception e) {
+            logger.warn("Failed to set Windows L&F, use the default look and feel", e);
+        }
 
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(FoomApplication.class, args);
-		final AppFrame frame = applicationContext.getBean(AppFrame.class);
-		EventQueue.invokeLater(() -> {
-			try {
-				frame.pack();
-				frame.setLocationRelativeTo(null);
-				frame.setVisible(true);
-				frame.focusOnStartButton();
-			} catch (Exception e) {
-				logger.error("GUI error", e);
-			}
-		});
-	}
+        ConfigurableApplicationContext applicationContext = SpringApplication.run(FoomApplication.class, args);
+        final AppFrame frame = applicationContext.getBean(AppFrame.class);
+        EventQueue.invokeLater(() -> {
+            try {
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+                frame.focusOnStartButton();
+            } catch (Exception e) {
+                logger.error("GUI error", e);
+            }
+        });
+    }
 
 }

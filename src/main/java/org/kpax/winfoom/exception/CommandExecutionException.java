@@ -17,7 +17,7 @@ package org.kpax.winfoom.exception;
  */
 public class CommandExecutionException extends Exception {
 
-	private static final long serialVersionUID = -7892346088830154581L;
+    private static final long serialVersionUID = -7892346088830154581L;
 
     public CommandExecutionException(String message) {
         super(message);

@@ -16,8 +16,8 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpVersion;
 import org.apache.http.ProtocolVersion;
-import org.kpax.winfoom.util.ObjectFormat;
 import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

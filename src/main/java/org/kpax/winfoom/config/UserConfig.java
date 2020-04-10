@@ -80,11 +80,6 @@ public class UserConfig {
         }
     }
 
-    @Autowired
-    private void setTempDirectory(@Value("${user.home}") String userHome) {
-        tempDirectory = Paths.get(userHome,".winfoom", "temp");
-    }
-
     public Integer getLocalPort() {
         return localPort;
     }
@@ -119,6 +114,11 @@ public class UserConfig {
 
     public Path getTempDirectory() {
         return tempDirectory;
+    }
+
+    @Autowired
+    private void setTempDirectory(@Value("${user.home}") String userHome) {
+        tempDirectory = Paths.get(userHome, ".winfoom", "temp");
     }
 
     public void save() throws ConfigurationException {

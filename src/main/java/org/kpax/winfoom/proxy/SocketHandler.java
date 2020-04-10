@@ -19,7 +19,6 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
@@ -69,6 +68,7 @@ class SocketHandler {
             HttpHeaders.CONTENT_TYPE,
             HttpHeaders.CONTENT_ENCODING,
             HttpHeaders.PROXY_AUTHORIZATION);
+
     /**
      * These headers will be removed from client's response if there is no enclosing
      * entity (it means the request has no body).
@@ -91,7 +91,7 @@ class SocketHandler {
     private CustomProxyClient proxyClient;
 
     @Autowired
-    private HttpClientBuilder httpClientBuilder;
+    private HttpClientBuilderFactory clientBuilderFactory;
 
     private AsynchronousSocketChannelWrapper localSocketChannel;
 
@@ -294,7 +294,7 @@ class SocketHandler {
             }
         }
 
-        try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
+        try (CloseableHttpClient httpClient = clientBuilderFactory.createHttpClientBuilder().build()) {
 
             // Extract URI
             URI uri = HttpUtils.parseUri(requestLine.getUri());

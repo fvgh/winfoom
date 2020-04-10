@@ -175,7 +175,7 @@ public final class HttpUtils {
         return ContentType.create(contentType, charset);
     }
 
-    public static void consumeEntity (HttpEntity httpEntity) throws IOException {
+    public static void consumeEntity(HttpEntity httpEntity) throws IOException {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpEntity.writeTo(outStream);
         outStream.flush();

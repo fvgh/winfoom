@@ -15,7 +15,6 @@ package org.kpax.winfoom.proxy;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.event.AfterServerStopEvent;
-import org.kpax.winfoom.event.BeforeServerStartEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,8 +72,6 @@ public class LocalProxyServer implements Closeable {
             throw new IllegalStateException("Server already started!");
         }
         logger.info("Start local proxy server with userConfig {}", userConfig);
-
-        applicationEventPublisher.publishEvent(new BeforeServerStartEvent(this));
 
         try {
             serverSocket = AsynchronousServerSocketChannel.open()

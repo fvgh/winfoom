@@ -105,7 +105,8 @@ public final class LocalIOUtils extends IOUtils {
             }
         }
     }
-    public static String generateCacheFilename () {
+
+    public static String generateCacheFilename() {
         return new StringBuffer()
                 .append(System.nanoTime())
                 .append("-")
