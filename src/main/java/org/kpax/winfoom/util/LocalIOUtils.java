@@ -12,7 +12,6 @@
 
 package org.kpax.winfoom.util;
 
-import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.slf4j.Logger;
@@ -20,14 +19,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Iterator;
 
 /**
  * @author Eugen Covaci
  */
-public final class LocalIOUtils extends IOUtils {
+public final class LocalIOUtils {
 
     public static final int DEFAULT_BUFFER_SIZE = 4 * 1024;
 
@@ -50,60 +46,22 @@ public final class LocalIOUtils extends IOUtils {
         }
     }
 
-    /**
-     * Copy from <code>inputStream</code> to <code>outputStream</code> until EOF is
-     * reached.
-     *
-     * @param inputStream  The input stream to copy from.
-     * @param outputStream The output stream to write into.
-     */
-    public static void copyQuietly(InputStream inputStream, OutputStream outputStream) {
-        byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
-        try {
-            int len;
-            while ((len = inputStream.read(buffer)) != EOF) {
-                outputStream.write(buffer, 0, len);
-                outputStream.flush();
-            }
-
-        } catch (Exception e) {
-            logger.debug("Error on reading bytes", e);
-        }
-    }
 
     /**
      * Close all <code>closeables</code>.
      *
-     * @param closeables The the array of {@link Closeable}
+     * @param closeable The {@link Closeable} instance.
      */
-    public static void close(Closeable... closeables) {
-        if (closeables != null) {
-            for (Closeable closable : closeables) {
-                if (closable != null) {
-                    logger.debug("Close {}", closable.getClass());
-                    try {
-                        closable.close();
-                    } catch (Exception e) {
-                        logger.debug("Fail to close: " + closable.getClass().getName(), e);
-                    }
-                }
+    public static void close(Closeable closeable) {
+        if (closeable != null) {
+            logger.debug("Close {}", closeable.getClass());
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                logger.debug("Fail to close: " + closeable.getClass().getName(), e);
             }
         }
-    }
 
-    public static void mergeProperties(PropertiesConfiguration from, PropertiesConfiguration to) {
-        for (Iterator<String> itr = to.getKeys(); itr.hasNext(); ) {
-            String key = itr.next();
-            if (!from.containsKey(key)) {
-                itr.remove();
-            }
-        }
-        for (Iterator<String> itr = from.getKeys(); itr.hasNext(); ) {
-            String key = itr.next();
-            if (!to.containsKey(key)) {
-                to.addProperty(key, from.getProperty(key));
-            }
-        }
     }
 
     public static String generateCacheFilename() {

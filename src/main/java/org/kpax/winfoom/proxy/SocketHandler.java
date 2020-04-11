@@ -40,7 +40,6 @@ import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.URI;
@@ -48,8 +47,8 @@ import java.net.URISyntaxException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -196,16 +195,18 @@ class SocketHandler {
         Socket socket = tunnel.getSocket();
         final InputStream socketInputStream = socket.getInputStream();
         Future<?> localToSocket = proxyContext.executeAsync(
-                () -> LocalIOUtils.copyQuietly(socketInputStream, localSocketChannel.getOutputStream()));
+                () -> socketInputStream.transferTo(localSocketChannel.getOutputStream()));
         try {
-            LocalIOUtils.copy(localSocketChannel.getInputStream(),
-                    socket.getOutputStream());
+            localSocketChannel.getInputStream().transferTo(socket.getOutputStream());
             if (!localToSocket.isDone()) {
+
+                // Wait for async copy to finish
                 try {
-                    // Wait for async copy to finish
                     localToSocket.get();
-                } catch (Exception e) {
+                } catch (ExecutionException e) {
                     logger.debug("Error on writing to socket", e);
+                } catch (Exception e) {
+                    logger.debug("Failed to write to socket", e);
                 }
             }
         } catch (IOException e) {

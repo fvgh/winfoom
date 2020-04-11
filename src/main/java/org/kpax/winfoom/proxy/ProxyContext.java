@@ -62,6 +62,17 @@ public class ProxyContext implements AutoCloseable {
         return threadPool.submit(runnable);
     }
 
+
+    /**
+     * Submit to the internal executor a {@link Callable} instance for asynchronous execution.
+     *
+     * @param callable The instance to be submitted for execution.
+     * @return The <code>Future</code> instance.
+     */
+    public <T> Future<T> executeAsync(Callable<T> callable) {
+        return threadPool.submit(callable);
+    }
+
     /**
      * Check whether the local proxy server is started.
      *
