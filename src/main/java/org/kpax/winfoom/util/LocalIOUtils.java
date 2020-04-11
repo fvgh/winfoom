@@ -24,7 +24,7 @@ import java.io.IOException;
  */
 public final class LocalIOUtils {
 
-    public static final int DEFAULT_BUFFER_SIZE = 4 * 1024;
+    public static final int DEFAULT_BUFFER_SIZE = 8192;
 
     private static final Logger logger = LoggerFactory.getLogger(LocalIOUtils.class);
 
