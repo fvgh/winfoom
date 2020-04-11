@@ -12,7 +12,6 @@
 
 package org.kpax.winfoom.util;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
