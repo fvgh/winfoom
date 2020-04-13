@@ -13,13 +13,11 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
@@ -34,21 +32,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ConnectException;
-import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -64,7 +59,6 @@ class SocketHandler {
      * entity.
      */
     private static final List<String> ENTITY_BANNED_HEADERS = Arrays.asList(
-
             HttpHeaders.CONTENT_LENGTH,
             HttpHeaders.CONTENT_TYPE,
             HttpHeaders.CONTENT_ENCODING,
@@ -86,13 +80,10 @@ class SocketHandler {
     private UserConfig userConfig;
 
     @Autowired
-    private ProxyContext proxyContext;
-
-    @Autowired
-    private CustomProxyClient proxyClient;
-
-    @Autowired
     private HttpClientBuilderFactory clientBuilderFactory;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
     private AsynchronousSocketChannelWrapper localSocketChannel;
 
@@ -102,7 +93,7 @@ class SocketHandler {
         return this;
     }
 
-    void handleRequest() {
+    void handleConnection() {
         logger.debug("Connection received");
         try {
             // Prepare request parsing (this is the client's request)
@@ -120,9 +111,9 @@ class SocketHandler {
 
             logger.debug("Start processing request {}", requestLine);
             if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
-                handleConnect(requestLine);
+                applicationContext.getBean(ConnectRequestHandler.class).handleConnect(requestLine, localSocketChannel);
             } else {
-                handleNonConnectRequest(request, inputBuffer);
+                handleRequest(request, inputBuffer);
             }
             logger.debug("End processing request {}", requestLine);
 
@@ -148,105 +139,6 @@ class SocketHandler {
     }
 
     /**
-     * Creates a tunnel through proxy, then let the client and the remote proxy
-     * communicate via the local socket channel instance.
-     *
-     * @param requestLine The first line of the request.
-     * @throws HttpException
-     * @throws IOException
-     */
-    private void handleConnect(final RequestLine requestLine) throws HttpException, IOException {
-        logger.debug("Handle proxy connect request");
-        Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
-        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-        HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
-
-        try (Tunnel tunnel = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion())) {
-            handleConnectResponse(tunnel);
-        } catch (TunnelRefusedException tre) {
-            logger.debug("The tunnel request was rejected by the proxy host", tre);
-            writeHttpResponse(tre.getResponse());
-        }
-
-    }
-
-    /**
-     * Handles the tunnel's response.<br>
-     * <b>It should not throw any exception!</b>
-     *
-     * @param tunnel The tunnel's instance
-     */
-    private void handleConnectResponse(final Tunnel tunnel) {
-        try {
-            logger.debug("Write status line");
-            localSocketChannel.write(tunnel.getStatusLine());
-
-            logger.debug("Write empty line");
-            localSocketChannel.writeln();
-
-            logger.debug("Start full duplex communication");
-            fullDuplex(tunnel);
-        } catch (Exception e) {
-            logger.debug("Error on handling CONNECT response", e);
-        }
-    }
-
-    void fullDuplex(Tunnel tunnel) throws IOException {
-        Socket socket = tunnel.getSocket();
-        final InputStream socketInputStream = socket.getInputStream();
-        Future<?> localToSocket = proxyContext.executeAsync(
-                () -> socketInputStream.transferTo(localSocketChannel.getOutputStream()));
-        try {
-            localSocketChannel.getInputStream().transferTo(socket.getOutputStream());
-            if (!localToSocket.isDone()) {
-
-                // Wait for async copy to finish
-                try {
-                    localToSocket.get();
-                } catch (ExecutionException e) {
-                    logger.debug("Error on writing to socket", e);
-                } catch (Exception e) {
-                    logger.debug("Failed to write to socket", e);
-                }
-            }
-        } catch (IOException e) {
-            localToSocket.cancel(true);
-            logger.debug("Error on reading from socket", e);
-        }
-
-    }
-
-    /**
-     * Writes the HTTP response as it is.
-     *
-     * @param httpResponse The HTTP response.
-     */
-    private void writeHttpResponse(final HttpResponse httpResponse) {
-        try {
-            StatusLine statusLine = httpResponse.getStatusLine();
-            logger.debug("Write statusLine {}", statusLine);
-            localSocketChannel.write(statusLine);
-
-            logger.debug("Write headers");
-            for (Header header : httpResponse.getAllHeaders()) {
-                localSocketChannel.write(header);
-            }
-
-            // Empty line between headers and the body
-            localSocketChannel.writeln();
-
-            HttpEntity entity = httpResponse.getEntity();
-            if (entity != null) {
-                logger.debug("Write entity content");
-                entity.writeTo(localSocketChannel.getOutputStream());
-            }
-            EntityUtils.consume(entity);
-        } catch (Exception e) {
-            logger.debug("Error on writing response", e);
-        }
-    }
-
-    /**
      * Handle a non CONNECT request.
      *
      * @param request     The request to handle.
@@ -254,12 +146,11 @@ class SocketHandler {
      * @throws IOException
      * @throws URISyntaxException
      */
-    private void handleNonConnectRequest(final HttpRequest request, final SessionInputBufferImpl inputBuffer)
+    private void handleRequest(final HttpRequest request, final SessionInputBufferImpl inputBuffer)
             throws IOException, URISyntaxException {
         RequestLine requestLine = request.getRequestLine();
         logger.debug("Handle non-connect request {}", requestLine);
 
-        // Set the streaming entity
         if (request instanceof HttpEntityEnclosingRequest) {
             logger.debug("Set enclosing entity");
             RepeatableHttpEntity entity = new RepeatableHttpEntity(inputBuffer,
@@ -311,9 +202,14 @@ class SocketHandler {
                     uri.getPort(),
                     uri.getScheme());
 
+            // Execute the request
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                // Execute the request
-                handleNonConnectResponse(response);
+
+                try {
+                    handleResponse(response);
+                } catch (Exception e) {
+                    logger.debug("Error on handling non CONNECT response", e);
+                }
             }
         } finally {
             if (request instanceof HttpEntityEnclosingRequest) {
@@ -324,53 +220,49 @@ class SocketHandler {
 
     /**
      * Handles the Http response for non-CONNECT requests.<br>
-     * <b>It should not throw any exception!</b>
      *
      * @param response The Http response.
      */
-    private void handleNonConnectResponse(final CloseableHttpResponse response) {
-        try {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Write status line: {}", response.getStatusLine());
-            }
-            localSocketChannel.write(response.getStatusLine());
-
-            for (Header header : response.getAllHeaders()) {
-                if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
-                    // Strip 'chunked' from Transfer-Encoding header's value
-                    // since the response is not chunked
-                    String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
-                    if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                        localSocketChannel.write(
-                                HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
-                                        nonChunkedTransferEncoding));
-                        logger.debug("Add chunk-striped header response");
-                    } else {
-                        logger.debug("Remove transfer encoding chunked header response");
-                    }
-                } else {
-                    logger.debug("Write response header: {}", header);
-                    localSocketChannel.write(header);
-                }
-            }
-
-            // Empty line marking the end
-            // of header's section
-            localSocketChannel.writeln();
-
-            // Now write the request body, if any
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                logger.debug("Start writing entity content");
-                entity.writeTo(localSocketChannel.getOutputStream());
-                logger.debug("End writing entity content");
-
-                // Make sure the entity is fully consumed
-                EntityUtils.consume(entity);
-            }
-        } catch (Exception e) {
-            logger.debug("Error on handling non CONNECT response", e);
+    private void handleResponse(final CloseableHttpResponse response) throws IOException {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Write status line: {}", response.getStatusLine());
         }
+        localSocketChannel.write(response.getStatusLine());
+
+        for (Header header : response.getAllHeaders()) {
+            if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
+                // Strip 'chunked' from Transfer-Encoding header's value
+                // since the response is not chunked
+                String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
+                if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
+                    localSocketChannel.write(
+                            HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
+                                    nonChunkedTransferEncoding));
+                    logger.debug("Add chunk-striped header response");
+                } else {
+                    logger.debug("Remove transfer encoding chunked header response");
+                }
+            } else {
+                logger.debug("Write response header: {}", header);
+                localSocketChannel.write(header);
+            }
+        }
+
+        // Empty line marking the end
+        // of header's section
+        localSocketChannel.writeln();
+
+        // Now write the request body, if any
+        HttpEntity entity = response.getEntity();
+        if (entity != null) {
+            logger.debug("Start writing entity content");
+            entity.writeTo(localSocketChannel.getOutputStream());
+            logger.debug("End writing entity content");
+
+            // Make sure the entity is fully consumed
+            EntityUtils.consume(entity);
+        }
+
     }
 
 }

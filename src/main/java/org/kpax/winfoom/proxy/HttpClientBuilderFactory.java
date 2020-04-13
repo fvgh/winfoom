@@ -29,19 +29,13 @@ import org.springframework.stereotype.Component;
  * Created on 4/10/2020
  */
 @Component
-public class HttpClientBuilderFactory {
+class HttpClientBuilderFactory {
 
     @Autowired
     private SystemConfig systemConfig;
 
     @Autowired
     private UserConfig userConfig;
-
-    @Autowired
-    private ProxyContext proxyContext;
-
-    @Autowired
-    private CustomProxyClient proxyClient;
 
     @Autowired
     private CredentialsProvider credentialsProvider;

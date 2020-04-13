@@ -33,7 +33,7 @@ import java.nio.file.StandardOpenOption;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/6/2020
  */
-public class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
+class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
 
     private final Logger logger = LoggerFactory.getLogger(RepeatableHttpEntity.class);
 

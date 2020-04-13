@@ -14,8 +14,8 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.HttpVersion;
-import org.apache.http.ProtocolVersion;
+import org.apache.http.*;
+import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
@@ -91,6 +91,33 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         } catch (Exception ex) {
             logger.debug("Error on writing response error", ex);
         }
+    }
+
+    /**
+     * Writes the HTTP response as it is.
+     *
+     * @param httpResponse The HTTP response.
+     */
+    void writeHttpResponse(final HttpResponse httpResponse) throws Exception {
+        StatusLine statusLine = httpResponse.getStatusLine();
+        logger.debug("Write statusLine {}", statusLine);
+        write(statusLine);
+
+        logger.debug("Write headers");
+        for (Header header : httpResponse.getAllHeaders()) {
+            write(header);
+        }
+
+        // Empty line between headers and the body
+        writeln();
+
+        HttpEntity entity = httpResponse.getEntity();
+        if (entity != null) {
+            logger.debug("Write entity content");
+            entity.writeTo(outputStream);
+        }
+        EntityUtils.consume(entity);
+
     }
 
     @Override

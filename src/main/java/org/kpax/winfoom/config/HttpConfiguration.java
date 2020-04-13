@@ -41,12 +41,6 @@ public class HttpConfiguration {
     private SystemConfig systemConfig;
 
     @Autowired
-    private UserConfig userConfig;
-
-    @Autowired
-    private CredentialsProvider credentialsProvider;
-
-    @Autowired
     private ProxyContext proxyContext;
 
     /**
