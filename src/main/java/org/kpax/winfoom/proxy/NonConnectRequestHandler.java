@@ -56,7 +56,9 @@ class NonConnectRequestHandler implements RequestHandler {
      */
     private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(
             HttpHeaders.PROXY_AUTHORIZATION);
+
     private final Logger logger = LoggerFactory.getLogger(NonConnectRequestHandler.class);
+
     @Autowired
     private SystemConfig systemConfig;
 

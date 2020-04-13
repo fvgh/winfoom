@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  */
 @EnableScheduling
 @Configuration
-public class HttpConfiguration {
+class HttpConfiguration {
 
     private final Logger logger = LoggerFactory.getLogger(HttpConfiguration.class);
 

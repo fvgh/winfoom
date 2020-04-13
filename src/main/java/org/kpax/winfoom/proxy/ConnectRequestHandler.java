@@ -55,7 +55,7 @@ class ConnectRequestHandler implements RequestHandler {
                               final SessionInputBufferImpl sessionInputBuffer,
                               final AsynchronousSocketChannelWrapper socketChannelWrapper)
             throws IOException, HttpException {
-        logger.debug("Handle proxy connect request");
+        logger.debug("Handle connect request");
         RequestLine requestLine = request.getRequestLine();
         Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
