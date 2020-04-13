@@ -41,8 +41,6 @@ import java.util.List;
 @Component
 class NonConnectRequestHandler implements RequestHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(NonConnectRequestHandler.class);
-
     /**
      * These headers will be removed from client's response if there is an enclosing
      * entity.
@@ -58,8 +56,7 @@ class NonConnectRequestHandler implements RequestHandler {
      */
     private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(
             HttpHeaders.PROXY_AUTHORIZATION);
-
-
+    private final Logger logger = LoggerFactory.getLogger(NonConnectRequestHandler.class);
     @Autowired
     private SystemConfig systemConfig;
 

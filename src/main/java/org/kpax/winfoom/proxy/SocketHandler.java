@@ -12,14 +12,14 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.http.*;
-import org.apache.http.client.ClientProtocolException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpStatus;
+import org.apache.http.RequestLine;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
@@ -31,10 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.net.ConnectException;
-import java.net.URISyntaxException;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -45,31 +42,10 @@ import java.util.List;
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 class SocketHandler {
 
-    /**
-     * These headers will be removed from client's response if there is an enclosing
-     * entity.
-     */
-    private static final List<String> ENTITY_BANNED_HEADERS = Arrays.asList(
-            HttpHeaders.CONTENT_LENGTH,
-            HttpHeaders.CONTENT_TYPE,
-            HttpHeaders.CONTENT_ENCODING,
-            HttpHeaders.PROXY_AUTHORIZATION);
-
-    /**
-     * These headers will be removed from client's response if there is no enclosing
-     * entity (it means the request has no body).
-     */
-    private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(
-            HttpHeaders.PROXY_AUTHORIZATION);
-
     private final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
 
     @Autowired
     private SystemConfig systemConfig;
-
-    @Autowired
-    private UserConfig userConfig;
-
 
     @Autowired
     private RequestHandlerFactory requestHandlerFactory;

@@ -27,8 +27,9 @@ public interface RequestHandler {
 
     /**
      * Process the client's HTTP request.
-     * @param request The request.
-     * @param sessionInputBuffer The session input buffer instance.
+     *
+     * @param request              The request.
+     * @param sessionInputBuffer   The session input buffer instance.
      * @param socketChannelWrapper The {@link java.nio.channels.AsynchronousSocketChannel} wrapper instance.
      * @throws IOException
      * @throws URISyntaxException
