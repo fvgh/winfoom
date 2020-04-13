@@ -142,7 +142,7 @@ class SocketHandlerTests {
 
                 // Handle this connection.
                 try {
-                    applicationContext.getBean(SocketHandler.class).bind(socketChanel).handleRequest();
+                    applicationContext.getBean(SocketHandler.class).bind(socketChanel).handleConnection();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

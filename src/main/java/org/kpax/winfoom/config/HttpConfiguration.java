@@ -12,7 +12,6 @@
 
 package org.kpax.winfoom.config;
 
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kpax.winfoom.event.AfterServerStopEvent;
 import org.kpax.winfoom.proxy.ProxyContext;

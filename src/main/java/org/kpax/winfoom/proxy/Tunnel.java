@@ -29,8 +29,6 @@ import java.net.Socket;
  */
 class Tunnel implements Closeable {
 
-    private final Logger logger = LoggerFactory.getLogger(Tunnel.class);
-
     private ManagedHttpClientConnection connection;
     private HttpResponse response;
 

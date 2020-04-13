@@ -15,8 +15,10 @@ package org.kpax.winfoom.proxy;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
 import org.apache.http.RequestLine;
 import org.apache.http.impl.execchain.TunnelRefusedException;
+import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
@@ -35,7 +37,7 @@ import java.util.concurrent.Future;
  * Created on 4/13/2020
  */
 @Component
-class ConnectRequestHandler {
+class ConnectRequestHandler implements RequestHandler {
 
     private final Logger logger = LoggerFactory.getLogger(ConnectRequestHandler.class);
 
@@ -48,32 +50,27 @@ class ConnectRequestHandler {
     @Autowired
     private CustomProxyClient proxyClient;
 
-    /**
-     * Creates a tunnel through proxy, then let the client and the remote proxy
-     * communicate via the local socket channel instance.
-     *
-     * @param requestLine The first line of the request.
-     * @throws HttpException
-     * @throws IOException
-     */
-    void handleConnect(final RequestLine requestLine,
-                       AsynchronousSocketChannelWrapper localSocketChannel)
-            throws HttpException, IOException {
+    @Override
+    public void handleRequest(final HttpRequest request,
+                              final SessionInputBufferImpl sessionInputBuffer,
+                              final AsynchronousSocketChannelWrapper socketChannelWrapper)
+            throws IOException, HttpException {
         logger.debug("Handle proxy connect request");
+        RequestLine requestLine = request.getRequestLine();
         Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
         HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
 
         try (Tunnel tunnel = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion())) {
             try {
-                handleResponse(tunnel, localSocketChannel);
+                handleResponse(tunnel, socketChannelWrapper);
             } catch (Exception e) {
                 logger.debug("Error on handling CONNECT response", e);
             }
         } catch (TunnelRefusedException tre) {
             logger.debug("The tunnel request was rejected by the proxy host", tre);
             try {
-                localSocketChannel.writeHttpResponse(tre.getResponse());
+                socketChannelWrapper.writeHttpResponse(tre.getResponse());
             } catch (Exception e) {
                 logger.debug("Error on writing response", e);
             }
@@ -115,9 +112,9 @@ class ConnectRequestHandler {
             }
         } catch (IOException e) {
             localToSocket.cancel(true);
-            logger.debug("Error on reading from socket", e);
+            throw e;
         }
-
+        logger.debug("End full duplex communication");
     }
 
 }

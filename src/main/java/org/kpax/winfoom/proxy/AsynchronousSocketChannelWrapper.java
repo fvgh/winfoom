@@ -41,11 +41,12 @@ class AsynchronousSocketChannelWrapper implements Closeable {
 
     private final AsynchronousSocketChannel socketChannel;
 
+    private final int socketChannelTimeout;
+
     private final InputStream inputStream;
 
     private final OutputStream outputStream;
 
-    private final int socketChannelTimeout;
 
     AsynchronousSocketChannelWrapper(AsynchronousSocketChannel socketChannel, int socketChannelTimeout) {
         Validate.notNull(socketChannel, "socketChannel cannot be null");
