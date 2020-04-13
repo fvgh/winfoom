@@ -263,7 +263,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
 
 
     @Test
-    void repeatable_NoAvailableData_False() throws IOException {//OK
+    void repeatable_NoAvailableData_DoNotUseTempFile() throws IOException {//OK
         this.bufferSize = 1024;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpHost target = HttpHost.create("http://localhost:" + TestConstants.PROXY_PORT);
