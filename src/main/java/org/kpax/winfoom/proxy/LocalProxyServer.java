@@ -47,9 +47,6 @@ public class LocalProxyServer implements Closeable {
     private UserConfig userConfig;
 
     @Autowired
-    private ProxyContext proxyContext;
-
-    @Autowired
     private ApplicationContext applicationContext;
 
     @Autowired

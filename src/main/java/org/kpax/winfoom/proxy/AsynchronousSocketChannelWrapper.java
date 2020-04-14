@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -69,7 +70,7 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     }
 
     void write(Object obj) throws IOException {
-        outputStream.write(ObjectFormat.toCrlf(obj, ObjectFormat.UTF_8));
+        outputStream.write(ObjectFormat.toCrlf(obj, StandardCharsets.UTF_8));
     }
 
     void writeln(Object obj) throws IOException {

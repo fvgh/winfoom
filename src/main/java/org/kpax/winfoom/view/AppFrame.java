@@ -84,7 +84,6 @@ public class AppFrame extends JFrame {
     /**
      * Create the frame.
      */
-    @SuppressWarnings("serial")
     @PostConstruct
     public void init() {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -505,7 +504,7 @@ public class AppFrame extends JFrame {
         }
     }
 
-    private class TunedImageIcon extends ImageIcon {
+    private static class TunedImageIcon extends ImageIcon {
 
         TunedImageIcon(String filename) {
             super(filename);

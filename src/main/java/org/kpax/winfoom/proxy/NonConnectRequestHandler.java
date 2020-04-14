@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -54,7 +55,7 @@ class NonConnectRequestHandler implements RequestHandler {
      * These headers will be removed from client's response if there is no enclosing
      * entity (it means the request has no body).
      */
-    private static final List<String> DEFAULT_BANNED_HEADERS = Arrays.asList(
+    private static final List<String> DEFAULT_BANNED_HEADERS = Collections.singletonList(
             HttpHeaders.PROXY_AUTHORIZATION);
 
     private final Logger logger = LoggerFactory.getLogger(NonConnectRequestHandler.class);

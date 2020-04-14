@@ -27,8 +27,8 @@ import java.net.Socket;
  */
 class Tunnel implements Closeable {
 
-    private ManagedHttpClientConnection connection;
-    private HttpResponse response;
+    private final ManagedHttpClientConnection connection;
+    private final HttpResponse response;
 
     Tunnel(ManagedHttpClientConnection connection, HttpResponse response) {
         Validate.notNull(connection, "connection cannot be null");

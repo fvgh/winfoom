@@ -51,7 +51,7 @@ public final class Message {
         return text;
     }
 
-    public static enum MessageType {
+    public enum MessageType {
         ERROR("Error"), INFO("Information"), WARNING("Warning"), CONFIRMATION("Confirmation");
 
         private final String label;

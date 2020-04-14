@@ -32,6 +32,7 @@ import org.springframework.util.Assert;
 
 import java.net.ConnectException;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.charset.StandardCharsets;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -67,7 +68,7 @@ class SocketHandler {
                     LocalIOUtils.DEFAULT_BUFFER_SIZE,
                     LocalIOUtils.DEFAULT_BUFFER_SIZE,
                     MessageConstraints.DEFAULT,
-                    ObjectFormat.UTF_8.newDecoder());
+                    StandardCharsets.UTF_8.newDecoder());
             sessionInputBuffer.bind(socketChannelWrapper.getInputStream());
 
             // Parse the request (all but the message body )

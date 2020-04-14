@@ -23,8 +23,6 @@ public final class ObjectFormat {
 
     public static final String CRLF = "\r\n";
 
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
-
     private ObjectFormat() {
     }
 

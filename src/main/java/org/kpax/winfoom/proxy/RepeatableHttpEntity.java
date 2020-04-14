@@ -35,8 +35,6 @@ import java.nio.file.StandardOpenOption;
  */
 class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
 
-    private final Logger logger = LoggerFactory.getLogger(RepeatableHttpEntity.class);
-
     private final SessionInputBufferImpl inputBuffer;
 
     private final Path tempDirectory;
@@ -107,7 +105,7 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
             if (firstTry) {
                 return new InputStream() {
                     @Override
-                    public int read() throws IOException {
+                    public int read() {
                         throw new UnsupportedOperationException("Do not use it");
                     }
 

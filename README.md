@@ -3,12 +3,12 @@
 
 [![Build Status](https://travis-ci.com/ecovaci/winfoom.svg?branch=master)](https://travis-ci.com/github/ecovaci/winfoom)
 
-Winfoom is a HTTP(s) proxy server facade that allows applications to authenticate through a NTML/Kerberos authenticated proxy server, typically used in corporate environments, 
+Winfoom is an HTTP(s) proxy server facade that allows applications to authenticate through a NTML/Kerberos authenticated proxy server, typically used in corporate environments, 
 without having to deal with the actual handshake.
 
 A lot of software applications have problems when dealing with an authenticated proxy server's protocol. Winfoom sits between the corporate proxy and applications and offloads the authentication and the proxy's protocol, acting as a facade. This way, the software application will only have to deal with a basic proxy with no authentication.
 
-An example of such facade for NTLM proxies is [CNTLM](http://cntlm.sourceforge.net/)
+An example of such a facade for NTLM proxies is [CNTLM](http://cntlm.sourceforge.net/)
 
 ### Instalation
 
@@ -25,13 +25,13 @@ Available commands:
 * `launch.bat --systemjre` launches the application using your system JRE - you'll need a JRE v.11 (at least).
 * `launch.bat --debug --systemjre`  launches the application using your system JRE in debug mode.
 
-The installation is pretty basic, just unzip the content of the released archive then double click on `launch.bat` file.
+The installation is pretty basic, just unzip the content of the released archive then double-click on `launch.bat` file.
 
 The application log file is placed under `logs` directory.
 
 ### Configuration
 
-Winfoom has a graphical user interface that allows the user to configure proxy host, port and the URL for testing the settings.
+Winfoom has a graphical user interface that allows the user to configure the proxy host, port and the URL for testing the settings.
 These fields are pre-filled with the values gathered from your system.
 
 To test it, open a browser, let's say Firefox and configure proxy like this:
@@ -47,7 +47,7 @@ as a NTML proxy._
 
 ### Build from source code
 
-If you decide to build the executable *jar* file from source code, you would need this prerequisites:
+If you decide to build the executable *jar* file from source code, you would need these prerequisites:
 
 * Java JDK 11(+)
 * Maven 3.x version

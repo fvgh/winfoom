@@ -69,9 +69,6 @@ class CustomProxyClient {
     private final Logger logger = LoggerFactory.getLogger(CustomProxyClient.class);
 
     @Autowired
-    private SystemConfig systemConfig;
-
-    @Autowired
     private CredentialsProvider credentialsProvider;
 
     private HttpProcessor httpProcessor;
