@@ -57,9 +57,8 @@ class ConnectRequestHandler implements RequestHandler {
             throws IOException, HttpException {
         logger.debug("Handle connect request");
         RequestLine requestLine = request.getRequestLine();
-        Pair<String, Integer> hostPort = HttpUtils.parseConnectUri(requestLine.getUri());
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-        HttpHost target = new HttpHost(hostPort.getLeft(), hostPort.getRight());
+        HttpHost target = HttpHost.create(requestLine.getUri());
 
         try (Tunnel tunnel = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion())) {
             try {

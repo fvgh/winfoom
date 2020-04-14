@@ -14,8 +14,6 @@ package org.kpax.winfoom.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -57,15 +55,6 @@ public final class HttpUtils {
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
     private HttpUtils() {
-    }
-
-    public static Pair<String, Integer> parseConnectUri(String uri) throws HttpException {
-        try {
-            String[] split = uri.split(":");
-            return new ImmutablePair<>(split[0], Integer.parseInt(split[1]));
-        } catch (Exception e) {
-            throw new HttpException("Cannot parse CONNECT uri", e);
-        }
     }
 
     public static URI parseUri(String url) throws URISyntaxException {
