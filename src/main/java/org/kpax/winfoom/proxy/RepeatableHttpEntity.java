@@ -19,8 +19,6 @@ import org.apache.http.impl.io.ChunkedInputStream;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.ByteBuffer;

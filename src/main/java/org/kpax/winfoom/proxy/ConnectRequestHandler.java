@@ -12,7 +12,6 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -20,7 +19,6 @@ import org.apache.http.RequestLine;
 import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

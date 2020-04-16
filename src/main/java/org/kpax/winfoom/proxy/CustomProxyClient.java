@@ -42,7 +42,6 @@ import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.protocol.*;
 import org.apache.http.util.Args;
 import org.apache.http.util.EntityUtils;
-import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
