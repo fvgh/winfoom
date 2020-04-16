@@ -86,10 +86,7 @@ class ConnectRequestHandler implements RequestHandler {
     private void handleResponse(final Tunnel tunnel,
                                 AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
         logger.debug("Write status line");
-        localSocketChannel.write(tunnel.getStatusLine());
-
-        logger.debug("Write empty line");
-        localSocketChannel.writeln();
+        localSocketChannel.writeln(tunnel.getStatusLine());
 
         logger.debug("Start full duplex communication");
         Socket socket = tunnel.getSocket();
