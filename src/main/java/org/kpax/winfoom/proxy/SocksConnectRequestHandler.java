@@ -16,6 +16,8 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.RequestLine;
 import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpDateGenerator;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
@@ -37,6 +39,7 @@ import java.net.Socket;
 public class SocksConnectRequestHandler implements RequestHandler {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private final HttpDateGenerator httpDateGenerator = new HttpDateGenerator();
 
     @Autowired
     private UserConfig userConfig;
@@ -65,13 +68,18 @@ public class SocksConnectRequestHandler implements RequestHandler {
             logger.debug("Connected to {}", target);
 
             // Respond with 200 code
-            socketChannelWrapper.writeln(String.format("%s 200 OK", requestLine.getProtocolVersion()));
+            socketChannelWrapper.write(String.format("%s 200 Connection established", requestLine.getProtocolVersion()));
+            socketChannelWrapper.write(HttpUtils.createHttpHeader(HTTP.DATE_HEADER, httpDateGenerator.getCurrentDate()));
+            socketChannelWrapper.writeln();
 
-            logger.debug("Start full duplex communication");
-            HttpUtils.duplex(proxyContext.executorService(),
-                    socket.getInputStream(), socket.getOutputStream(),
-                    socketChannelWrapper.getInputStream(), socketChannelWrapper.getOutputStream());
-            logger.debug("End full duplex communication");
+            try {
+                HttpUtils.duplex(proxyContext.executorService(),
+                        socket.getInputStream(), socket.getOutputStream(),
+                        socketChannelWrapper.getInputStream(), socketChannelWrapper.getOutputStream());
+            } catch (Exception e) {
+                logger.error("Error on full duplex", e);
+            }
+
         }
     }
 

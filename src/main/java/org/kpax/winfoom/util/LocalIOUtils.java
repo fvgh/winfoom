@@ -53,9 +53,9 @@ public final class LocalIOUtils {
     /**
      * Close all <code>closeables</code>.
      *
-     * @param closeable The {@link Closeable} instance.
+     * @param closeable The {@link AutoCloseable} instance.
      */
-    public static void close(Closeable closeable) {
+    public static void close(AutoCloseable closeable) {
         if (closeable != null) {
             logger.debug("Close {}", closeable.getClass());
             try {

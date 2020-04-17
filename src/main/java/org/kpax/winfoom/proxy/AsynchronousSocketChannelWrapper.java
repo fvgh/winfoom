@@ -73,10 +73,10 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         outputStream.write(ObjectFormat.toCrlf(obj, StandardCharsets.UTF_8));
     }
 
-    void writeln(Object obj) throws IOException {
+/*    void writeln(Object obj) throws IOException {
         write(obj);
         writeln();
-    }
+    }*/
 
     void writeln() throws IOException {
         outputStream.write(ObjectFormat.CRLF.getBytes());
@@ -89,7 +89,8 @@ class AsynchronousSocketChannelWrapper implements Closeable {
     void writelnError(ProtocolVersion protocolVersion, int statusCode, Exception e) {
         Validate.notNull(e, "Exception cannot be null");
         try {
-            writeln(HttpUtils.toStatusLine(protocolVersion, statusCode, e.getMessage()));
+            write(HttpUtils.toStatusLine(protocolVersion, statusCode, e.getMessage()));
+            writeln();
         } catch (Exception ex) {
             logger.debug("Error on writing response error", ex);
         }

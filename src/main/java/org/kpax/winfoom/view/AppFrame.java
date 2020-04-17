@@ -538,7 +538,7 @@ public class AppFrame extends JFrame {
     private void startServer() {
         if (userConfig.isSocks()) {
             if (StringUtils.isNotEmpty(userConfig.getProxyUsername())
-            && (userConfig.getProxyPassword() == null)
+                    && (userConfig.getProxyPassword() == null)
                     || userConfig.getProxyPassword().length == 0) {
                 int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide any password." +
                         "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);

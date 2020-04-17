@@ -12,6 +12,7 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -80,10 +81,9 @@ class NonConnectRequestHandler implements RequestHandler {
             throws IOException, URISyntaxException {
         logger.debug("Handle non-connect request");
 
+        AbstractHttpEntity entity = null;
         if (request instanceof HttpEntityEnclosingRequest) {
             logger.debug("Set enclosing entity");
-
-            AbstractHttpEntity entity;
             if (userConfig.isSocks()) {
                 entity = new InputStreamEntity(new LocalIOUtils.SessionInputStream(sessionInputBuffer),
                         HttpUtils.getContentLength(request),
@@ -157,8 +157,8 @@ class NonConnectRequestHandler implements RequestHandler {
                 }
             }
         } finally {
-            if (request instanceof HttpEntityEnclosingRequest) {
-                LocalIOUtils.close((RepeatableHttpEntity) ((HttpEntityEnclosingRequest) request).getEntity());
+            if (entity instanceof AutoCloseable) {
+                LocalIOUtils.close((AutoCloseable)entity);
             }
         }
     }

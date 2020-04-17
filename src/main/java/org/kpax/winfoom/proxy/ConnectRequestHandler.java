@@ -12,10 +12,7 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
-import org.apache.http.RequestLine;
+import org.apache.http.*;
 import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.UserConfig;
@@ -82,14 +79,19 @@ class ConnectRequestHandler implements RequestHandler {
     private void handleResponse(final Tunnel tunnel,
                                 AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
         logger.debug("Write status line");
-        localSocketChannel.writeln(tunnel.getStatusLine());
+        localSocketChannel.write(tunnel.getStatusLine());
 
-        Socket socket = tunnel.getSocket();
-        logger.debug("Start full duplex communication");
+        logger.debug("Write headers");
+        for (Header header:tunnel.getResponse().getAllHeaders()) {
+            localSocketChannel.write(header);
+        }
+        localSocketChannel.writeln();
+
+        // The proxy facade mediates the full duplex communication
+        // between the client and the remote proxy
         HttpUtils.duplex(proxyContext.executorService(),
-                socket.getInputStream(), socket.getOutputStream(),
+                tunnel.getSocket().getInputStream(), tunnel.getSocket().getOutputStream(),
                 localSocketChannel.getInputStream(), localSocketChannel.getOutputStream());
-        logger.debug("End full duplex communication");
     }
 
 }

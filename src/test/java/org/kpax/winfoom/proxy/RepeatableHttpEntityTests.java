@@ -107,8 +107,10 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
                         }
                         ((HttpEntityEnclosingRequest) request).setEntity(requestEntity);
                         localSocketChannel.write("HTTP/1.1 200 OK");
+                        localSocketChannel.writeln();
                     } catch (Exception e) {
-                        localSocketChannel.writeln("HTTP/1.1 500 " + e.getMessage());
+                        localSocketChannel.write("HTTP/1.1 500 " + e.getMessage());
+                        localSocketChannel.writeln();
                         throw e;
                     }
 
@@ -136,7 +138,8 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
                             localSocketChannel.write(HttpUtils.createHttpHeader(bufferedBytesHeader, String.valueOf(bufferedBytes.length)));
                         }
 
-                        localSocketChannel.writeln(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
+                        localSocketChannel.write(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
+                        localSocketChannel.writeln();
                     }
 
                 } catch (Exception e) {
