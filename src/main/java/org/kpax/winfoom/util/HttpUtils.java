@@ -228,31 +228,6 @@ public final class HttpUtils {
         outStream.flush();
     }
 
-    public static void duplex(ExecutorService executorService,
-                              InputStream firstInputSource, OutputStream firstOutputSource,
-                              InputStream secondInputSource, OutputStream secondOutputSource) throws IOException {
-        logger.debug("Start full duplex communication");
-        Future<?> localToSocket = executorService.submit(
-                () -> secondInputSource.transferTo(firstOutputSource));
-        try {
-            firstInputSource.transferTo(secondOutputSource);
-            if (!localToSocket.isDone()) {
-
-                // Wait for async copy to finish
-                try {
-                    localToSocket.get();
-                } catch (ExecutionException e) {
-                    logger.debug("Error on writing bytes", e.getCause());
-                } catch (Exception e) {
-                    logger.debug("Failed to write bytes", e);
-                }
-            }
-        } catch (Exception e) {
-            localToSocket.cancel(true);
-            logger.debug("Error on first to second transfer", e);
-        }
-        logger.debug("End full duplex communication");
-    }
 
     public static String toHtml(String text) {
         return new StringBuilder("<html>").append(text).append("</html>").toString();

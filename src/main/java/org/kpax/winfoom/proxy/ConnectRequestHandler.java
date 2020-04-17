@@ -17,6 +17,7 @@ import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,9 +90,11 @@ class ConnectRequestHandler implements RequestHandler {
 
         // The proxy facade mediates the full duplex communication
         // between the client and the remote proxy
-        HttpUtils.duplex(proxyContext.executorService(),
-                tunnel.getSocket().getInputStream(), tunnel.getSocket().getOutputStream(),
-                localSocketChannel.getInputStream(), localSocketChannel.getOutputStream());
+        LocalIOUtils.duplex(proxyContext.executorService(),
+                tunnel.getSocket().getInputStream(),
+                tunnel.getSocket().getOutputStream(),
+                localSocketChannel.getInputStream(),
+                localSocketChannel.getOutputStream());
     }
 
 }

@@ -22,6 +22,10 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * @author Eugen Covaci
@@ -72,6 +76,33 @@ public final class LocalIOUtils {
                 .append(System.nanoTime())
                 .append("-")
                 .append((int) (Math.random() * 100)).toString();
+    }
+
+
+    public static void duplex(ExecutorService executorService,
+                              InputStream firstInputSource, OutputStream firstOutputSource,
+                              InputStream secondInputSource, OutputStream secondOutputSource) throws IOException {
+        logger.debug("Start full duplex communication");
+        Future<?> localToSocket = executorService.submit(
+                () -> secondInputSource.transferTo(firstOutputSource));
+        try {
+            firstInputSource.transferTo(secondOutputSource);
+            if (!localToSocket.isDone()) {
+
+                // Wait for async copy to finish
+                try {
+                    localToSocket.get();
+                } catch (ExecutionException e) {
+                    logger.debug("Error on writing bytes", e.getCause());
+                } catch (Exception e) {
+                    logger.debug("Failed to write bytes", e);
+                }
+            }
+        } catch (Exception e) {
+            localToSocket.cancel(true);
+            logger.debug("Error on first to second transfer", e);
+        }
+        logger.debug("End full duplex communication");
     }
 
     public static class SessionInputStream extends InputStream {

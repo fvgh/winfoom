@@ -21,6 +21,7 @@ import org.apache.http.protocol.HttpDateGenerator;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,9 +74,13 @@ public class SocksConnectRequestHandler implements RequestHandler {
             socketChannelWrapper.writeln();
 
             try {
-                HttpUtils.duplex(proxyContext.executorService(),
-                        socket.getInputStream(), socket.getOutputStream(),
-                        socketChannelWrapper.getInputStream(), socketChannelWrapper.getOutputStream());
+                // The proxy facade mediates the full duplex communication
+                // between the client and the remote proxy
+                LocalIOUtils.duplex(proxyContext.executorService(),
+                        socket.getInputStream(),
+                        socket.getOutputStream(),
+                        socketChannelWrapper.getInputStream(),
+                        socketChannelWrapper.getOutputStream());
             } catch (Exception e) {
                 logger.error("Error on full duplex", e);
             }
