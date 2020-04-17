@@ -20,7 +20,8 @@ import org.jdesktop.beansbinding.BindingGroup;
 import org.jdesktop.beansbinding.Bindings;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.proxy.LocalProxyServer;
+import org.kpax.winfoom.proxy.ProxyContext;
+import org.kpax.winfoom.proxy.ProxyType;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.SwingUtils;
 import org.slf4j.Logger;
@@ -59,7 +60,10 @@ public class AppFrame extends JFrame {
     private SystemConfig systemConfig;
 
     @Autowired
-    private LocalProxyServer localProxyServer;
+    private ProxyContext proxyContext;
+
+    private JLabel proxyTypeLabel;
+    private JComboBox<ProxyType> proxyTypeCombo;
 
     private JLabel proxyHostLabel;
     private JTextField proxyHostJTextField;
@@ -71,8 +75,10 @@ public class AppFrame extends JFrame {
     private JLabel testUrlLabel;
     private JTextField testUrlJTextField;
 
+    private JButton btnCredentials;
     private JButton btnStart;
     private JButton btnStop;
+
     private JPanel btnPanel;
 
     private JMenuBar menuBar;
@@ -137,70 +143,95 @@ public class AppFrame extends JFrame {
         //
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{0, 0, 0};
-        gridBagLayout.rowHeights = new int[]{35, 35, 35, 35, 35, 10};
-        gridBagLayout.columnWeights = new double[]{0.0, 1.0, 1.0E-4};
-        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0E-4};
+        gridBagLayout.rowHeights = new int[]{35, 35, 35, 35, 35, 35, 10};
+        gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0};
+        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0E-4};
         mainContentPane.setLayout(gridBagLayout);
+
+        GridBagConstraints labelGbc1 = new GridBagConstraints();
+        labelGbc1.fill = GridBagConstraints.BOTH;
+        labelGbc1.insets = new Insets(5, 5, 5, 5);
+        labelGbc1.gridx = 0;
+        labelGbc1.gridy = 0;
+        mainContentPane.add(getProxyTypeLabel(), labelGbc1);
+
+        GridBagConstraints componentGbc1 = new GridBagConstraints();
+        componentGbc1.insets = new Insets(5, 5, 5, 5);
+        componentGbc1.anchor = GridBagConstraints.WEST;
+        componentGbc1.gridx = 1;
+        componentGbc1.gridy = 0;
+        mainContentPane.add(getProxyTypeCombo(), componentGbc1);
+
+        GridBagConstraints componentGbc2 = new GridBagConstraints();
+        componentGbc2.insets = new Insets(5, 5, 5, 5);
+        componentGbc2.anchor = GridBagConstraints.WEST;
+        componentGbc2.gridx = 2;
+        componentGbc2.gridy = 0;
+        mainContentPane.add(getBtnCredentials(), componentGbc2);
 
         GridBagConstraints labelGbc3 = new GridBagConstraints();
         labelGbc3.fill = GridBagConstraints.BOTH;
         labelGbc3.insets = new Insets(5, 5, 5, 5);
         labelGbc3.gridx = 0;
-        labelGbc3.gridy = 0;
+        labelGbc3.gridy = 1;
         mainContentPane.add(getProxyHostLabel(), labelGbc3);
 
         GridBagConstraints componentGbc3 = new GridBagConstraints();
         componentGbc3.insets = new Insets(5, 5, 5, 5);
         componentGbc3.fill = GridBagConstraints.HORIZONTAL;
         componentGbc3.gridx = 1;
-        componentGbc3.gridy = 0;
+        componentGbc3.gridy = 1;
+        componentGbc3.gridwidth = 2;
         mainContentPane.add(getProxyHostJTextField(), componentGbc3);
 
         GridBagConstraints labelGbc4 = new GridBagConstraints();
         labelGbc4.fill = GridBagConstraints.BOTH;
         labelGbc4.insets = new Insets(5, 5, 5, 5);
         labelGbc4.gridx = 0;
-        labelGbc4.gridy = 1;
+        labelGbc4.gridy = 2;
         mainContentPane.add(getProxyPortLabel(), labelGbc4);
 
         GridBagConstraints componentGbc4 = new GridBagConstraints();
         componentGbc4.anchor = GridBagConstraints.WEST;
         componentGbc4.insets = new Insets(5, 5, 5, 5);
         componentGbc4.gridx = 1;
-        componentGbc4.gridy = 1;
+        componentGbc4.gridy = 2;
+        componentGbc4.gridwidth = 2;
         mainContentPane.add(getProxyPortJSpinner(), componentGbc4);
 
         GridBagConstraints labelGbc5 = new GridBagConstraints();
         labelGbc5.fill = GridBagConstraints.BOTH;
         labelGbc5.insets = new Insets(5, 5, 5, 5);
         labelGbc5.gridx = 0;
-        labelGbc5.gridy = 2;
+        labelGbc5.gridy = 3;
         mainContentPane.add(getLocalPortLabel(), labelGbc5);
 
         GridBagConstraints componentGbc5 = new GridBagConstraints();
         componentGbc5.anchor = GridBagConstraints.WEST;
         componentGbc5.insets = new Insets(5, 5, 5, 5);
         componentGbc5.gridx = 1;
-        componentGbc5.gridy = 2;
+        componentGbc5.gridy = 3;
+        componentGbc5.gridwidth = 2;
         mainContentPane.add(getLocalPortJSpinner(), componentGbc5);
 
         GridBagConstraints labelGbcTestUrl = new GridBagConstraints();
         labelGbcTestUrl.fill = GridBagConstraints.BOTH;
         labelGbcTestUrl.insets = new Insets(5, 5, 5, 5);
         labelGbcTestUrl.gridx = 0;
-        labelGbcTestUrl.gridy = 3;
+        labelGbcTestUrl.gridy = 4;
         mainContentPane.add(getTestUrlLabel(), labelGbcTestUrl);
 
         GridBagConstraints componentGbcTestUrl = new GridBagConstraints();
         componentGbcTestUrl.insets = new Insets(5, 5, 5, 5);
         componentGbcTestUrl.gridx = 1;
-        componentGbcTestUrl.gridy = 3;
+        componentGbcTestUrl.gridy = 4;
+        componentGbcTestUrl.gridwidth = 2;
         mainContentPane.add(getTestUrlJTextField(), componentGbcTestUrl);
 
         GridBagConstraints gbcBtnPanel = new GridBagConstraints();
         gbcBtnPanel.gridx = 0;
-        gbcBtnPanel.gridy = 4;
-        gbcBtnPanel.gridwidth = 2;
+        gbcBtnPanel.gridy = 5;
+        gbcBtnPanel.gridwidth = 3;
         gbcBtnPanel.gridheight = 2;
         mainContentPane.add(getBtnPanel(), gbcBtnPanel);
 
@@ -212,6 +243,13 @@ public class AppFrame extends JFrame {
     }
 
     // ---------- Labels
+
+    private JLabel getProxyTypeLabel() {
+        if (proxyTypeLabel == null) {
+            proxyTypeLabel = new JLabel("Proxy type:");
+        }
+        return proxyTypeLabel;
+    }
 
     private JLabel getProxyHostLabel() {
         if (proxyHostLabel == null) {
@@ -244,6 +282,17 @@ public class AppFrame extends JFrame {
     // ------- End Labels
 
     // -------- Fields
+
+    private JComboBox<ProxyType> getProxyTypeCombo() {
+        if (proxyTypeCombo == null) {
+            proxyTypeCombo = new JComboBox<>(new ProxyType[]{ProxyType.HTTP, ProxyType.SOCKS5});
+            proxyTypeCombo.setMinimumSize(new Dimension(80, 35));
+            proxyTypeCombo.addActionListener((e) -> {
+                getBtnCredentials().setVisible(userConfig.isSocks());
+            });
+        }
+        return proxyTypeCombo;
+    }
 
     private JTextField getProxyHostJTextField() {
         if (proxyHostJTextField == null) {
@@ -280,11 +329,13 @@ public class AppFrame extends JFrame {
     private JButton getBtnStart() {
         if (btnStart == null) {
             btnStart = new JButton("Start");
+            btnStart.setMargin(new Insets(2, 6, 2, 6));
             btnStart.setIcon(new TunedImageIcon("config/img/arrow-right.png"));
             btnStart.addActionListener(e -> {
                 startServer();
                 getBtnStop().requestFocus();
             });
+            btnStart.setToolTipText("Start the proxy facade");
         }
         return btnStart;
     }
@@ -292,15 +343,36 @@ public class AppFrame extends JFrame {
     private JButton getBtnStop() {
         if (btnStop == null) {
             btnStop = new JButton("Stop");
+            btnStop.setMargin(new Insets(2, 6, 2, 6));
             btnStop.addActionListener(e -> {
                 stopServer();
                 focusOnStartButton();
             });
             btnStop.setIcon(new TunedImageIcon("config/img/process-stop.png"));
             btnStop.setEnabled(false);
+            btnStop.setToolTipText("Stop the proxy facade");
         }
         return btnStop;
     }
+
+    private JButton getBtnCredentials() {
+        if (btnCredentials == null) {
+            btnCredentials = new JButton("Credentials");
+            btnCredentials.setIcon(new TunedImageIcon("config/img/dialog-password.png"));
+            btnCredentials.setPreferredSize(new Dimension(90, 25));
+            btnCredentials.setMargin(new Insets(1, 1, 1, 1));
+            btnCredentials.addActionListener(e -> showCredentialsInputDialog());
+            btnCredentials.setToolTipText(HttpUtils.toHtml("Set the user/password required for this proxy." +
+                    "<br>Leave it empty if the proxy does not require authentication." +
+                    "<br>Take into account the fact that the password is not persistent," +
+                    "<br>you'll have to insert it each time you start the application!"));
+        }
+        return btnCredentials;
+    }
+
+    // ------- End Buttons
+
+    // --------- Panels
 
     private JPanel getBtnPanel() {
         if (btnPanel == null) {
@@ -310,8 +382,6 @@ public class AppFrame extends JFrame {
         }
         return btnPanel;
     }
-
-    // ------- End Buttons
 
     // -------- Menu
 
@@ -381,6 +451,12 @@ public class AppFrame extends JFrame {
 
     private void initDataBindings() {
         //
+        BeanProperty<UserConfig, ProxyType> proxyTypeProperty = BeanProperty.create("proxyType");
+        AutoBinding<UserConfig, ProxyType, JComboBox, Object> autoBindingProxyType = Bindings
+                .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, proxyTypeProperty,
+                        getProxyTypeCombo(), BeanProperty.create("selectedItem"));
+        autoBindingProxyType.bind();
+        //
         BeanProperty<UserConfig, String> proxyHostProperty = BeanProperty.create("proxyHost");
         AutoBinding<UserConfig, String, JTextField, String> autoBindingProxyHost = Bindings
                 .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, proxyHostProperty,
@@ -406,6 +482,7 @@ public class AppFrame extends JFrame {
         autoBindingProxyTestUrl.bind();
         //
         BindingGroup bindingGroup = new BindingGroup();
+        bindingGroup.addBinding(autoBindingProxyType);
         bindingGroup.addBinding(autoBindingProxyHost);
         bindingGroup.addBinding(autoBindingProxyPort);
         bindingGroup.addBinding(autoBindingLocalPort);
@@ -459,17 +536,27 @@ public class AppFrame extends JFrame {
     }
 
     private void startServer() {
+        if (userConfig.isSocks()) {
+            if (StringUtils.isNotEmpty(userConfig.getProxyUsername())
+            && (userConfig.getProxyPassword() == null)
+                    || userConfig.getProxyPassword().length == 0) {
+                int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide any password." +
+                        "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (option != JOptionPane.OK_OPTION) {
+                    return;
+                }
+            }
+        }
         disableAll();
-        final java.awt.Component thisFrame = this;
         SwingUtils.executeRunnable(() -> {
             if (isValidInput()) {
                 try {
-                    localProxyServer.start();
+                    proxyContext.start();
                     getBtnStop().setEnabled(true);
                 } catch (Exception e) {
                     logger.error("Error on starting proxy server", e);
                     enableInput();
-                    SwingUtils.showErrorMessage(thisFrame,
+                    SwingUtils.showErrorMessage(AppFrame.this,
                             "Error on starting proxy server.\nSee the application's log for details.");
                 }
             } else {
@@ -480,10 +567,10 @@ public class AppFrame extends JFrame {
     }
 
     private void stopServer() {
-        if (localProxyServer.isStarted() && JOptionPane.showConfirmDialog(this,
+        if (proxyContext.isStarted() && JOptionPane.showConfirmDialog(this,
                 "The local proxy facade is started. \nDo you like to stop the proxy facade?",
                 "Warning", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.YES_OPTION) {
-            localProxyServer.close();
+            proxyContext.stop();
             enableInput();
         }
     }
@@ -495,13 +582,42 @@ public class AppFrame extends JFrame {
 
 
     private void shutdownApp() {
-        if (!localProxyServer.isStarted() || JOptionPane.showConfirmDialog(this,
+        if (!proxyContext.isStarted() || JOptionPane.showConfirmDialog(this,
                 "The local proxy facade is started. \nDo you like to stop the proxy facade and leave the application?",
                 "Warning", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.YES_OPTION) {
             logger.info("Now shutdown application");
             applicationContext.close();
             dispose();
         }
+    }
+
+
+    private void showCredentialsInputDialog() {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+
+        JPanel label = new JPanel(new GridLayout(0, 1, 2, 2));
+        label.add(new JLabel("Username: ", SwingConstants.RIGHT));
+        label.add(new JLabel("Password: ", SwingConstants.RIGHT));
+        panel.add(label, BorderLayout.WEST);
+
+        JPanel controlsPanel = new JPanel(new GridLayout(0, 1, 2, 2));
+        JTextField username = new JTextField(userConfig.getProxyUsername());
+        controlsPanel.add(username);
+        JPasswordField password = new JPasswordField(String.valueOf(userConfig.getProxyPassword() != null ? userConfig.getProxyPassword() : ""));
+        controlsPanel.add(password);
+        panel.add(controlsPanel, BorderLayout.CENTER);
+
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                "Credentials",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+        if (option == JOptionPane.OK_OPTION) {
+            userConfig.setProxyUsername(username.getText());
+            userConfig.setProxyPassword(password.getPassword());
+        }
+
     }
 
     private static class TunedImageIcon extends ImageIcon {

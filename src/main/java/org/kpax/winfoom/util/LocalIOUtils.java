@@ -12,12 +12,16 @@
 
 package org.kpax.winfoom.util;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.Validate;
 import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.apache.http.io.SessionInputBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author Eugen Covaci
@@ -68,6 +72,26 @@ public final class LocalIOUtils {
                 .append(System.nanoTime())
                 .append("-")
                 .append((int) (Math.random() * 100)).toString();
+    }
+
+    public static class SessionInputStream extends InputStream {
+
+        private SessionInputBuffer sessionInputBuffer;
+
+        public SessionInputStream(SessionInputBuffer sessionInputBuffer) {
+            Validate.notNull(sessionInputBuffer, "sessionInputBuffer cannot be null");
+            this.sessionInputBuffer = sessionInputBuffer;
+        }
+
+        @Override
+        public int read() throws IOException {
+            throw new NotImplementedException("Do not use it");
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return sessionInputBuffer.read(b, off, len);
+        }
     }
 
 }

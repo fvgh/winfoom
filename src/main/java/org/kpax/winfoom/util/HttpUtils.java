@@ -20,6 +20,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.EnglishReasonPhraseCatalog;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -34,15 +35,17 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.login.CredentialException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
@@ -51,6 +54,8 @@ import java.util.stream.Collectors;
 public final class HttpUtils {
 
     public static final String HTTP_CONNECT = "CONNECT";
+
+    public static final String SOCKS_ADDRESS = "socks.address";
 
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 
@@ -99,6 +104,16 @@ public final class HttpUtils {
     public static void testProxyConfig(final UserConfig userConfig)
             throws IOException, CredentialException {
         logger.info("Test proxy config {}", userConfig);
+        if (userConfig.isSocks()) {
+            testSocksProxyConfig(userConfig);
+        } else {
+            testHttpProxyConfig(userConfig);
+        }
+    }
+
+    private static void testHttpProxyConfig(final UserConfig userConfig)
+            throws IOException, CredentialException {
+
         try (CloseableHttpClient httpClient = WinHttpClients.createDefault()) {
             HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
             HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
@@ -118,7 +133,50 @@ public final class HttpUtils {
                 }
             }
         } catch (Exception e) {
-            logger.error("Error on testing proxy config", e);
+            logger.error("Error on testing http proxy config", e);
+            throw e;
+        }
+    }
+
+    private static void testSocksProxyConfig(final UserConfig userConfig) throws IOException, CredentialException {
+        try {
+            Proxy socksProxy
+                    = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(userConfig.getProxyHost(),
+                    userConfig.getProxyPort()));
+            Authenticator.setDefault(new Authenticator() {
+                public PasswordAuthentication getPasswordAuthentication() {
+                    return (new PasswordAuthentication(userConfig.getProxyUsername(),
+                            userConfig.getProxyPassword() != null ? userConfig.getProxyPassword() : new char[0]));
+                }
+            });
+            URL url = new URL(userConfig.getProxyTestUrl());
+            HttpURLConnection socksConnection
+                    = (HttpURLConnection) url.openConnection(socksProxy);
+            socksConnection.setConnectTimeout(5000);
+            try (InputStream inputStream = socksConnection.getInputStream()) {
+                logger.info("Test response status {} {}", socksConnection.getResponseCode(),
+                        socksConnection.getResponseMessage());
+            }
+        } catch (Exception e) {
+            logger.error("Error on testing socks proxy config", e);
+
+            // Map some errors for more precise
+            // response the the user
+            if (e instanceof SocketException) {
+                if (StringUtils.containsIgnoreCase(e.getMessage(), "authentication failed")) {
+                    throw new CredentialException();
+                } else if (StringUtils.containsIgnoreCase(e.getMessage(), "connection timed out")) {
+                    throw new UnknownHostException();
+                } else if (StringUtils.containsIgnoreCase(e.getMessage(), "connection refused")) {
+                    throw new HttpHostConnectException((IOException) e, HttpHost.create(userConfig.getProxyTestUrl()));
+                }
+            } else if (e instanceof SocketTimeoutException) {
+                throw new SocketTimeoutException("Invalid proxy host/port");
+            }
+
+            // On error remove the current authentication
+            Authenticator.setDefault(null);
+
             throw e;
         }
     }
@@ -168,6 +226,34 @@ public final class HttpUtils {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpEntity.writeTo(outStream);
         outStream.flush();
+    }
+
+    public static void duplex(ExecutorService executorService,
+                              InputStream inputSource1, OutputStream outputSource1,
+                              InputStream inputSource2, OutputStream outputSource2) throws IOException {
+        Future<?> localToSocket = executorService.submit(
+                () -> inputSource1.transferTo(outputSource2));
+        try {
+            inputSource2.transferTo(outputSource1);
+            if (!localToSocket.isDone()) {
+
+                // Wait for async copy to finish
+                try {
+                    localToSocket.get();
+                } catch (ExecutionException e) {
+                    logger.debug("Error on writing bytes", e.getCause());
+                } catch (Exception e) {
+                    logger.debug("Failed to write bytes", e);
+                }
+            }
+        } catch (IOException e) {
+            localToSocket.cancel(true);
+            throw e;
+        }
+    }
+
+    public static String toHtml(String text) {
+        return new StringBuilder("<html>").append(text).append("</html>").toString();
     }
 
 }

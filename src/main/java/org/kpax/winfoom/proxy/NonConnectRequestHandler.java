@@ -15,6 +15,9 @@ package org.kpax.winfoom.proxy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.entity.AbstractHttpEntity;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.apache.http.protocol.HTTP;
@@ -29,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -78,10 +82,19 @@ class NonConnectRequestHandler implements RequestHandler {
 
         if (request instanceof HttpEntityEnclosingRequest) {
             logger.debug("Set enclosing entity");
-            RepeatableHttpEntity entity = new RepeatableHttpEntity(sessionInputBuffer,
-                    userConfig.getTempDirectory(),
-                    request,
-                    systemConfig.getInternalBufferLength());
+
+            AbstractHttpEntity entity;
+            if (userConfig.isSocks()) {
+                entity = new InputStreamEntity(new LocalIOUtils.SessionInputStream(sessionInputBuffer),
+                        HttpUtils.getContentLength(request),
+                        HttpUtils.getContentType(request));
+            } else {
+                entity = new RepeatableHttpEntity(sessionInputBuffer,
+                        userConfig.getTempDirectory(),
+                        request,
+                        systemConfig.getInternalBufferLength());
+            }
+
             Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
             if (transferEncoding != null
                     && StringUtils.containsIgnoreCase(transferEncoding.getValue(), HTTP.CHUNK_CODING)) {
@@ -119,7 +132,7 @@ class NonConnectRequestHandler implements RequestHandler {
             }
         }
 
-        try (CloseableHttpClient httpClient = clientBuilderFactory.createHttpClientBuilder().build()) {
+        try (CloseableHttpClient httpClient = clientBuilderFactory.createClientBuilder().build()) {
 
             // Extract URI
             URI uri = HttpUtils.parseUri(request.getRequestLine().getUri());
@@ -127,8 +140,15 @@ class NonConnectRequestHandler implements RequestHandler {
                     uri.getPort(),
                     uri.getScheme());
 
+            HttpClientContext context = HttpClientContext.create();
+            if (userConfig.isSocks()) {
+                InetSocketAddress proxySocketAddress = new InetSocketAddress(userConfig.getProxyHost(),
+                        userConfig.getProxyPort());
+                context.setAttribute(HttpUtils.SOCKS_ADDRESS, proxySocketAddress);
+            }
+
             // Execute the request
-            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
+            try (CloseableHttpResponse response = httpClient.execute(target, request, context)) {
 
                 try {
                     handleResponse(response, socketChannelWrapper);

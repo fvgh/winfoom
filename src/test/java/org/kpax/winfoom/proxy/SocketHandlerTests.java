@@ -31,7 +31,6 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.event.BeforeServerStartEvent;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -96,7 +95,6 @@ class SocketHandlerTests {
     void before() throws IOException {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
-        publisher.publishEvent(new BeforeServerStartEvent(this));
         remoteProxyServer = DefaultHttpProxyServer.bootstrap()
                 .withPort(PROXY_PORT)
                 .withName("AuthenticatedUpstreamProxy")

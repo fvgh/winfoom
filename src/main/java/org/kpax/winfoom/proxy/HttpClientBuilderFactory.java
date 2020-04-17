@@ -18,7 +18,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,15 +40,39 @@ class HttpClientBuilderFactory {
     private CredentialsProvider credentialsProvider;
 
     @Autowired
-    private PoolingHttpClientConnectionManager connectionManager;
+    private ProxyContext proxyContext;
 
-    HttpClientBuilder createHttpClientBuilder() {
+    HttpClientBuilder createClientBuilder() {
+        if (userConfig.isSocks()) {
+            return createSocksClientBuilder();
+        } else if (userConfig.isHttp()) {
+            return createHttpClientBuilder();
+        } else {
+            throw new IllegalStateException("Unknown proxy type: " + userConfig.getProxyType());
+        }
+    }
+
+    private HttpClientBuilder createHttpClientBuilder() {
         RequestConfig requestConfig = createRequestConfig();
         HttpClientBuilder builder = WinHttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
-                .setConnectionManager(connectionManager)
+                .setConnectionManager(proxyContext.getHttpConnectionManager())
                 .setConnectionManagerShared(true)
                 .setDefaultRequestConfig(requestConfig)
                 .setRoutePlanner(new DefaultProxyRoutePlanner(requestConfig.getProxy()))
+                .disableAutomaticRetries()
+                .disableRedirectHandling()
+                .disableCookieManagement();
+
+        if (systemConfig.isUseSystemProperties()) {
+            builder.useSystemProperties();
+        }
+        return builder;
+    }
+
+    private HttpClientBuilder createSocksClientBuilder() {
+        HttpClientBuilder builder = WinHttpClients.custom()
+                .setConnectionManager(proxyContext.getSocksConnectionManager())
+                .setConnectionManagerShared(true)
                 .disableAutomaticRetries()
                 .disableRedirectHandling()
                 .disableCookieManagement();

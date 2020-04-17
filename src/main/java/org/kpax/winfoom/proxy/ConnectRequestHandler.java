@@ -19,16 +19,14 @@ import org.apache.http.RequestLine;
 import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Socket;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
@@ -86,28 +84,11 @@ class ConnectRequestHandler implements RequestHandler {
         logger.debug("Write status line");
         localSocketChannel.writeln(tunnel.getStatusLine());
 
-        logger.debug("Start full duplex communication");
         Socket socket = tunnel.getSocket();
-        final InputStream socketInputStream = socket.getInputStream();
-        Future<?> localToSocket = proxyContext.executeAsync(
-                () -> socketInputStream.transferTo(localSocketChannel.getOutputStream()));
-        try {
-            localSocketChannel.getInputStream().transferTo(socket.getOutputStream());
-            if (!localToSocket.isDone()) {
-
-                // Wait for async copy to finish
-                try {
-                    localToSocket.get();
-                } catch (ExecutionException e) {
-                    logger.debug("Error on writing to socket", e);
-                } catch (Exception e) {
-                    logger.debug("Failed to write to socket", e);
-                }
-            }
-        } catch (IOException e) {
-            localToSocket.cancel(true);
-            throw e;
-        }
+        logger.debug("Start full duplex communication");
+        HttpUtils.duplex(proxyContext.executorService(),
+                socket.getInputStream(), socket.getOutputStream(),
+                localSocketChannel.getInputStream(), localSocketChannel.getOutputStream());
         logger.debug("End full duplex communication");
     }
 

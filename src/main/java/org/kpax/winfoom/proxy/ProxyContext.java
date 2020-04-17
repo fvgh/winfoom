@@ -12,12 +12,19 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.config.UserConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.net.Authenticator;
 import java.util.concurrent.*;
 
 /**
@@ -35,19 +42,36 @@ public class ProxyContext implements AutoCloseable {
     @Autowired
     private LocalProxyServer localProxyServer;
 
+    @Autowired
+    private UserConfig userConfig;
+
+    @Autowired
+    private SystemConfig systemConfig;
+
     private ThreadPoolExecutor threadPool;
+
+    private ScheduledExecutorService cleanupConnectionManagerScheduler;
+
+    private ScheduledFuture<?> cleanupConnectionManagerFuture;
+
+    private volatile PoolingHttpClientConnectionManager httpConnectionManager;
+
+    private volatile PoolingHttpClientConnectionManager socksConnectionManager;
 
     @PostConstruct
     private void init() {
         logger.info("Create thread pool");
 
         // All threads are daemons!
-        threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+        this.threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
                 runnable -> {
                     Thread thread = Executors.defaultThreadFactory().newThread(runnable);
                     thread.setDaemon(true);
                     return thread;
                 });
+
+        // The connection clean up job executor
+        this.cleanupConnectionManagerScheduler = Executors.newSingleThreadScheduledExecutor();
 
         logger.info("Done proxy context's initialization");
     }
@@ -73,6 +97,43 @@ public class ProxyContext implements AutoCloseable {
         return threadPool.submit(callable);
     }
 
+    public synchronized boolean start() throws Exception {
+        if (!isStarted()) {
+            localProxyServer.start();
+            cleanupConnectionManagerFuture = setupConnectionManagerCleanupTask();
+            return true;
+        }
+        return false;
+    }
+
+    public synchronized boolean stop() {
+        if (isStarted()) {
+            localProxyServer.close();
+
+            if (cleanupConnectionManagerFuture != null) {
+                cleanupConnectionManagerFuture.cancel(true);
+            }
+
+            if (httpConnectionManager != null) {
+                httpConnectionManager.close();
+                httpConnectionManager = null;
+            }
+
+            if (socksConnectionManager != null) {
+                socksConnectionManager.close();
+                socksConnectionManager = null;
+            }
+
+            // Remove auth for SOCKS proxy
+            if (userConfig.isSocks()) {
+                Authenticator.setDefault(null);
+            }
+
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Check whether the local proxy server is started.
      *
@@ -82,15 +143,94 @@ public class ProxyContext implements AutoCloseable {
         return localProxyServer.isStarted();
     }
 
+    public ExecutorService executorService() {
+        return threadPool;
+    }
+
     @Override
     public void close() {
         logger.info("Close all context's resources");
+        stop();
 
         try {
             threadPool.shutdownNow();
         } catch (Exception e) {
             logger.warn("Error on closing thread pool", e);
         }
+
+        try {
+            cleanupConnectionManagerScheduler.shutdownNow();
+        } catch (Exception e) {
+            logger.warn("Error on closing cleanup connection manager scheduler", e);
+        }
     }
 
+    public PoolingHttpClientConnectionManager getHttpConnectionManager() {
+        if (httpConnectionManager == null) {
+            synchronized (this) {
+                if (httpConnectionManager == null) {
+                    httpConnectionManager = createHttpConnectionManager();
+                }
+            }
+        }
+        return httpConnectionManager;
+
+    }
+
+    public PoolingHttpClientConnectionManager getSocksConnectionManager() {
+        if (socksConnectionManager == null) {
+            synchronized (this) {
+                if (socksConnectionManager == null) {
+                    socksConnectionManager = createSocksConnectionManager();
+                }
+            }
+        }
+        return socksConnectionManager;
+    }
+
+    private PoolingHttpClientConnectionManager createHttpConnectionManager() {
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        applySystemSettings(connectionManager);
+        return connectionManager;
+    }
+
+
+    private PoolingHttpClientConnectionManager createSocksConnectionManager() {
+        SocksConnectionSocketFactory connectionSocketFactory = new SocksConnectionSocketFactory();
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", connectionSocketFactory)
+                .register("https", connectionSocketFactory)
+                .build();
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+        applySystemSettings(connectionManager);
+        return connectionManager;
+    }
+
+    private void applySystemSettings(final PoolingHttpClientConnectionManager connectionManager) {
+        logger.info("Configure connection manager");
+        if (systemConfig.getMaxConnections() != null) {
+            connectionManager.setMaxTotal(systemConfig.getMaxConnections());
+        }
+        if (systemConfig.getMaxConnectionsPerRoute() != null) {
+            connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
+        }
+    }
+
+    private ScheduledFuture<?> setupConnectionManagerCleanupTask() {
+        return cleanupConnectionManagerScheduler.scheduleWithFixedDelay(
+                () -> {
+                    logger.debug("Execute connection manager pool clean up task");
+                    PoolingHttpClientConnectionManager connectionManager = userConfig.isSocks() ? socksConnectionManager : httpConnectionManager;
+                    if (connectionManager != null) {
+                        connectionManager.closeExpiredConnections();
+                        connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
+                        }
+                    }
+                },
+                systemConfig.getConnectionManagerIdleTimeout(),
+                systemConfig.getConnectionManagerIdleTimeout(),
+                TimeUnit.SECONDS);
+    }
 }

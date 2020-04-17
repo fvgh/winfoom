@@ -18,6 +18,7 @@ import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.kpax.winfoom.proxy.ProxyType;
 import org.kpax.winfoom.util.CommandExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,14 @@ public class UserConfig {
 
     @Value("${proxy.port:0}")
     private Integer proxyPort;
+
+    @Value("${proxy.type}")
+    private ProxyType proxyType;
+
+    @Value("${proxy.username}")
+    private String proxyUsername;
+
+    private char[] proxyPassword;
 
     private Path tempDirectory;
 
@@ -116,6 +125,39 @@ public class UserConfig {
         return tempDirectory;
     }
 
+    public ProxyType getProxyType() {
+        return proxyType;
+    }
+
+    public void setProxyType(ProxyType proxyType) {
+        this.proxyType = proxyType;
+    }
+
+    public boolean isSocks() {
+        return proxyType == ProxyType.SOCKS5;
+    }
+
+    public boolean isHttp() {
+        return proxyType == ProxyType.HTTP;
+    }
+
+
+    public String getProxyUsername() {
+        return proxyUsername;
+    }
+
+    public void setProxyUsername(String proxyUsername) {
+        this.proxyUsername = proxyUsername;
+    }
+
+    public char[] getProxyPassword() {
+        return proxyPassword;
+    }
+
+    public void setProxyPassword(char[] proxyPassword) {
+        this.proxyPassword = proxyPassword;
+    }
+
     @Autowired
     private void setTempDirectory(@Value("${user.home}") String userHome) {
         tempDirectory = Paths.get(userHome, ".winfoom", "temp");
@@ -126,10 +168,12 @@ public class UserConfig {
                 .propertiesBuilder(Paths.get(System.getProperty("user.dir"), "config",
                         "user.properties").toFile());
         Configuration config = propertiesBuilder.getConfiguration();
-        config.setProperty("local.port", this.localPort);
+        config.setProperty("proxy.type", this.proxyType);
         config.setProperty("proxy.host", this.proxyHost);
         config.setProperty("proxy.port", this.proxyPort);
+        config.setProperty("local.port", this.localPort);
         config.setProperty("proxy.test.url", this.proxyTestUrl);
+        config.setProperty("proxy.username", this.proxyUsername);
         propertiesBuilder.save();
     }
 
@@ -140,6 +184,8 @@ public class UserConfig {
                 ", proxyHost='" + proxyHost + '\'' +
                 ", proxyTestUrl='" + proxyTestUrl + '\'' +
                 ", proxyPort=" + proxyPort +
+                ", proxyType=" + proxyType +
+                ", tempDirectory=" + tempDirectory +
                 '}';
     }
 }

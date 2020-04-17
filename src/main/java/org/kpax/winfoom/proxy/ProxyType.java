@@ -10,15 +10,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.event;
+package org.kpax.winfoom.proxy;
 
-import org.springframework.context.ApplicationEvent;
-
-public class AfterServerStopEvent extends ApplicationEvent {
-
-    private static final long serialVersionUID = 3549068287479006890L;
-
-    public AfterServerStopEvent(Object source) {
-        super(source);
-    }
+public enum ProxyType {
+    HTTP, SOCKS5;
 }

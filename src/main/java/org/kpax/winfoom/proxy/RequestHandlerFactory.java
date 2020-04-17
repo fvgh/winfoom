@@ -13,6 +13,7 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.http.RequestLine;
+import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -25,13 +26,22 @@ import org.springframework.stereotype.Component;
 class RequestHandlerFactory {
 
     @Autowired
+    private UserConfig userConfig;
+
+    @Autowired
     private ConnectRequestHandler connectRequestHandler;
+
+    @Autowired
+    private SocksConnectRequestHandler socksConnectRequestHandler;
 
     @Autowired
     private NonConnectRequestHandler nonConnectRequestHandler;
 
     RequestHandler createRequestHandler(RequestLine requestLine) {
         if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
+            if (userConfig.isSocks()) {
+                return socksConnectRequestHandler;
+            }
             return connectRequestHandler;
         } else {
             return nonConnectRequestHandler;
