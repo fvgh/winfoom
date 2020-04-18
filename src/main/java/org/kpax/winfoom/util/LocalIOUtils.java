@@ -83,46 +83,24 @@ public final class LocalIOUtils {
                               InputStream firstInputSource, OutputStream firstOutputSource,
                               InputStream secondInputSource, OutputStream secondOutputSource) throws IOException {
         logger.debug("Start full duplex communication");
-        Future<?> localToSocket = executorService.submit(
+        Future<?> secondToFirst = executorService.submit(
                 () -> secondInputSource.transferTo(firstOutputSource));
         try {
             firstInputSource.transferTo(secondOutputSource);
-            if (!localToSocket.isDone()) {
+            if (!secondToFirst.isDone()) {
 
                 // Wait for async copy to finish
                 try {
-                    localToSocket.get();
-                } catch (ExecutionException e) {
-                    logger.debug("Error on writing bytes", e.getCause());
+                    secondToFirst.get();
                 } catch (Exception e) {
-                    logger.debug("Failed to write bytes", e);
+                    logger.debug("Error on second to first transfer", e);
                 }
             }
         } catch (Exception e) {
-            localToSocket.cancel(true);
+            secondToFirst.cancel(true);
             logger.debug("Error on first to second transfer", e);
         }
         logger.debug("End full duplex communication");
-    }
-
-    public static class SessionInputStream extends InputStream {
-
-        private SessionInputBuffer sessionInputBuffer;
-
-        public SessionInputStream(SessionInputBuffer sessionInputBuffer) {
-            Validate.notNull(sessionInputBuffer, "sessionInputBuffer cannot be null");
-            this.sessionInputBuffer = sessionInputBuffer;
-        }
-
-        @Override
-        public int read() throws IOException {
-            throw new NotImplementedException("Do not use it");
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            return sessionInputBuffer.read(b, off, len);
-        }
     }
 
 }

@@ -85,7 +85,7 @@ class NonConnectRequestHandler implements RequestHandler {
         if (request instanceof HttpEntityEnclosingRequest) {
             logger.debug("Set enclosing entity");
             if (userConfig.isSocks()) {
-                entity = new InputStreamEntity(new LocalIOUtils.SessionInputStream(sessionInputBuffer),
+                entity = new InputStreamEntity(socketChannelWrapper.getInputStream(),
                         HttpUtils.getContentLength(request),
                         HttpUtils.getContentType(request));
             } else {
