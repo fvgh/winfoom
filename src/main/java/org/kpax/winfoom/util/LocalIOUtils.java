@@ -89,7 +89,7 @@ public final class LocalIOUtils {
             firstInputSource.transferTo(secondOutputSource);
             if (!secondToFirst.isDone()) {
 
-                // Wait for async copy to finish
+                // Wait for async transfer to finish
                 try {
                     secondToFirst.get();
                 } catch (Exception e) {
