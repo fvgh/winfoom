@@ -27,6 +27,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -73,20 +75,15 @@ class AsynchronousSocketChannelWrapper implements Closeable {
         outputStream.write(ObjectFormat.toCrlf(obj, StandardCharsets.UTF_8));
     }
 
-/*    void writeln(Object obj) throws IOException {
-        write(obj);
-        writeln();
-    }*/
-
     void writeln() throws IOException {
         outputStream.write(ObjectFormat.CRLF.getBytes());
     }
 
-    void writelnError(int statusCode, Exception e) {
-        writelnError(HttpVersion.HTTP_1_1, statusCode, e);
+    void writeError(int statusCode, Exception e) {
+        writeError(HttpVersion.HTTP_1_1, statusCode, e);
     }
 
-    void writelnError(ProtocolVersion protocolVersion, int statusCode, Exception e) {
+    void writeError(ProtocolVersion protocolVersion, int statusCode, Exception e) {
         Validate.notNull(e, "Exception cannot be null");
         try {
             write(HttpUtils.toStatusLine(protocolVersion, statusCode, e.getMessage()));
@@ -145,6 +142,9 @@ class AsynchronousSocketChannelWrapper implements Closeable {
             try {
                 return socketChannel.read(buffer).get(socketChannelTimeout, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
+                if (e.getCause() instanceof IOException) {
+                    throw (IOException)e.getCause();
+                }
                 throw new IOException(e.getCause());
             } catch (Exception e) {
                 throw new IOException(e);
@@ -167,6 +167,9 @@ class AsynchronousSocketChannelWrapper implements Closeable {
             try {
                 socketChannel.write(buffer).get(socketChannelTimeout, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
+                if (e.getCause() instanceof IOException) {
+                    throw (IOException)e.getCause();
+                }
                 throw new IOException(e.getCause());
             } catch (Exception e) {
                 throw new IOException(e);

@@ -83,12 +83,12 @@ class SocketHandler {
         } catch (ConnectException e) {
 
             // Cannot connect to the remote proxy
-            socketChannelWrapper.writelnError(HttpStatus.SC_BAD_GATEWAY, e);
+            socketChannelWrapper.writeError(HttpStatus.SC_BAD_GATEWAY, e);
             logger.debug("Connection error", e);
         } catch (Exception e) {
 
             // Any other error, including client errors
-            socketChannelWrapper.writelnError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+            socketChannelWrapper.writeError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
             logger.debug("Generic error", e);
         } finally {
             LocalIOUtils.close(socketChannelWrapper);
