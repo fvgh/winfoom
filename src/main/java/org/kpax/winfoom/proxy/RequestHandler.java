@@ -13,7 +13,6 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.http.HttpRequest;
-import org.apache.http.impl.io.SessionInputBufferImpl;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
@@ -25,13 +24,11 @@ public interface RequestHandler {
      * Process the client's HTTP request.
      *
      * @param request              The request.
-     * @param sessionInputBuffer   The session input buffer instance.
-     * @param socketChannelWrapper The {@link java.nio.channels.AsynchronousSocketChannel} wrapper instance.
+     * @param socketWrapper The {@link java.nio.channels.AsynchronousSocketChannel} wrapper instance.
      * @throws Exception
      */
     void handleRequest(HttpRequest request,
-                       SessionInputBufferImpl sessionInputBuffer,
-                       AsynchronousSocketChannelWrapper socketChannelWrapper)
+                       SocketWrapper socketWrapper)
             throws Exception;
 
 }

@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
 
 /**
  * @author Eugen Covaci
@@ -56,10 +57,14 @@ public class UserConfig {
     @Value("${proxy.type}")
     private ProxyType proxyType;
 
-    @Value("${proxy.username}")
-    private String proxyUsername;
+    @Value("${proxy.socks.username}")
+    private String proxySocksUsername;
 
-    private char[] proxyPassword;
+    @Value("${proxy.socks.store.password}")
+    private boolean proxySocksStorePassword;
+
+    @Value("${proxy.socks.password}")
+    private String proxySocksPassword;
 
     private Path tempDirectory;
 
@@ -141,21 +146,35 @@ public class UserConfig {
         return proxyType == ProxyType.HTTP;
     }
 
-
-    public String getProxyUsername() {
-        return proxyUsername;
+    public String getProxySocksUsername() {
+        return proxySocksUsername;
     }
 
-    public void setProxyUsername(String proxyUsername) {
-        this.proxyUsername = proxyUsername;
+    public void setProxySocksUsername(String proxySocksUsername) {
+        this.proxySocksUsername = proxySocksUsername;
     }
 
-    public char[] getProxyPassword() {
-        return proxyPassword;
+    public String getProxyPassword() {
+        if (proxySocksPassword != null) {
+            return new String(Base64.getDecoder().decode(proxySocksPassword));
+        }
+        return null;
     }
 
     public void setProxyPassword(char[] proxyPassword) {
-        this.proxyPassword = proxyPassword;
+        if (proxyPassword != null) {
+            proxySocksPassword = Base64.getEncoder().encodeToString(String.valueOf(proxyPassword).getBytes());
+        } else {
+            proxySocksPassword = null;
+        }
+    }
+
+    public boolean isProxySocksStorePassword() {
+        return proxySocksStorePassword;
+    }
+
+    public void setProxySocksStorePassword(boolean proxySocksStorePassword) {
+        this.proxySocksStorePassword = proxySocksStorePassword;
     }
 
     @Autowired
@@ -173,7 +192,11 @@ public class UserConfig {
         config.setProperty("proxy.port", this.proxyPort);
         config.setProperty("local.port", this.localPort);
         config.setProperty("proxy.test.url", this.proxyTestUrl);
-        config.setProperty("proxy.username", this.proxyUsername);
+        config.setProperty("proxy.socks.username", this.proxySocksUsername);
+        config.setProperty("proxy.socks.store.password", this.proxySocksStorePassword);
+        if (this.proxySocksStorePassword) {
+            config.setProperty("proxy.socks.password", this.proxySocksPassword);
+        }
         propertiesBuilder.save();
     }
 
@@ -185,6 +208,7 @@ public class UserConfig {
                 ", proxyTestUrl='" + proxyTestUrl + '\'' +
                 ", proxyPort=" + proxyPort +
                 ", proxyType=" + proxyType +
+                ", proxySocksStorePassword=" + proxySocksStorePassword +
                 ", tempDirectory=" + tempDirectory +
                 '}';
     }

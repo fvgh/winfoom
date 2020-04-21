@@ -14,9 +14,7 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.http.*;
 import org.apache.http.impl.execchain.TunnelRefusedException;
-import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,16 +22,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.Socket;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/13/2020
  */
 @Component
-class ConnectRequestHandler implements RequestHandler {
+class HttpConnectRequestHandler implements RequestHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(ConnectRequestHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(HttpConnectRequestHandler.class);
 
     @Autowired
     private UserConfig userConfig;
@@ -46,8 +43,7 @@ class ConnectRequestHandler implements RequestHandler {
 
     @Override
     public void handleRequest(final HttpRequest request,
-                              final SessionInputBufferImpl sessionInputBuffer,
-                              final AsynchronousSocketChannelWrapper socketChannelWrapper)
+                              final SocketWrapper socketWrapper)
             throws IOException, HttpException {
         logger.debug("Handle connect request");
         RequestLine requestLine = request.getRequestLine();
@@ -56,14 +52,14 @@ class ConnectRequestHandler implements RequestHandler {
 
         try (Tunnel tunnel = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion())) {
             try {
-                handleResponse(tunnel, socketChannelWrapper);
+                handleResponse(tunnel, socketWrapper);
             } catch (Exception e) {
                 logger.debug("Error on handling CONNECT response", e);
             }
         } catch (TunnelRefusedException tre) {
             logger.debug("The tunnel request was rejected by the proxy host", tre);
             try {
-                socketChannelWrapper.writeHttpResponse(tre.getResponse());
+                socketWrapper.writeHttpResponse(tre.getResponse());
             } catch (Exception e) {
                 logger.debug("Error on writing response", e);
             }
@@ -78,7 +74,7 @@ class ConnectRequestHandler implements RequestHandler {
      * @throws IOException
      */
     private void handleResponse(final Tunnel tunnel,
-                                AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
+                                SocketWrapper localSocketChannel) throws IOException {
         logger.debug("Write status line");
         localSocketChannel.write(tunnel.getStatusLine());
 

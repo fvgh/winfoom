@@ -12,7 +12,6 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -20,7 +19,6 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
@@ -76,8 +74,7 @@ class NonConnectRequestHandler implements RequestHandler {
 
     @Override
     public void handleRequest(final HttpRequest request,
-                              final SessionInputBufferImpl sessionInputBuffer,
-                              final AsynchronousSocketChannelWrapper socketChannelWrapper)
+                              final SocketWrapper socketWrapper)
             throws IOException, URISyntaxException {
         logger.debug("Handle non-connect request");
 
@@ -85,11 +82,14 @@ class NonConnectRequestHandler implements RequestHandler {
         if (request instanceof HttpEntityEnclosingRequest) {
             logger.debug("Set enclosing entity");
             if (userConfig.isSocks()) {
-                entity = new InputStreamEntity(socketChannelWrapper.getInputStream(),
+
+                // There is no need for caching since
+                // SOCKS communication is one step only
+                entity = new InputStreamEntity(socketWrapper.getInputStream(),
                         HttpUtils.getContentLength(request),
                         HttpUtils.getContentType(request));
             } else {
-                entity = new RepeatableHttpEntity(sessionInputBuffer,
+                entity = new RepeatableHttpEntity(socketWrapper.getSessionInputBuffer(),
                         userConfig.getTempDirectory(),
                         request,
                         systemConfig.getInternalBufferLength());
@@ -151,7 +151,7 @@ class NonConnectRequestHandler implements RequestHandler {
             try (CloseableHttpResponse response = httpClient.execute(target, request, context)) {
 
                 try {
-                    handleResponse(response, socketChannelWrapper);
+                    handleResponse(response, socketWrapper);
                 } catch (Exception e) {
                     logger.debug("Error on handling non CONNECT response", e);
                 }
@@ -169,7 +169,7 @@ class NonConnectRequestHandler implements RequestHandler {
      * @param response The Http response.
      */
     private void handleResponse(final CloseableHttpResponse response,
-                                AsynchronousSocketChannelWrapper localSocketChannel) throws IOException {
+                                SocketWrapper localSocketChannel) throws IOException {
         if (logger.isDebugEnabled()) {
             logger.debug("Write status line: {}", response.getStatusLine());
         }
@@ -177,6 +177,7 @@ class NonConnectRequestHandler implements RequestHandler {
 
         for (Header header : response.getAllHeaders()) {
             if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
+
                 // Strip 'chunked' from Transfer-Encoding header's value
                 // since the response is not chunked
                 String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());

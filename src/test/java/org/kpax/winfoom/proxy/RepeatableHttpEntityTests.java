@@ -15,6 +15,7 @@ package org.kpax.winfoom.proxy;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.MessageConstraints;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -26,24 +27,35 @@ import org.apache.http.io.HttpMessageParser;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.TestConstants;
+import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
@@ -58,13 +70,11 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
 
     private final String echoContentHeader = "Echo-content";
     private final String firstTryHeader = "First-try";
-    private final String retryHeader = "Retry";
     private final String tempFilenameHeader = "Temp-filename";
-
     private final String tempFileContentHeader = "Temp-file-content";
     private final String bufferedBytesHeader = "Buffered-bytes";
 
-    private AsynchronousServerSocketChannel serverSocket;
+    private ServerSocket serverSocket;
 
     private int bufferSize = 1024;
 
@@ -75,85 +85,85 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
         tempDirectory = Paths.get(System.getProperty("user.dir"), "target", "temp");
         Files.createDirectories(tempDirectory);
         logger.info("Using temp directory {}", tempDirectory);
-        serverSocket = AsynchronousServerSocketChannel.open()
-                .bind(new InetSocketAddress(TestConstants.PROXY_PORT));
-        serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
 
-            public void completed(AsynchronousSocketChannel socketChanel, Void att) {
+        serverSocket = new ServerSocket(TestConstants.PROXY_PORT);
+
+        final ServerSocket server = serverSocket;
+
+        new Thread(() -> {
+            while (!server.isClosed()) {
                 try {
-                    // accept the next connection
-                    serverSocket.accept(null, this);
+                    Socket socket = serverSocket.accept();
+                    new Thread(() -> {
+
+                        // Handle this connection.
+                        try (SocketWrapper socketWrapper = new SocketWrapper(socket)) {
+                            HttpRequest request;
+                            RepeatableHttpEntity requestEntity;
+                            try {
+                                SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(
+                                        new HttpTransportMetricsImpl(),
+                                        LocalIOUtils.DEFAULT_BUFFER_SIZE,
+                                        LocalIOUtils.DEFAULT_BUFFER_SIZE,
+                                        MessageConstraints.DEFAULT,
+                                        StandardCharsets.UTF_8.newDecoder());
+                                inputBuffer.bind(socketWrapper.getInputStream());
+
+                                HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
+                                request = requestParser.parse();
+                                requestEntity = new RepeatableHttpEntity(inputBuffer, tempDirectory, request,
+                                        bufferSize);
+                                Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
+                                if (transferEncoding != null && HTTP.CHUNK_CODING.equalsIgnoreCase(transferEncoding.getValue())) {
+                                    requestEntity.setChunked(true);
+                                }
+                                ((HttpEntityEnclosingRequest) request).setEntity(requestEntity);
+                                socketWrapper.write("HTTP/1.1 200 OK");
+                            } catch (Exception e) {
+                                socketWrapper.write("HTTP/1.1 500 " + e.getMessage());
+                                socketWrapper.writeln();
+                                throw e;
+                            }
+
+                            if (request.containsHeader(echoContentHeader)) {
+                                socketWrapper.write(request.getFirstHeader(HTTP.CONTENT_LEN));
+                                socketWrapper.write(request.getFirstHeader(HTTP.CONTENT_TYPE));
+                                socketWrapper.writeln();
+                                requestEntity.getContent().transferTo(socketWrapper.getOutputStream());
+                            } else {
+
+                                // Read the entity
+                                HttpUtils.consumeEntity(requestEntity);
+
+                                boolean firstTry = (Boolean) ReflectionTestUtils.getField(requestEntity, "firstTry");
+                                socketWrapper.write(HttpUtils.createHttpHeader(firstTryHeader, String.valueOf(firstTry)));
+
+                                Path tempFilepath = (Path) ReflectionTestUtils.getField(requestEntity, "tempFilepath");
+                                if (tempFilepath != null) {
+                                    socketWrapper.write(HttpUtils.createHttpHeader(tempFilenameHeader, tempFilepath.getFileName().toString()));
+                                    socketWrapper.write(HttpUtils.createHttpHeader(tempFileContentHeader, Files.readString(tempFilepath)));
+                                }
+
+                                byte[] bufferedBytes = (byte[]) ReflectionTestUtils.getField(requestEntity, "bufferedBytes");
+                                if (bufferedBytes != null) {
+                                    socketWrapper.write(HttpUtils.createHttpHeader(bufferedBytesHeader, String.valueOf(bufferedBytes.length)));
+                                }
+
+                                socketWrapper.write(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
+                                socketWrapper.writeln();
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
                 } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                // Handle this connection.
-                try (AsynchronousSocketChannelWrapper localSocketChannel = new AsynchronousSocketChannelWrapper(socketChanel, 10)) {
-                    HttpRequest request;
-                    RepeatableHttpEntity requestEntity;
-                    try {
-                        HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
-                        SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(metrics,
-                                LocalIOUtils.DEFAULT_BUFFER_SIZE);
-                        inputBuffer.bind(localSocketChannel.getInputStream());
-
-                        HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
-                        request = requestParser.parse();
-                        requestEntity = new RepeatableHttpEntity(inputBuffer, tempDirectory, request,
-                                bufferSize);
-                        Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
-                        if (transferEncoding != null && HTTP.CHUNK_CODING.equalsIgnoreCase(transferEncoding.getValue())) {
-                            requestEntity.setChunked(true);
-                        }
-                        ((HttpEntityEnclosingRequest) request).setEntity(requestEntity);
-                        localSocketChannel.write("HTTP/1.1 200 OK");
-                        localSocketChannel.writeln();
-                    } catch (Exception e) {
-                        localSocketChannel.write("HTTP/1.1 500 " + e.getMessage());
-                        localSocketChannel.writeln();
-                        throw e;
-                    }
-
-                    if (request.containsHeader(echoContentHeader)) {
-                        localSocketChannel.write(request.getFirstHeader(HTTP.CONTENT_LEN));
-                        localSocketChannel.write(request.getFirstHeader(HTTP.CONTENT_TYPE));
-                        localSocketChannel.writeln();
-                        requestEntity.getContent().transferTo(localSocketChannel.getOutputStream());
-                    } else {
-
-                        // Read the entity
-                        HttpUtils.consumeEntity(requestEntity);
-
-                        boolean firstTry = (Boolean) ReflectionTestUtils.getField(requestEntity, "firstTry");
-                        localSocketChannel.write(HttpUtils.createHttpHeader(firstTryHeader, String.valueOf(firstTry)));
-
-                        Path tempFilepath = (Path) ReflectionTestUtils.getField(requestEntity, "tempFilepath");
-                        if (tempFilepath != null) {
-                            localSocketChannel.write(HttpUtils.createHttpHeader(tempFilenameHeader, tempFilepath.getFileName().toString()));
-                            localSocketChannel.write(HttpUtils.createHttpHeader(tempFileContentHeader, Files.readString(tempFilepath)));
-                        }
-
-                        byte[] bufferedBytes = (byte[]) ReflectionTestUtils.getField(requestEntity, "bufferedBytes");
-                        if (bufferedBytes != null) {
-                            localSocketChannel.write(HttpUtils.createHttpHeader(bufferedBytesHeader, String.valueOf(bufferedBytes.length)));
-                        }
-
-                        localSocketChannel.write(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
-                        localSocketChannel.writeln();
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("Error on getting connection", e);
                 }
             }
+        }).start();
 
-            public void failed(Throwable exc, Void att) {
-                if (!(exc instanceof java.nio.channels.AsynchronousCloseException)) {
-                    exc.printStackTrace();
-                }
-            }
 
-        });
     }
 
     @Test
@@ -168,6 +178,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
                 EntityUtils.consume(response.getEntity());
+                assertTrue(response.containsHeader(firstTryHeader));
                 assertEquals("false", response.getFirstHeader(firstTryHeader).getValue());
                 assertTrue(response.containsHeader(tempFilenameHeader));
                 assertEquals(content, response.getFirstHeader(tempFileContentHeader).getValue());

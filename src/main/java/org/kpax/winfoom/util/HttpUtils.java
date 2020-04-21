@@ -145,8 +145,8 @@ public final class HttpUtils {
                     userConfig.getProxyPort()));
             Authenticator.setDefault(new Authenticator() {
                 public PasswordAuthentication getPasswordAuthentication() {
-                    return (new PasswordAuthentication(userConfig.getProxyUsername(),
-                            userConfig.getProxyPassword() != null ? userConfig.getProxyPassword() : new char[0]));
+                    return (new PasswordAuthentication(userConfig.getProxySocksUsername(),
+                            userConfig.getProxyPassword() != null ? userConfig.getProxyPassword().toCharArray() : new char[0]));
                 }
             });
             URL url = new URL(userConfig.getProxyTestUrl());

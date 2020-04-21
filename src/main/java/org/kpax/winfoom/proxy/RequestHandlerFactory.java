@@ -29,7 +29,7 @@ class RequestHandlerFactory {
     private UserConfig userConfig;
 
     @Autowired
-    private ConnectRequestHandler connectRequestHandler;
+    private HttpConnectRequestHandler httpConnectRequestHandler;
 
     @Autowired
     private SocksConnectRequestHandler socksConnectRequestHandler;
@@ -42,7 +42,7 @@ class RequestHandlerFactory {
             if (userConfig.isSocks()) {
                 return socksConnectRequestHandler;
             }
-            return connectRequestHandler;
+            return httpConnectRequestHandler;
         } else {
             return nonConnectRequestHandler;
         }

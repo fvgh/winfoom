@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-public class HttpDateGenerator {
+public class HeaderDateGenerator {
 
     /** Date format pattern used to generate the header in RFC 1123 format. */
     public static final

@@ -22,7 +22,12 @@ import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.io.DefaultHttpRequestParser;
+import org.apache.http.impl.io.HttpTransportMetricsImpl;
+import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.apache.http.io.HttpMessageParser;
 import org.apache.http.message.BasicHttpRequest;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
@@ -30,10 +35,15 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
+import org.kpax.winfoom.TestConstants;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.LocalIOUtils;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -41,14 +51,20 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.kpax.winfoom.TestConstants.*;
 import static org.mockito.Mockito.when;
 
@@ -63,6 +79,8 @@ import static org.mockito.Mockito.when;
 @TestMethodOrder(OrderAnnotation.class)
 @Timeout(10)
 class SocketHandlerTests {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @MockBean
     private LocalProxyServer localProxyServer;
@@ -79,7 +97,7 @@ class SocketHandlerTests {
     @Autowired
     private ApplicationEventPublisher publisher;
 
-    private AsynchronousServerSocketChannel serverSocket;
+    private ServerSocket serverSocket;
 
     private HttpServer remoteServer;
 
@@ -89,12 +107,17 @@ class SocketHandlerTests {
     void beforeEach() {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
+        when(userConfig.isHttp()).thenReturn(true);
     }
 
     @BeforeAll
     void before() throws IOException {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
+        when(userConfig.isHttp()).thenReturn(true);
+
         remoteProxyServer = DefaultHttpProxyServer.bootstrap()
                 .withPort(PROXY_PORT)
                 .withName("AuthenticatedUpstreamProxy")
@@ -126,33 +149,28 @@ class SocketHandlerTests {
 
         remoteServer.start();
 
-        serverSocket = AsynchronousServerSocketChannel.open()
-                .bind(new InetSocketAddress(LOCAL_PROXY_PORT));
-        serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
-
-            public void completed(AsynchronousSocketChannel socketChanel, Void att) {
+        serverSocket = new ServerSocket(TestConstants.LOCAL_PROXY_PORT);
+        final ServerSocket server = serverSocket;
+        new Thread(() -> {
+            while (!server.isClosed()) {
                 try {
-                    // accept the next connection
-                    serverSocket.accept(null, this);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                    Socket socket = serverSocket.accept();
+                    socket.setSoTimeout(30 * 1000);
+                    new Thread(() -> {
 
-                // Handle this connection.
-                try {
-                    applicationContext.getBean(SocketHandler.class).bind(socketChanel).handleConnection();
+                        // Handle this connection.
+                        try {
+                            applicationContext.getBean(SocketHandler.class).bind(socket).handleConnection();
+                        } catch (Exception e) {
+                            logger.error("Error on handling connection", e);
+                        }
+                    }).start();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("Error on getting connection", e);
                 }
             }
+        }).start();
 
-            public void failed(Throwable exc, Void att) {
-                if (!(exc instanceof java.nio.channels.AsynchronousCloseException)) {
-                    exc.printStackTrace();
-                }
-            }
-
-        });
     }
 
     @Test
@@ -200,7 +218,7 @@ class SocketHandlerTests {
             HttpRequest request = new BasicHttpRequest("CONNECT", "/");
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, response.getStatusLine().getStatusCode());
-                assertEquals("Cannot parse CONNECT uri", response.getStatusLine().getReasonPhrase());
+                assertTrue(response.getStatusLine().getReasonPhrase().startsWith("Invalid HTTP host"));
             }
         }
     }

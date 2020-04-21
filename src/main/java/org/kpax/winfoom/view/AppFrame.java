@@ -75,7 +75,7 @@ public class AppFrame extends JFrame {
     private JLabel testUrlLabel;
     private JTextField testUrlJTextField;
 
-    private JButton btnCredentials;
+    private JButton btnConfig;
     private JButton btnStart;
     private JButton btnStop;
 
@@ -167,7 +167,7 @@ public class AppFrame extends JFrame {
         componentGbc2.anchor = GridBagConstraints.WEST;
         componentGbc2.gridx = 2;
         componentGbc2.gridy = 0;
-        mainContentPane.add(getBtnCredentials(), componentGbc2);
+        mainContentPane.add(getBtnConfig(), componentGbc2);
 
         GridBagConstraints labelGbc3 = new GridBagConstraints();
         labelGbc3.fill = GridBagConstraints.BOTH;
@@ -288,7 +288,7 @@ public class AppFrame extends JFrame {
             proxyTypeCombo = new JComboBox<>(new ProxyType[]{ProxyType.HTTP, ProxyType.SOCKS5});
             proxyTypeCombo.setMinimumSize(new Dimension(80, 35));
             proxyTypeCombo.addActionListener((e) -> {
-                getBtnCredentials().setVisible(userConfig.isSocks());
+                getBtnConfig().setVisible(userConfig.isSocks());
             });
         }
         return proxyTypeCombo;
@@ -355,19 +355,17 @@ public class AppFrame extends JFrame {
         return btnStop;
     }
 
-    private JButton getBtnCredentials() {
-        if (btnCredentials == null) {
-            btnCredentials = new JButton("Credentials");
-            btnCredentials.setIcon(new TunedImageIcon("config/img/dialog-password.png"));
-            btnCredentials.setPreferredSize(new Dimension(90, 25));
-            btnCredentials.setMargin(new Insets(1, 1, 1, 1));
-            btnCredentials.addActionListener(e -> showCredentialsInputDialog());
-            btnCredentials.setToolTipText(HttpUtils.toHtml("Set the user/password required for this proxy." +
-                    "<br>Leave it empty if the proxy does not require authentication." +
-                    "<br>Take into account the fact that the password is not persistent," +
-                    "<br>you'll have to insert it each time you start the application!"));
+    private JButton getBtnConfig() {
+        if (btnConfig == null) {
+            btnConfig = new JButton("Config");
+            btnConfig.setIcon(new TunedImageIcon("config/img/preferences-system.png"));
+            btnConfig.setPreferredSize(new Dimension(90, 25));
+            btnConfig.setMargin(new Insets(1, 1, 1, 1));
+            btnConfig.addActionListener(e -> showConfigInputDialog());
+            btnConfig.setToolTipText(HttpUtils.toHtml("Set the user/password required for this proxy." +
+                    "<br>Leave it empty if the proxy does not require authentication."));
         }
-        return btnCredentials;
+        return btnConfig;
     }
 
     // ------- End Buttons
@@ -537,9 +535,8 @@ public class AppFrame extends JFrame {
 
     private void startServer() {
         if (userConfig.isSocks()) {
-            if (StringUtils.isNotEmpty(userConfig.getProxyUsername())
-                    && (userConfig.getProxyPassword() == null)
-                    || userConfig.getProxyPassword().length == 0) {
+            if (StringUtils.isNotEmpty(userConfig.getProxySocksUsername())
+                    && StringUtils.isEmpty(userConfig.getProxyPassword())) {
                 int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide any password." +
                         "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
                 if (option != JOptionPane.OK_OPTION) {
@@ -592,30 +589,49 @@ public class AppFrame extends JFrame {
     }
 
 
-    private void showCredentialsInputDialog() {
+    private void showConfigInputDialog() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
 
-        JPanel label = new JPanel(new GridLayout(0, 1, 2, 2));
-        label.add(new JLabel("Username: ", SwingConstants.RIGHT));
-        label.add(new JLabel("Password: ", SwingConstants.RIGHT));
-        panel.add(label, BorderLayout.WEST);
+        JPanel labelPanel = new JPanel(new GridLayout(0, 1, 2, 2));
+        labelPanel.add(new JLabel("Username: ", SwingConstants.RIGHT));
+        labelPanel.add(new JLabel("Password: ", SwingConstants.RIGHT));
+        labelPanel.add(new JLabel("Store password: ", SwingConstants.RIGHT));
+        panel.add(labelPanel, BorderLayout.WEST);
 
         JPanel controlsPanel = new JPanel(new GridLayout(0, 1, 2, 2));
-        JTextField username = new JTextField(userConfig.getProxyUsername());
+        JTextField username = new JTextField(userConfig.getProxySocksUsername());
         controlsPanel.add(username);
-        JPasswordField password = new JPasswordField(String.valueOf(userConfig.getProxyPassword() != null ? userConfig.getProxyPassword() : ""));
+        JPasswordField password = new JPasswordField(userConfig.getProxyPassword());
         controlsPanel.add(password);
+        JCheckBox storePassword = new JCheckBox();
+        storePassword.setSelected(userConfig.isProxySocksStorePassword());
+        storePassword.addActionListener((e -> {
+            if (storePassword.isSelected()) {
+                int option = JOptionPane.showConfirmDialog(AppFrame.this,
+                        "This is not recomanded!" +
+                                "\nThe password is stored in a text file, encoded but not encrypted.",
+                        "Warning",
+                        JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+                if (option != JOptionPane.OK_OPTION) {
+                    storePassword.setSelected(false);
+                }
+            }
+        }));
+
+        controlsPanel.add(storePassword);
         panel.add(controlsPanel, BorderLayout.CENTER);
 
         int option = JOptionPane.showConfirmDialog(
                 this,
                 panel,
-                "Credentials",
+                "Config",
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE);
         if (option == JOptionPane.OK_OPTION) {
-            userConfig.setProxyUsername(username.getText());
+            userConfig.setProxySocksUsername(username.getText());
             userConfig.setProxyPassword(password.getPassword());
+            userConfig.setProxySocksStorePassword(storePassword.isSelected());
         }
 
     }
@@ -626,14 +642,17 @@ public class AppFrame extends JFrame {
             super(filename);
         }
 
+        @Override
         public int getIconHeight() {
             return ICON_SIZE;
         }
 
+        @Override
         public int getIconWidth() {
             return ICON_SIZE;
         }
 
+        @Override
         public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
             Graphics2D g2d = (Graphics2D) g.create();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

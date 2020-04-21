@@ -15,9 +15,7 @@ package org.kpax.winfoom.proxy;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
-import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
-import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.LocalIOUtils;
@@ -29,9 +27,9 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import java.io.IOException;
 import java.net.ConnectException;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.charset.StandardCharsets;
+import java.net.Socket;
 
 /**
  * This class handles the communication client <-> proxy facade <-> remote proxy. <br>
@@ -50,25 +48,18 @@ class SocketHandler {
     @Autowired
     private RequestHandlerFactory requestHandlerFactory;
 
-    private AsynchronousSocketChannelWrapper socketChannelWrapper;
+    private SocketWrapper socketWrapper;
 
-    SocketHandler bind(final AsynchronousSocketChannel socketChannel) {
-        Assert.isNull(socketChannelWrapper, "Socket already bound!");
-        this.socketChannelWrapper = new AsynchronousSocketChannelWrapper(socketChannel, systemConfig.getSocketChannelTimeout());
+    SocketHandler bind(final Socket socket) throws IOException {
+        Assert.isNull(socketWrapper, "Socket already bound!");
+        this.socketWrapper = new SocketWrapper(socket);
         return this;
     }
 
     void handleConnection() {
         logger.debug("Connection received");
         try {
-            // Prepare request parsing (this is the client's request)
-            SessionInputBufferImpl sessionInputBuffer = new SessionInputBufferImpl(
-                    new HttpTransportMetricsImpl(),
-                    LocalIOUtils.DEFAULT_BUFFER_SIZE,
-                    LocalIOUtils.DEFAULT_BUFFER_SIZE,
-                    MessageConstraints.DEFAULT,
-                    StandardCharsets.UTF_8.newDecoder());
-            sessionInputBuffer.bind(socketChannelWrapper.getInputStream());
+            SessionInputBufferImpl sessionInputBuffer = socketWrapper.getSessionInputBuffer();
 
             // Parse the request (all but the message body )
             HttpRequest request = new DefaultHttpRequestParser(sessionInputBuffer).parse();
@@ -76,22 +67,21 @@ class SocketHandler {
 
             logger.debug("Start processing request {}", requestLine);
             requestHandlerFactory.createRequestHandler(requestLine).handleRequest(request,
-                    sessionInputBuffer,
-                    socketChannelWrapper);
+                    socketWrapper);
             logger.debug("End processing request {}", requestLine);
 
         } catch (ConnectException e) {
 
             // Cannot connect to the remote proxy
-            socketChannelWrapper.writeError(HttpStatus.SC_BAD_GATEWAY, e);
+            socketWrapper.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
             logger.debug("Connection error", e);
         } catch (Exception e) {
 
             // Any other error, including client errors
-            socketChannelWrapper.writeError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+            socketWrapper.writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
             logger.debug("Generic error", e);
         } finally {
-            LocalIOUtils.close(socketChannelWrapper);
+            LocalIOUtils.close(socketWrapper);
         }
 
     }

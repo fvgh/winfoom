@@ -97,7 +97,7 @@ class CustomProxyClientTests {
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
-        AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
+        SocketWrapper socketChannelWrapper = Mockito.mock(SocketWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)
                 .tunnel(proxy, target, HttpVersion.HTTP_1_1);
@@ -111,7 +111,7 @@ class CustomProxyClientTests {
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, "wrong_pass"));
-        AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
+        SocketWrapper socketChannelWrapper = Mockito.mock(SocketWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(org.apache.http.impl.execchain.TunnelRefusedException.class, () -> {
             Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)
@@ -126,7 +126,7 @@ class CustomProxyClientTests {
         HttpHost proxy = new HttpHost("wronghost", userConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
-        AsynchronousSocketChannelWrapper socketChannelWrapper = Mockito.mock(AsynchronousSocketChannelWrapper.class);
+        SocketWrapper socketChannelWrapper = Mockito.mock(SocketWrapper.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(java.net.UnknownHostException.class, () -> {
             Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)

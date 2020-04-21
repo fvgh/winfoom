@@ -15,11 +15,10 @@ package org.kpax.winfoom.proxy;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.RequestLine;
-import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpDateGenerator;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.util.HeaderDateGenerator;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
@@ -40,8 +39,6 @@ import java.net.Socket;
 public class SocksConnectRequestHandler implements RequestHandler {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final HttpDateGenerator httpDateGenerator = new HttpDateGenerator();
-
     @Autowired
     private UserConfig userConfig;
 
@@ -53,8 +50,7 @@ public class SocksConnectRequestHandler implements RequestHandler {
 
     @Override
     public void handleRequest(HttpRequest request,
-                              SessionInputBufferImpl sessionInputBuffer,
-                              AsynchronousSocketChannelWrapper socketChannelWrapper)
+                              SocketWrapper socketWrapper)
             throws IOException {
 
         RequestLine requestLine = request.getRequestLine();
@@ -63,15 +59,18 @@ public class SocksConnectRequestHandler implements RequestHandler {
         HttpHost target = HttpHost.create(requestLine.getUri());
 
         try (Socket socket = new Socket(proxy)) {
-
+            socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
             logger.debug("Open connection");
-            socket.connect(new InetSocketAddress(target.getHostName(), target.getPort()), systemConfig.getSocketChannelTimeout() * 1000);
+            socket.connect(new InetSocketAddress(target.getHostName(), target.getPort()),
+                    systemConfig.getSocketChannelTimeout() * 1000);
             logger.debug("Connected to {}", target);
 
             // Respond with 200 code
-            socketChannelWrapper.write(String.format("%s 200 Connection established", requestLine.getProtocolVersion()));
-            socketChannelWrapper.write(HttpUtils.createHttpHeader(HTTP.DATE_HEADER, httpDateGenerator.getCurrentDate()));
-            socketChannelWrapper.writeln();
+            socketWrapper.write(String.format("%s 200 Connection established",
+                    requestLine.getProtocolVersion()));
+            socketWrapper.write(HttpUtils.createHttpHeader(HTTP.DATE_HEADER,
+                    new HeaderDateGenerator().getCurrentDate()));
+            socketWrapper.writeln();
 
             try {
                 // The proxy facade mediates the full duplex communication
@@ -79,8 +78,8 @@ public class SocksConnectRequestHandler implements RequestHandler {
                 LocalIOUtils.duplex(proxyContext.executorService(),
                         socket.getInputStream(),
                         socket.getOutputStream(),
-                        socketChannelWrapper.getInputStream(),
-                        socketChannelWrapper.getOutputStream());
+                        socketWrapper.getInputStream(),
+                        socketWrapper.getOutputStream());
             } catch (Exception e) {
                 logger.error("Error on full duplex", e);
             }

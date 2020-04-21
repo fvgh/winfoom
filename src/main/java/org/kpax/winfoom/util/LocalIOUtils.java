@@ -12,20 +12,16 @@
 
 package org.kpax.winfoom.util;
 
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.impl.io.SessionInputBufferImpl;
-import org.apache.http.io.SessionInputBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.*;
 
 /**
  * @author Eugen Covaci
@@ -79,9 +75,19 @@ public final class LocalIOUtils {
     }
 
 
+    /**
+     * Transfers bytes between two sources.
+     *
+     * @param executorService    The executor service for async support.
+     * @param firstInputSource   The input of the first source.
+     * @param firstOutputSource  The output of the first source.
+     * @param secondInputSource  The input of the second source.
+     * @param secondOutputSource The output of the second source.
+     */
     public static void duplex(ExecutorService executorService,
                               InputStream firstInputSource, OutputStream firstOutputSource,
-                              InputStream secondInputSource, OutputStream secondOutputSource) throws IOException {
+                              InputStream secondInputSource, OutputStream secondOutputSource) {
+
         logger.debug("Start full duplex communication");
         Future<?> secondToFirst = executorService.submit(
                 () -> secondInputSource.transferTo(firstOutputSource));
@@ -89,18 +95,31 @@ public final class LocalIOUtils {
             firstInputSource.transferTo(secondOutputSource);
             if (!secondToFirst.isDone()) {
 
-                // Wait for async transfer to finish
+                // Wait for the async transfer to finish
                 try {
                     secondToFirst.get();
-                } catch (Exception e) {
-                    logger.debug("Error on second to first transfer", e);
+                } catch (ExecutionException e) {
+                    if (e.getCause() instanceof SocketTimeoutException) {
+                        logger.debug("Second to first transfer cancelled due to timeout");
+                    } else {
+                        logger.debug("Error on executing second to first transfer", e.getCause());
+                    }
+                } catch (InterruptedException e) {
+                    logger.debug("Transfer from second to first interrupted", e);
+                } catch (CancellationException e) {
+                    logger.debug("Transfer from second to first cancelled", e);
                 }
             }
         } catch (Exception e) {
             secondToFirst.cancel(true);
-            logger.debug("Error on first to second transfer", e);
+            if (e instanceof SocketTimeoutException) {
+                logger.debug("Second to first transfer cancelled due to timeout");
+            } else {
+                logger.debug("Error on executing second to first transfer", e);
+            }
         }
         logger.debug("End full duplex communication");
     }
+
 
 }

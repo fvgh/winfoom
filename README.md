@@ -3,7 +3,7 @@
 
 [![Build Status](https://travis-ci.com/ecovaci/winfoom.svg?branch=master)](https://travis-ci.com/github/ecovaci/winfoom)
 
-Winfoom is an HTTP(s) proxy server facade that allows applications to authenticate through a NTML/Kerberos authenticated proxy server, typically used in corporate environments, 
+Winfoom is an HTTP(s) proxy server facade that allows applications to authenticate through a NTML/Kerberos HTTP authenticated proxy server or SOCKS 5 proxy server, typically used in corporate environments, 
 without having to deal with the actual handshake.
 
 A lot of software applications have problems when dealing with an authenticated proxy server's protocol. Winfoom sits between the corporate proxy and applications and offloads the authentication and the proxy's protocol, acting as a facade. This way, the software application will only have to deal with a basic proxy with no authentication.
@@ -31,8 +31,10 @@ The application log file is placed under `logs` directory.
 
 ### Configuration
 
-Winfoom has a graphical user interface that allows the user to configure the proxy host, port and the URL for testing the settings.
+Winfoom has a graphical user interface that allows the user to configure the proxy type (HTTP or SOCKS5), the proxy host, port and the URL for testing the settings.
 These fields are pre-filled with the values gathered from your system.
+
+For SOCKS proxy type, if authentication is required use the `Config` button to provide user/password. 
 
 To test it, open a browser, let's say Firefox and configure proxy like this:
 
@@ -43,7 +45,7 @@ Now you should be able to access any URL without Firefox asking for credentials.
 _If you don't have an available proxy, you still can test WinFoom by installing [WinGate](https://www.wingate.com/) and configure it to act 
 as a NTML proxy._
 
-> 👉 Note: Winfoom uses the current user credentials to authenticate to the remote proxy! For this, it uses [org.apache.http.impl.auth.win.WindowsCredentialsProvider]( https://hc.apache.org/httpcomponents-client-ga/httpclient-win/apidocs/org/apache/http/impl/auth/win/WindowsCredentialsProvider.html)
+> 👉 Note: For HTTP proxy type, Winfoom uses the current user credentials to authenticate to the remote proxy, there is no need to provide them!
 
 ### Build from source code
 

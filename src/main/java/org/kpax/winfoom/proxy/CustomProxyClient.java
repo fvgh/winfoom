@@ -42,6 +42,7 @@ import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.protocol.*;
 import org.apache.http.util.Args;
 import org.apache.http.util.EntityUtils;
+import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
@@ -69,6 +70,9 @@ class CustomProxyClient {
 
     @Autowired
     private CredentialsProvider credentialsProvider;
+
+    @Autowired
+    private SystemConfig systemConfig;
 
     private HttpProcessor httpProcessor;
     private HttpRequestExecutor requestExec;
@@ -127,7 +131,9 @@ class CustomProxyClient {
         HttpResponse response;
         while (true) {
             if (!connection.isOpen()) {
-                connection.bind(new Socket(proxy.getHostName(), proxy.getPort()));
+                Socket socket = new Socket(proxy.getHostName(), proxy.getPort());
+                socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
+                connection.bind(socket);
             }
 
             this.authenticator.generateAuthResponse(connect, this.proxyAuthState, context);

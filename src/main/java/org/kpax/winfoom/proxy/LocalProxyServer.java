@@ -12,6 +12,7 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.commons.lang3.StringUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.slf4j.Logger;
@@ -21,11 +22,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.Closeable;
-import java.net.InetSocketAddress;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.AsynchronousServerSocketChannel;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 
 /**
  * The local proxy server.
@@ -45,9 +44,12 @@ class LocalProxyServer implements Closeable {
     private UserConfig userConfig;
 
     @Autowired
+    private ProxyContext proxyContext;
+
+    @Autowired
     private ApplicationContext applicationContext;
 
-    private AsynchronousServerSocketChannel serverSocket;
+    private ServerSocket serverSocket;
 
     private volatile boolean started;
 
@@ -65,41 +67,36 @@ class LocalProxyServer implements Closeable {
         logger.info("Start local proxy server with userConfig {}", userConfig);
 
         try {
-            serverSocket = AsynchronousServerSocketChannel.open()
-                    .bind(new InetSocketAddress(userConfig.getLocalPort()), systemConfig.getSocketChannelBacklog());
-            serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
-
-                public void completed(AsynchronousSocketChannel socketChanel, Void att) {
-                    try {
-                        // accept the next connection
-                        serverSocket.accept(null, this);
-                    } catch (Exception e) {
-                        logger.error("Error on accepting the next connection", e);
-                    }
-
-                    // Handle this connection.
-                    try {
-                        applicationContext.getBean(SocketHandler.class)
-                                .bind(socketChanel)
-                                .handleConnection();
-                    } catch (Exception e) {
-                        logger.error("Error on handling connection", e);
-                    }
-                }
-
-                public void failed(Throwable exc, Void att) {
-
-                    // Ignore java.nio.channels.AsynchronousCloseException error
-                    // since it uselessly pollutes the log file
-                    if (!(exc instanceof AsynchronousCloseException)) {
-                        logger.warn("SocketServer failed", exc);
-                    }
-
-                }
-
-            });
+            serverSocket = new ServerSocket(userConfig.getLocalPort(),
+                    systemConfig.getSocketChannelBacklog());
 
             started = true;
+
+            proxyContext.executorService().execute(() -> {
+                while (started) {
+                    try {
+                        Socket socket = serverSocket.accept();
+                        socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
+                        proxyContext.executorService().execute(() -> {
+                            try {
+                                applicationContext.getBean(SocketHandler.class)
+                                        .bind(socket)
+                                        .handleConnection();
+                            } catch (Exception e) {
+                                logger.error("Error on handling connection", e);
+                            }
+                        });
+                    } catch (SocketException e) {
+
+                        //Ignore java.net.SocketException: Interrupted function call
+                        if (!StringUtils.startsWithIgnoreCase(e.getMessage(), "Interrupted function call")) {
+                            logger.debug("Socket error on getting connection", e);
+                        }
+                    } catch (Exception e) {
+                        logger.debug("Generic error on getting connection", e);
+                    }
+                }
+            });
 
             try {
                 // Save the user properties
@@ -118,16 +115,18 @@ class LocalProxyServer implements Closeable {
 
     @Override
     public synchronized void close() {
-        logger.info("Stop running the local proxy server, if any");
-        if (serverSocket != null) {
+        if (this.started) {
+            this.started = false;
+            logger.info("Now stop running the local proxy server");
             try {
                 logger.info("Close the server socket");
                 serverSocket.close();
             } catch (Exception e) {
                 logger.warn("Error on closing server socket", e);
             }
+        } else {
+            logger.info("Already closed, nothing to do");
         }
-        this.started = false;
     }
 
     synchronized boolean isStarted() {
