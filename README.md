@@ -1,5 +1,5 @@
 # winfoom
-### Basic Proxy Facade for NTLM and Kerberos proxies
+### Basic Proxy Facade for NTLM, Kerberos and SOCKS 5 proxies
 
 [![Build Status](https://travis-ci.com/ecovaci/winfoom.svg?branch=master)](https://travis-ci.com/github/ecovaci/winfoom)
 
