@@ -36,6 +36,8 @@ These fields are pre-filled with the values gathered from your system.
 
 For SOCKS proxy type, if authentication is required use the `Config` button to provide user/password. 
 
+> 👉 Note: For HTTP proxy type, Winfoom uses the current user credentials to authenticate to the remote proxy, there is no need to provide them!
+
 To test it, open a browser, let's say Firefox and configure proxy like this:
 
 ![firefox](https://github.com/ecovaci/winfoom/blob/master/assets/img/firefox.png)
@@ -44,8 +46,6 @@ Now you should be able to access any URL without Firefox asking for credentials.
 
 _If you don't have an available proxy, you still can test WinFoom by installing [WinGate](https://www.wingate.com/) and configure it to act 
 as a NTML proxy._
-
-> 👉 Note: For HTTP proxy type, Winfoom uses the current user credentials to authenticate to the remote proxy, there is no need to provide them!
 
 ### Build from source code
 
