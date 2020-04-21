@@ -158,7 +158,7 @@ class NonConnectRequestHandler implements RequestHandler {
             }
         } finally {
             if (entity instanceof AutoCloseable) {
-                LocalIOUtils.close((AutoCloseable)entity);
+                LocalIOUtils.close((AutoCloseable) entity);
             }
         }
     }

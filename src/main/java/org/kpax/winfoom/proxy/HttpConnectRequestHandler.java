@@ -79,7 +79,7 @@ class HttpConnectRequestHandler implements RequestHandler {
         localSocketChannel.write(tunnel.getStatusLine());
 
         logger.debug("Write headers");
-        for (Header header:tunnel.getResponse().getAllHeaders()) {
+        for (Header header : tunnel.getResponse().getAllHeaders()) {
             localSocketChannel.write(header);
         }
         localSocketChannel.writeln();

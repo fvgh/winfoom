@@ -80,10 +80,10 @@ public class UserConfig {
                     if (split[0].startsWith("http=")) {
                         proxyHost = split[0].substring("http=".length());
                         proxyType = ProxyType.HTTP;
-                    }else if (split[0].startsWith("socks=")) {
+                    } else if (split[0].startsWith("socks=")) {
                         proxyHost = split[0].substring("socks=".length());
                         proxyType = ProxyType.SOCKS5;
-                    }  else {
+                    } else {
                         proxyHost = split[0];
                     }
                     proxyPort = Integer.parseInt(split[1]);

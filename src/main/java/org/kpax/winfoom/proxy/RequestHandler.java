@@ -23,7 +23,7 @@ public interface RequestHandler {
     /**
      * Process the client's HTTP request.
      *
-     * @param request              The request.
+     * @param request       The request.
      * @param socketWrapper The {@link java.nio.channels.AsynchronousSocketChannel} wrapper instance.
      * @throws Exception
      */
