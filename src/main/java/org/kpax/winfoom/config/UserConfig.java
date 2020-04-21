@@ -74,8 +74,18 @@ public class UserConfig {
             try {
                 CommandExecutor.getSystemProxy().ifPresent((s) -> {
                     logger.info("proxyLine: {}", s);
-                    String[] split = s.split(":");
-                    proxyHost = split[0];
+                    String firstProxy = s.split(";")[0];
+                    logger.info("firstProxy: {}", firstProxy);
+                    String[] split = firstProxy.split(":");
+                    if (split[0].startsWith("http=")) {
+                        proxyHost = split[0].substring("http=".length());
+                        proxyType = ProxyType.HTTP;
+                    }else if (split[0].startsWith("socks=")) {
+                        proxyHost = split[0].substring("socks=".length());
+                        proxyType = ProxyType.SOCKS5;
+                    }  else {
+                        proxyHost = split[0];
+                    }
                     proxyPort = Integer.parseInt(split[1]);
                 });
             } catch (Exception e) {
