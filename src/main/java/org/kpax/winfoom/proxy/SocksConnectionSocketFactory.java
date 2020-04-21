@@ -42,7 +42,7 @@ public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
             final InetSocketAddress localAddress,
             final HttpContext context) throws IOException, ConnectTimeoutException {
         Socket currentSocket = socket;
-        if (currentSocket != null) {
+        if (currentSocket == null) {
             currentSocket = createSocket(context);
         }
         if (localAddress != null) {
