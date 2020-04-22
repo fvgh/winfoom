@@ -63,7 +63,7 @@ public class UserConfig {
     @Value("${proxy.socks.store.password}")
     private boolean proxySocksStorePassword;
 
-    @Value("${proxy.socks.password}")
+    @Value("${proxy.socks.password:}")
     private String proxySocksPassword;
 
     private Path tempDirectory;
@@ -165,14 +165,15 @@ public class UserConfig {
     }
 
     public String getProxyPassword() {
-        if (proxySocksPassword != null) {
+        if (StringUtils.isNotEmpty(proxySocksPassword)) {
             return new String(Base64.getDecoder().decode(proxySocksPassword));
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setProxyPassword(char[] proxyPassword) {
-        if (proxyPassword != null) {
+        if (proxyPassword != null && proxyPassword.length > 0) {
             proxySocksPassword = Base64.getEncoder().encodeToString(String.valueOf(proxyPassword).getBytes());
         } else {
             proxySocksPassword = null;
@@ -206,6 +207,13 @@ public class UserConfig {
         config.setProperty("proxy.socks.store.password", this.proxySocksStorePassword);
         if (this.proxySocksStorePassword) {
             config.setProperty("proxy.socks.password", this.proxySocksPassword);
+        } else {
+
+            // Clear the stored password
+            if (StringUtils.isNotEmpty(proxySocksPassword)) {
+                config.setProperty("proxy.socks.password", null);
+                this.proxySocksPassword = null;
+            }
         }
         propertiesBuilder.save();
     }

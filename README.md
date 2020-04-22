@@ -34,6 +34,8 @@ The application log file is placed under `logs` directory.
 Winfoom has a graphical user interface that allows the user to configure the proxy type (HTTP or SOCKS5), the proxy host, port and the URL for testing the settings.
 These fields are pre-filled with the values gathered from your system.
 
+![winfoom_gui](https://github.com/ecovaci/winfoom/blob/master/assets/img/winfoom_gui.png)
+
 For SOCKS proxy type, if authentication is required use the `Config` button to provide user/password. 
 
 > 👉 Note: For HTTP proxy type, Winfoom uses the current user credentials to authenticate to the remote proxy, there is no need to provide them!
