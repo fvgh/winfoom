@@ -57,13 +57,13 @@ public class UserConfig {
     @Value("${proxy.type}")
     private ProxyType proxyType;
 
-    @Value("${proxy.socks.username}")
+    @Value("${proxy.socks.username:#{null}}")
     private String proxySocksUsername;
 
-    @Value("${proxy.socks.store.password}")
+    @Value("${proxy.socks.store.password:false}")
     private boolean proxySocksStorePassword;
 
-    @Value("${proxy.socks.password:}")
+    @Value("${proxy.socks.password:#{null}}")
     private String proxySocksPassword;
 
     private Path tempDirectory;
