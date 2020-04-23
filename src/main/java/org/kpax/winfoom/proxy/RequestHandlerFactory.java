@@ -39,7 +39,7 @@ class RequestHandlerFactory {
 
     RequestHandler createRequestHandler(RequestLine requestLine) {
         if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
-            if (userConfig.isSocks()) {
+            if (userConfig.isSocks5()) {
                 return socksConnectRequestHandler;
             }
             return httpConnectRequestHandler;

@@ -14,6 +14,7 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.config.SystemConfig;
@@ -54,12 +55,22 @@ public class SocksConnectRequestHandler implements RequestHandler {
             throws IOException {
 
         RequestLine requestLine = request.getRequestLine();
+
         Proxy proxy = new Proxy(Proxy.Type.SOCKS,
                 new InetSocketAddress(userConfig.getProxyHost(), userConfig.getProxyPort()));
         HttpHost target = HttpHost.create(requestLine.getUri());
 
         try (Socket socket = new Socket(proxy)) {
             socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
+            if (userConfig.isSocks4()) {
+                try {
+                    HttpUtils.setSocks4(socket);
+                } catch (Exception e) {
+                    logger.debug("Error on setting SOCKS 4 version", e);
+                    socketWrapper.writeErrorResponse(request.getProtocolVersion(), HttpStatus.SC_INTERNAL_SERVER_ERROR, "SOCKS 4 not supported by JVM");
+                    return;
+                }
+            }
             logger.debug("Open connection");
             socket.connect(new InetSocketAddress(target.getHostName(), target.getPort()),
                     systemConfig.getSocketChannelTimeout() * 1000);

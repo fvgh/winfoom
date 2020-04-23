@@ -141,7 +141,7 @@ class NonConnectRequestHandler implements RequestHandler {
                     uri.getScheme());
 
             HttpClientContext context = HttpClientContext.create();
-            if (userConfig.isSocks()) {
+            if (userConfig.isSocks5()) {
                 InetSocketAddress proxySocketAddress = new InetSocketAddress(userConfig.getProxyHost(),
                         userConfig.getProxyPort());
                 context.setAttribute(HttpUtils.SOCKS_ADDRESS, proxySocketAddress);

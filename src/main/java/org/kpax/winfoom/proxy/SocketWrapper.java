@@ -97,14 +97,18 @@ class SocketWrapper implements Closeable {
         writeErrorResponse(HttpVersion.HTTP_1_1, statusCode, e);
     }
 
-    void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, Exception e) {
-        Validate.notNull(e, "Exception cannot be null");
+    void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, String reasonPhrase) {
         try {
-            write(HttpUtils.toStatusLine(protocolVersion, statusCode, e.getMessage()));
+            write(HttpUtils.toStatusLine(protocolVersion, statusCode, reasonPhrase));
             writeln();
         } catch (Exception ex) {
             logger.debug("Error on writing response error", ex);
         }
+    }
+
+    void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, Exception e) {
+        Validate.notNull(e, "Exception cannot be null");
+        writeErrorResponse(protocolVersion, statusCode, e.getMessage());
     }
 
     /**

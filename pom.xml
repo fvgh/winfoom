@@ -39,6 +39,8 @@
         <mock-server.version>5.9.0</mock-server.version>
         <littleproxy.version>1.1.2</littleproxy.version>
         <beansbinding.version>1.2.1</beansbinding.version>
+        <commons-net.version>3.6</commons-net.version>
+        <htmlunit-core-js.version>2.39.0</htmlunit-core-js.version>
     </properties>
 
     <dependencies>
@@ -81,6 +83,18 @@
             <groupId>org.jdesktop</groupId>
             <artifactId>beansbinding</artifactId>
             <version>${beansbinding.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sourceforge.htmlunit</groupId>
+            <artifactId>htmlunit-core-js</artifactId>
+            <version>${htmlunit-core-js.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+            <version>${commons-net.version}</version>
         </dependency>
 
         <dependency>

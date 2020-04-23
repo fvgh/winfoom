@@ -148,12 +148,24 @@ public class UserConfig {
         this.proxyType = proxyType;
     }
 
-    public boolean isSocks() {
+    public boolean isSocks4() {
+        return proxyType == ProxyType.SOCKS4;
+    }
+
+    public boolean isSocks5() {
         return proxyType == ProxyType.SOCKS5;
+    }
+
+    public boolean isSocks() {
+        return proxyType == ProxyType.SOCKS4 || proxyType == ProxyType.SOCKS5;
     }
 
     public boolean isHttp() {
         return proxyType == ProxyType.HTTP;
+    }
+
+    public boolean isPac() {
+        return proxyType == ProxyType.PAC;
     }
 
     public String getProxySocksUsername() {

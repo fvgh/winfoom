@@ -13,5 +13,5 @@
 package org.kpax.winfoom.proxy;
 
 public enum ProxyType {
-    HTTP, SOCKS5;
+    HTTP, SOCKS4, SOCKS5, PAC;
 }

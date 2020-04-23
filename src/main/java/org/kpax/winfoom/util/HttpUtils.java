@@ -36,6 +36,9 @@ import javax.security.auth.login.CredentialException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -227,6 +230,16 @@ public final class HttpUtils {
 
     public static String toHtml(String text) {
         return new StringBuilder("<html>").append(text).append("</html>").toString();
+    }
+
+    public static void setSocks4 (final Socket socket) throws Exception {
+        Field implField = Socket.class.getDeclaredField("impl");
+        implField.setAccessible(true);
+        Object impl = implField.get(socket);
+        Class<?> implType = impl.getClass();
+        Method setV4 = implType.getDeclaredMethod("setV4");
+        setV4.setAccessible(true);
+        setV4.invoke(impl);
     }
 
 }

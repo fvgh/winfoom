@@ -43,7 +43,7 @@ class HttpClientBuilderFactory {
     private ProxyContext proxyContext;
 
     HttpClientBuilder createClientBuilder() {
-        if (userConfig.isSocks()) {
+        if (userConfig.isSocks5()) {
             return createSocksClientBuilder();
         } else if (userConfig.isHttp()) {
             return createHttpClientBuilder();

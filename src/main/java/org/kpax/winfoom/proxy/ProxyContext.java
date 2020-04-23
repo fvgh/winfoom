@@ -104,7 +104,7 @@ public class ProxyContext implements AutoCloseable {
             }
 
             // Remove auth for SOCKS proxy
-            if (userConfig.isSocks()) {
+            if (userConfig.isSocks5()) {
                 Authenticator.setDefault(null);
             }
 
@@ -175,7 +175,7 @@ public class ProxyContext implements AutoCloseable {
 
 
     private PoolingHttpClientConnectionManager createSocksConnectionManager() {
-        SocksConnectionSocketFactory connectionSocketFactory = new SocksConnectionSocketFactory();
+        SocksConnectionSocketFactory connectionSocketFactory = new SocksConnectionSocketFactory(userConfig);
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", connectionSocketFactory)
                 .register("https", connectionSocketFactory)
@@ -199,7 +199,7 @@ public class ProxyContext implements AutoCloseable {
         return cleanupConnectionManagerScheduler.scheduleWithFixedDelay(
                 () -> {
                     logger.debug("Execute connection manager pool clean up task");
-                    PoolingHttpClientConnectionManager connectionManager = userConfig.isSocks()
+                    PoolingHttpClientConnectionManager connectionManager = userConfig.isSocks5()
                             ? socksConnectionManager : httpConnectionManager;
                     if (connectionManager != null) {
                         connectionManager.closeExpiredConnections();
