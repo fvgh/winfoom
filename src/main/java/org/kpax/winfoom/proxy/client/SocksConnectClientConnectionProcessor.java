@@ -10,15 +10,16 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy;
+package org.kpax.winfoom.proxy.client;
 
 import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.ProxyContext;
+import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.util.HeaderDateGenerator;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
@@ -37,7 +38,7 @@ import java.net.Socket;
  * Created on 4/16/2020
  */
 @Component
-public class SocksConnectRequestHandler implements RequestHandler {
+public class SocksConnectClientConnectionProcessor implements ClientConnectionProcessor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
@@ -50,11 +51,10 @@ public class SocksConnectRequestHandler implements RequestHandler {
     private ProxyContext proxyContext;
 
     @Override
-    public void handleRequest(HttpRequest request,
-                              SocketWrapper socketWrapper)
+    public void process(ClientConnection clientConnection, ProxyInfo proxyInfo)
             throws IOException {
 
-        RequestLine requestLine = request.getRequestLine();
+        RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
 
         Proxy proxy = new Proxy(Proxy.Type.SOCKS,
                 new InetSocketAddress(userConfig.getProxyHost(), userConfig.getProxyPort()));
@@ -62,12 +62,13 @@ public class SocksConnectRequestHandler implements RequestHandler {
 
         try (Socket socket = new Socket(proxy)) {
             socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
-            if (userConfig.isSocks4()) {
+            if (userConfig.getProxyType().isSocks4()) {
                 try {
                     HttpUtils.setSocks4(socket);
                 } catch (Exception e) {
                     logger.debug("Error on setting SOCKS 4 version", e);
-                    socketWrapper.writeErrorResponse(request.getProtocolVersion(), HttpStatus.SC_INTERNAL_SERVER_ERROR, "SOCKS 4 not supported by JVM");
+                    clientConnection.writeErrorResponse(clientConnection.getHttpRequest().getProtocolVersion(),
+                            HttpStatus.SC_INTERNAL_SERVER_ERROR, "SOCKS 4 not supported by the JVM");
                     return;
                 }
             }
@@ -77,11 +78,11 @@ public class SocksConnectRequestHandler implements RequestHandler {
             logger.debug("Connected to {}", target);
 
             // Respond with 200 code
-            socketWrapper.write(String.format("%s 200 Connection established",
+            clientConnection.write(String.format("%s 200 Connection established",
                     requestLine.getProtocolVersion()));
-            socketWrapper.write(HttpUtils.createHttpHeader(HTTP.DATE_HEADER,
+            clientConnection.write(HttpUtils.createHttpHeader(HTTP.DATE_HEADER,
                     new HeaderDateGenerator().getCurrentDate()));
-            socketWrapper.writeln();
+            clientConnection.writeln();
 
             try {
                 // The proxy facade mediates the full duplex communication
@@ -89,8 +90,8 @@ public class SocksConnectRequestHandler implements RequestHandler {
                 LocalIOUtils.duplex(proxyContext.executorService(),
                         socket.getInputStream(),
                         socket.getOutputStream(),
-                        socketWrapper.getInputStream(),
-                        socketWrapper.getOutputStream());
+                        clientConnection.getInputStream(),
+                        clientConnection.getOutputStream());
             } catch (Exception e) {
                 logger.error("Error on full duplex", e);
             }

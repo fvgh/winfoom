@@ -10,11 +10,18 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy;
+package org.kpax.winfoom.proxy.client;
 
-import org.apache.http.*;
+import org.apache.http.Header;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.RequestLine;
 import org.apache.http.impl.execchain.TunnelRefusedException;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.ProxyContext;
+import org.kpax.winfoom.proxy.ProxyInfo;
+import org.kpax.winfoom.proxy.Tunnel;
+import org.kpax.winfoom.proxy.TunnelConnection;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +35,9 @@ import java.io.IOException;
  * Created on 4/13/2020
  */
 @Component
-class HttpConnectRequestHandler implements RequestHandler {
+class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor {
 
-    private final Logger logger = LoggerFactory.getLogger(HttpConnectRequestHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(HttpConnectClientConnectionProcessor.class);
 
     @Autowired
     private UserConfig userConfig;
@@ -39,27 +46,26 @@ class HttpConnectRequestHandler implements RequestHandler {
     private ProxyContext proxyContext;
 
     @Autowired
-    private CustomProxyClient proxyClient;
+    private TunnelConnection tunnelConnection;
 
     @Override
-    public void handleRequest(final HttpRequest request,
-                              final SocketWrapper socketWrapper)
+    public void process(final ClientConnection clientConnection, ProxyInfo proxyInfo)
             throws IOException, HttpException {
         logger.debug("Handle connect request");
-        RequestLine requestLine = request.getRequestLine();
+        RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
         HttpHost target = HttpHost.create(requestLine.getUri());
 
-        try (Tunnel tunnel = proxyClient.tunnel(proxy, target, requestLine.getProtocolVersion())) {
+        try (Tunnel tunnel = tunnelConnection.tunnel(proxy, target, requestLine.getProtocolVersion())) {
             try {
-                handleResponse(tunnel, socketWrapper);
+                handleResponse(tunnel, clientConnection);
             } catch (Exception e) {
                 logger.debug("Error on handling CONNECT response", e);
             }
         } catch (TunnelRefusedException tre) {
             logger.debug("The tunnel request was rejected by the proxy host", tre);
             try {
-                socketWrapper.writeHttpResponse(tre.getResponse());
+                clientConnection.writeHttpResponse(tre.getResponse());
             } catch (Exception e) {
                 logger.debug("Error on writing response", e);
             }
@@ -74,23 +80,23 @@ class HttpConnectRequestHandler implements RequestHandler {
      * @throws IOException
      */
     private void handleResponse(final Tunnel tunnel,
-                                SocketWrapper localSocketChannel) throws IOException {
+                                ClientConnection clientConnection) throws IOException {
         logger.debug("Write status line");
-        localSocketChannel.write(tunnel.getStatusLine());
+        clientConnection.write(tunnel.getStatusLine());
 
         logger.debug("Write headers");
         for (Header header : tunnel.getResponse().getAllHeaders()) {
-            localSocketChannel.write(header);
+            clientConnection.write(header);
         }
-        localSocketChannel.writeln();
+        clientConnection.writeln();
 
         // The proxy facade mediates the full duplex communication
         // between the client and the remote proxy
         LocalIOUtils.duplex(proxyContext.executorService(),
-                tunnel.getSocket().getInputStream(),
-                tunnel.getSocket().getOutputStream(),
-                localSocketChannel.getInputStream(),
-                localSocketChannel.getOutputStream());
+                tunnel.getInputStream(),
+                tunnel.getOutputStream(),
+                clientConnection.getInputStream(),
+                clientConnection.getOutputStream());
     }
 
 }

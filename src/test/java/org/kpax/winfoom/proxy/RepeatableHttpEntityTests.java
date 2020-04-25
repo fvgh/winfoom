@@ -28,6 +28,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
 import org.kpax.winfoom.TestConstants;
+import org.kpax.winfoom.proxy.client.ClientConnection;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
@@ -68,7 +69,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
 
     private Path tempDirectory;
 
-    @BeforeAll
+/*    @BeforeAll
     void before() throws IOException {
         tempDirectory = Paths.get(System.getProperty("user.dir"), "target", "temp");
         Files.createDirectories(tempDirectory);
@@ -85,7 +86,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
                     new Thread(() -> {
 
                         // Handle this connection.
-                        try (SocketWrapper socketWrapper = new SocketWrapper(socket)) {
+                        try (ClientConnection clientConnection = new ClientConnection(socket)) {
                             HttpRequest request;
                             RepeatableHttpEntity requestEntity;
                             try {
@@ -95,7 +96,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
                                         LocalIOUtils.DEFAULT_BUFFER_SIZE,
                                         MessageConstraints.DEFAULT,
                                         StandardCharsets.UTF_8.newDecoder());
-                                inputBuffer.bind(socketWrapper.getInputStream());
+                                inputBuffer.bind(clientConnection.getInputStream());
 
                                 HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
                                 request = requestParser.parse();
@@ -106,39 +107,39 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
                                     requestEntity.setChunked(true);
                                 }
                                 ((HttpEntityEnclosingRequest) request).setEntity(requestEntity);
-                                socketWrapper.write("HTTP/1.1 200 OK");
+                                clientConnection.write("HTTP/1.1 200 OK");
                             } catch (Exception e) {
-                                socketWrapper.write("HTTP/1.1 500 " + e.getMessage());
-                                socketWrapper.writeln();
+                                clientConnection.write("HTTP/1.1 500 " + e.getMessage());
+                                clientConnection.writeln();
                                 throw e;
                             }
 
                             if (request.containsHeader(echoContentHeader)) {
-                                socketWrapper.write(request.getFirstHeader(HTTP.CONTENT_LEN));
-                                socketWrapper.write(request.getFirstHeader(HTTP.CONTENT_TYPE));
-                                socketWrapper.writeln();
-                                requestEntity.getContent().transferTo(socketWrapper.getOutputStream());
+                                clientConnection.write(request.getFirstHeader(HTTP.CONTENT_LEN));
+                                clientConnection.write(request.getFirstHeader(HTTP.CONTENT_TYPE));
+                                clientConnection.writeln();
+                                requestEntity.getContent().transferTo(clientConnection.getOutputStream());
                             } else {
 
                                 // Read the entity
                                 HttpUtils.consumeEntity(requestEntity);
 
                                 boolean firstTry = (Boolean) ReflectionTestUtils.getField(requestEntity, "firstTry");
-                                socketWrapper.write(HttpUtils.createHttpHeader(firstTryHeader, String.valueOf(firstTry)));
+                                clientConnection.write(HttpUtils.createHttpHeader(firstTryHeader, String.valueOf(firstTry)));
 
                                 Path tempFilepath = (Path) ReflectionTestUtils.getField(requestEntity, "tempFilepath");
                                 if (tempFilepath != null) {
-                                    socketWrapper.write(HttpUtils.createHttpHeader(tempFilenameHeader, tempFilepath.getFileName().toString()));
-                                    socketWrapper.write(HttpUtils.createHttpHeader(tempFileContentHeader, Files.readString(tempFilepath)));
+                                    clientConnection.write(HttpUtils.createHttpHeader(tempFilenameHeader, tempFilepath.getFileName().toString()));
+                                    clientConnection.write(HttpUtils.createHttpHeader(tempFileContentHeader, Files.readString(tempFilepath)));
                                 }
 
                                 byte[] bufferedBytes = (byte[]) ReflectionTestUtils.getField(requestEntity, "bufferedBytes");
                                 if (bufferedBytes != null) {
-                                    socketWrapper.write(HttpUtils.createHttpHeader(bufferedBytesHeader, String.valueOf(bufferedBytes.length)));
+                                    clientConnection.write(HttpUtils.createHttpHeader(bufferedBytesHeader, String.valueOf(bufferedBytes.length)));
                                 }
 
-                                socketWrapper.write(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
-                                socketWrapper.writeln();
+                                clientConnection.write(HttpUtils.createHttpHeader(HTTP.CONTENT_LEN, "0"));
+                                clientConnection.writeln();
                             }
 
                         } catch (Exception e) {
@@ -152,7 +153,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
         }).start();
 
 
-    }
+    }*/
 
     @Test
     void repeatable_BufferLessThanContentLength_UseTempFile() throws IOException {//OK

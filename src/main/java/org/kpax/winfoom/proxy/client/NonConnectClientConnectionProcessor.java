@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy;
+package org.kpax.winfoom.proxy.client;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
@@ -23,6 +23,8 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.ProxyInfo;
+import org.kpax.winfoom.proxy.RepeatableHttpEntity;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.LocalIOUtils;
 import org.slf4j.Logger;
@@ -43,7 +45,7 @@ import java.util.List;
  * Created on 4/13/2020
  */
 @Component
-class NonConnectRequestHandler implements RequestHandler {
+class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
 
     /**
      * These headers will be removed from client's response if there is an enclosing
@@ -61,7 +63,7 @@ class NonConnectRequestHandler implements RequestHandler {
     private static final List<String> DEFAULT_BANNED_HEADERS = Collections.singletonList(
             HttpHeaders.PROXY_AUTHORIZATION);
 
-    private final Logger logger = LoggerFactory.getLogger(NonConnectRequestHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(NonConnectClientConnectionProcessor.class);
 
     @Autowired
     private SystemConfig systemConfig;
@@ -73,66 +75,71 @@ class NonConnectRequestHandler implements RequestHandler {
     private HttpClientBuilderFactory clientBuilderFactory;
 
     @Override
-    public void handleRequest(final HttpRequest request,
-                              final SocketWrapper socketWrapper)
+    public void process(final ClientConnection clientConnection, ProxyInfo proxyInfo)
             throws IOException, URISyntaxException {
         logger.debug("Handle non-connect request");
+        HttpRequest request = clientConnection.getHttpRequest();
 
-        AbstractHttpEntity entity = null;
-        if (request instanceof HttpEntityEnclosingRequest) {
-            logger.debug("Set enclosing entity");
-            if (userConfig.isSocks()) {
+        if (!clientConnection.isFlagged(ClientConnection.Flag.REQUEST_PREPARED)) {
 
-                // There is no need for caching since
-                // SOCKS communication is one step only
-                entity = new InputStreamEntity(socketWrapper.getInputStream(),
-                        HttpUtils.getContentLength(request),
-                        HttpUtils.getContentType(request));
-            } else {
-                entity = new RepeatableHttpEntity(socketWrapper.getSessionInputBuffer(),
-                        userConfig.getTempDirectory(),
-                        request,
-                        systemConfig.getInternalBufferLength());
-            }
+            AbstractHttpEntity entity;
+            if (request instanceof HttpEntityEnclosingRequest) {
+                logger.debug("Set enclosing entity");
+                if (userConfig.getProxyType().isSocks()) {
 
-            Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
-            if (transferEncoding != null
-                    && StringUtils.containsIgnoreCase(transferEncoding.getValue(), HTTP.CHUNK_CODING)) {
-                logger.debug("Mark entity as chunked");
-                entity.setChunked(true);
-
-                // Apache HttpClient adds a Transfer-Encoding header's chunk directive
-                // so remove or strip the existent one of chunk directive
-                request.removeHeader(transferEncoding);
-                String nonChunkedTransferEncoding = HttpUtils.stripChunked(transferEncoding.getValue());
-                if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                    request.addHeader(
-                            HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
-                                    nonChunkedTransferEncoding));
-                    logger.debug("Add chunk-striped request header");
+                    // There is no need for caching since
+                    // SOCKS communication is one step only
+                    entity = new InputStreamEntity(clientConnection.getInputStream(),
+                            HttpUtils.getContentLength(request),
+                            HttpUtils.getContentType(request));
                 } else {
-                    logger.debug("Remove transfer encoding chunked request header");
+                    entity = new RepeatableHttpEntity(clientConnection.getSessionInputBuffer(),
+                            userConfig.getTempDirectory(),
+                            request,
+                            systemConfig.getInternalBufferLength());
                 }
 
-            }
-            ((HttpEntityEnclosingRequest) request).setEntity(entity);
-        } else {
-            logger.debug("No enclosing entity");
-        }
+                Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
+                if (transferEncoding != null
+                        && StringUtils.containsIgnoreCase(transferEncoding.getValue(), HTTP.CHUNK_CODING)) {
+                    logger.debug("Mark entity as chunked");
+                    entity.setChunked(true);
 
-        // Remove banned headers
-        List<String> bannedHeaders = request instanceof HttpEntityEnclosingRequest ?
-                ENTITY_BANNED_HEADERS : DEFAULT_BANNED_HEADERS;
-        for (Header header : request.getAllHeaders()) {
-            if (bannedHeaders.contains(header.getName())) {
-                request.removeHeader(header);
-                logger.debug("Request header {} removed", header);
+                    // Apache HttpClient adds a Transfer-Encoding header's chunk directive
+                    // so remove or strip the existent one of chunk directive
+                    request.removeHeader(transferEncoding);
+                    String nonChunkedTransferEncoding = HttpUtils.stripChunked(transferEncoding.getValue());
+                    if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
+                        request.addHeader(
+                                HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
+                                        nonChunkedTransferEncoding));
+                        logger.debug("Add chunk-striped request header");
+                    } else {
+                        logger.debug("Remove transfer encoding chunked request header");
+                    }
+
+                }
+                ((HttpEntityEnclosingRequest) request).setEntity(entity);
             } else {
-                logger.debug("Allow request header {}", header);
+                logger.debug("No enclosing entity");
             }
+
+            // Remove banned headers
+            List<String> bannedHeaders = request instanceof HttpEntityEnclosingRequest ?
+                    ENTITY_BANNED_HEADERS : DEFAULT_BANNED_HEADERS;
+            for (Header header : request.getAllHeaders()) {
+                if (bannedHeaders.contains(header.getName())) {
+                    request.removeHeader(header);
+                    logger.debug("Request header {} removed", header);
+                } else {
+                    logger.debug("Allow request header {}", header);
+                }
+            }
+
+            clientConnection.flag(ClientConnection.Flag.REQUEST_PREPARED);
         }
 
-        try (CloseableHttpClient httpClient = clientBuilderFactory.createClientBuilder().build()) {
+        try (CloseableHttpClient httpClient = clientBuilderFactory.createClientBuilder(proxyInfo).build()) {
 
             // Extract URI
             URI uri = HttpUtils.parseUri(request.getRequestLine().getUri());
@@ -141,9 +148,9 @@ class NonConnectRequestHandler implements RequestHandler {
                     uri.getScheme());
 
             HttpClientContext context = HttpClientContext.create();
-            if (userConfig.isSocks5()) {
-                InetSocketAddress proxySocketAddress = new InetSocketAddress(userConfig.getProxyHost(),
-                        userConfig.getProxyPort());
+            if (proxyInfo.getType().isSocks()) {
+                InetSocketAddress proxySocketAddress = new InetSocketAddress(proxyInfo.getHost().getHostName(),
+                        proxyInfo.getHost().getPort());
                 context.setAttribute(HttpUtils.SOCKS_ADDRESS, proxySocketAddress);
             }
 
@@ -151,14 +158,19 @@ class NonConnectRequestHandler implements RequestHandler {
             try (CloseableHttpResponse response = httpClient.execute(target, request, context)) {
 
                 try {
-                    handleResponse(response, socketWrapper);
+                    handleResponse(response, clientConnection);
                 } catch (Exception e) {
                     logger.debug("Error on handling non CONNECT response", e);
                 }
             }
         } finally {
-            if (entity instanceof AutoCloseable) {
-                LocalIOUtils.close((AutoCloseable) entity);
+            if (clientConnection.isFlagged(ClientConnection.Flag.LAST_RESORT)) {
+                if (request instanceof HttpEntityEnclosingRequest) {
+                    HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
+                    if (entity instanceof AutoCloseable) {
+                        LocalIOUtils.close((AutoCloseable) entity);
+                    }
+                }
             }
         }
     }
@@ -169,11 +181,11 @@ class NonConnectRequestHandler implements RequestHandler {
      * @param response The Http response.
      */
     private void handleResponse(final CloseableHttpResponse response,
-                                SocketWrapper localSocketChannel) throws IOException {
+                                ClientConnection clientConnection) throws IOException {
         if (logger.isDebugEnabled()) {
             logger.debug("Write status line: {}", response.getStatusLine());
         }
-        localSocketChannel.write(response.getStatusLine());
+        clientConnection.write(response.getStatusLine());
 
         for (Header header : response.getAllHeaders()) {
             if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
@@ -182,7 +194,7 @@ class NonConnectRequestHandler implements RequestHandler {
                 // since the response is not chunked
                 String nonChunkedTransferEncoding = HttpUtils.stripChunked(header.getValue());
                 if (StringUtils.isNotEmpty(nonChunkedTransferEncoding)) {
-                    localSocketChannel.write(
+                    clientConnection.write(
                             HttpUtils.createHttpHeader(HttpHeaders.TRANSFER_ENCODING,
                                     nonChunkedTransferEncoding));
                     logger.debug("Add chunk-striped header response");
@@ -191,19 +203,19 @@ class NonConnectRequestHandler implements RequestHandler {
                 }
             } else {
                 logger.debug("Write response header: {}", header);
-                localSocketChannel.write(header);
+                clientConnection.write(header);
             }
         }
 
         // Empty line marking the end
         // of header's section
-        localSocketChannel.writeln();
+        clientConnection.writeln();
 
         // Now write the request body, if any
         HttpEntity entity = response.getEntity();
         if (entity != null) {
             logger.debug("Start writing entity content");
-            entity.writeTo(localSocketChannel.getOutputStream());
+            entity.writeTo(clientConnection.getOutputStream());
             logger.debug("End writing entity content");
 
             // Make sure the entity is fully consumed

@@ -17,9 +17,11 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicHttpRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.kpax.winfoom.proxy.ProxyInfo;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
@@ -88,6 +90,27 @@ class HttpUtilsTests {
         ContentType contentType = HttpUtils.getContentType(request);
         Assertions.assertEquals("text/plain", contentType.getMimeType());
         Assertions.assertNull(contentType.getCharset());
+    }
+
+    @Test
+    void parsePacProxyLine_directOnly_DIRECT () {
+        String proxyLine = "DIRECT";
+        List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
+        Assertions.assertEquals(1, proxyInfos.size());
+        Assertions.assertEquals(ProxyInfo.Type.DIRECT, proxyInfos.get(0).getType());
+        Assertions.assertNull(proxyInfos.get(0).getHost());
+    }
+
+    @Test
+    void parsePacProxyLine_proxyThenDirect_DIRECT () {
+        String proxyLine = "PROXY localhost:1080;DIRECT";
+
+        List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
+        Assertions.assertEquals(2, proxyInfos.size());
+        Assertions.assertEquals(ProxyInfo.Type.PROXY, proxyInfos.get(0).getType());
+        Assertions.assertEquals("localhost:1080", proxyInfos.get(0).getHost().toHostString());
+        Assertions.assertEquals(ProxyInfo.Type.DIRECT, proxyInfos.get(1).getType());
+        Assertions.assertNull(proxyInfos.get(1).getHost());
     }
 
 }

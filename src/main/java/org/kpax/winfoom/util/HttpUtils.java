@@ -18,33 +18,37 @@ import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.conn.HttpHostConnectException;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.EnglishReasonPhraseCatalog;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.WinHttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.ProxyInfo;
+import org.kpax.winfoom.proxy.conn.Socks4ConnectionSocketFactory;
+import org.kpax.winfoom.proxy.conn.SocksConnectionSocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.CredentialException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -103,26 +107,45 @@ public final class HttpUtils {
     public static void testProxyConfig(final UserConfig userConfig)
             throws IOException, CredentialException {
         logger.info("Test proxy config {}", userConfig);
-        if (userConfig.isSocks()) {
-            testSocksProxyConfig(userConfig);
-        } else {
-            testHttpProxyConfig(userConfig);
-        }
-    }
+        HttpClientBuilder httpClientBuilder;
 
-    private static void testHttpProxyConfig(final UserConfig userConfig)
-            throws IOException, CredentialException {
-
-        try (CloseableHttpClient httpClient = WinHttpClients.createDefault()) {
-            HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
-            HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-            RequestConfig config = RequestConfig.custom()
-                    .setProxy(proxy)
+        if (userConfig.getProxyType().isSocks()) {
+            if (userConfig.getProxyType().isSocks5()) {
+                Authenticator.setDefault(new Authenticator() {
+                    public PasswordAuthentication getPasswordAuthentication() {
+                        return (new PasswordAuthentication(userConfig.getProxySocksUsername(),
+                                userConfig.getProxyPassword() != null ? userConfig.getProxyPassword().toCharArray() : new char[0]));
+                    }
+                });
+            }
+            ConnectionSocketFactory connectionSocketFactory = userConfig.getProxyType().isSocks4()
+                    ? new Socks4ConnectionSocketFactory() : new SocksConnectionSocketFactory();
+            Registry<ConnectionSocketFactory> factoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", connectionSocketFactory)
+                    .register("https", connectionSocketFactory)
                     .build();
+
+            httpClientBuilder = HttpClients.custom().setConnectionManager(new PoolingHttpClientConnectionManager(factoryRegistry));
+        } else {
+            httpClientBuilder = WinHttpClients.custom();
+        }
+
+        try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
+            HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
             HttpGet request = new HttpGet("/");
-            request.setConfig(config);
-            logger.info("Executing request {} to {} via {}", target, proxy, request.getRequestLine());
-            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
+            if (userConfig.getProxyType().isHttp()) {
+                HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
+                RequestConfig config = RequestConfig.custom()
+                        .setProxy(proxy)
+                        .build();
+                request.setConfig(config);
+            }
+            HttpClientContext context = HttpClientContext.create();
+            if (userConfig.getProxyType().isSocks()) {
+                context.setAttribute(HttpUtils.SOCKS_ADDRESS, new InetSocketAddress(userConfig.getProxyHost(), userConfig.getProxyPort()));
+            }
+            logger.info("Executing request {} to {}", request.getRequestLine(), target);
+            try (CloseableHttpResponse response = httpClient.execute(target, request, context)) {
                 StatusLine statusLine = response.getStatusLine();
                 logger.info("Test response status {}", statusLine);
                 if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
@@ -133,49 +156,6 @@ public final class HttpUtils {
             }
         } catch (Exception e) {
             logger.error("Error on testing http proxy config", e);
-            throw e;
-        }
-    }
-
-    private static void testSocksProxyConfig(final UserConfig userConfig) throws IOException, CredentialException {
-        try {
-            Proxy socksProxy
-                    = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(userConfig.getProxyHost(),
-                    userConfig.getProxyPort()));
-            Authenticator.setDefault(new Authenticator() {
-                public PasswordAuthentication getPasswordAuthentication() {
-                    return (new PasswordAuthentication(userConfig.getProxySocksUsername(),
-                            userConfig.getProxyPassword() != null ? userConfig.getProxyPassword().toCharArray() : new char[0]));
-                }
-            });
-            URL url = new URL(userConfig.getProxyTestUrl());
-            HttpURLConnection socksConnection
-                    = (HttpURLConnection) url.openConnection(socksProxy);
-            socksConnection.setConnectTimeout(5000);
-            try (InputStream inputStream = socksConnection.getInputStream()) {
-                logger.info("Test response status {} {}", socksConnection.getResponseCode(),
-                        socksConnection.getResponseMessage());
-            }
-        } catch (Exception e) {
-            logger.error("Error on testing socks proxy config", e);
-
-            // Map some errors for more precise
-            // response the the user
-            if (e instanceof SocketException) {
-                if (StringUtils.containsIgnoreCase(e.getMessage(), "authentication failed")) {
-                    throw new CredentialException();
-                } else if (StringUtils.containsIgnoreCase(e.getMessage(), "connection timed out")) {
-                    throw new UnknownHostException();
-                } else if (StringUtils.containsIgnoreCase(e.getMessage(), "connection refused")) {
-                    throw new HttpHostConnectException((IOException) e, HttpHost.create(userConfig.getProxyTestUrl()));
-                }
-            } else if (e instanceof SocketTimeoutException) {
-                throw new SocketTimeoutException("Invalid proxy host/port");
-            }
-
-            // On error remove the current authentication
-            Authenticator.setDefault(null);
-
             throw e;
         }
     }
@@ -232,7 +212,7 @@ public final class HttpUtils {
         return new StringBuilder("<html>").append(text).append("</html>").toString();
     }
 
-    public static void setSocks4 (final Socket socket) throws Exception {
+    public static void setSocks4(final Socket socket) throws Exception {
         Field implField = Socket.class.getDeclaredField("impl");
         implField.setAccessible(true);
         Object impl = implField.get(socket);
@@ -240,6 +220,25 @@ public final class HttpUtils {
         Method setV4 = implType.getDeclaredMethod("setV4");
         setV4.setAccessible(true);
         setV4.invoke(impl);
+    }
+
+    public static List<ProxyInfo> parsePacProxyLine(String proxyLine) {
+        if (proxyLine == null) {
+            return Collections.singletonList(new ProxyInfo(ProxyInfo.Type.DIRECT));
+        }
+        List<ProxyInfo> proxyInfos = new ArrayList<>();
+        for (String s : proxyLine.split(";")) {
+            String[] split = s.split("\\s+");
+            Validate.isTrue(split.length > 0);
+            ProxyInfo.Type type = ProxyInfo.Type.valueOf(split[0]);
+            if (type == ProxyInfo.Type.DIRECT) {
+                proxyInfos.add(new ProxyInfo(ProxyInfo.Type.DIRECT));
+            } else {
+                Validate.isTrue(split.length > 1);
+                proxyInfos.add(new ProxyInfo(type, HttpHost.create(split[1])));
+            }
+        }
+        return proxyInfos;
     }
 
 }

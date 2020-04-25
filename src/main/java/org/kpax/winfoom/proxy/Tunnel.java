@@ -19,13 +19,15 @@ import org.apache.http.conn.ManagedHttpClientConnection;
 import org.kpax.winfoom.util.LocalIOUtils;
 
 import java.io.Closeable;
-import java.net.Socket;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 3/31/2020
  */
-class Tunnel implements Closeable {
+public class Tunnel implements Closeable {
 
     private final ManagedHttpClientConnection connection;
     private final HttpResponse response;
@@ -41,15 +43,19 @@ class Tunnel implements Closeable {
         return connection;
     }
 
-    Socket getSocket() {
-        return connection.getSocket();
+    public InputStream getInputStream() throws IOException {
+        return connection.getSocket().getInputStream();
     }
 
-    HttpResponse getResponse() {
+    public OutputStream getOutputStream() throws IOException {
+        return connection.getSocket().getOutputStream();
+    }
+
+    public HttpResponse getResponse() {
         return response;
     }
 
-    StatusLine getStatusLine() {
+    public StatusLine getStatusLine() {
         return response.getStatusLine();
     }
 

@@ -10,16 +10,18 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy;
+package org.kpax.winfoom.proxy.client;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.ProxyInfo;
+import org.kpax.winfoom.proxy.conn.ConnectionSocketFactoryManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -34,28 +36,28 @@ class HttpClientBuilderFactory {
     private SystemConfig systemConfig;
 
     @Autowired
-    private UserConfig userConfig;
-
-    @Autowired
     private CredentialsProvider credentialsProvider;
 
     @Autowired
-    private ProxyContext proxyContext;
+    private ConnectionSocketFactoryManager connSocketFactoryManager;
 
-    HttpClientBuilder createClientBuilder() {
-        if (userConfig.isSocks5()) {
-            return createSocksClientBuilder();
-        } else if (userConfig.isHttp()) {
-            return createHttpClientBuilder();
-        } else {
-            throw new IllegalStateException("Unknown proxy type: " + userConfig.getProxyType());
+    HttpClientBuilder createClientBuilder(ProxyInfo proxyInfo) {
+        if (proxyInfo.getType().isSocks()) {
+            return createSocksClientBuilder(proxyInfo.getType().isSocks4());
+        } else if (proxyInfo.getType().isHttp()) {
+            return createHttpClientBuilder(proxyInfo);
+        } else { // Direct case
+            return createDirectClientBuilder();
         }
     }
 
-    private HttpClientBuilder createHttpClientBuilder() {
-        RequestConfig requestConfig = createRequestConfig();
+    private HttpClientBuilder createHttpClientBuilder(ProxyInfo proxyInfo) {
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setProxy(new HttpHost(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort()))
+                .setCircularRedirectsAllowed(true)
+                .build();
         HttpClientBuilder builder = WinHttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
-                .setConnectionManager(proxyContext.getHttpConnectionManager())
+                .setConnectionManager(connSocketFactoryManager.getHttpConnectionManager())
                 .setConnectionManagerShared(true)
                 .setDefaultRequestConfig(requestConfig)
                 .setRoutePlanner(new DefaultProxyRoutePlanner(requestConfig.getProxy()))
@@ -69,9 +71,27 @@ class HttpClientBuilderFactory {
         return builder;
     }
 
-    private HttpClientBuilder createSocksClientBuilder() {
-        HttpClientBuilder builder = WinHttpClients.custom()
-                .setConnectionManager(proxyContext.getSocksConnectionManager())
+    private HttpClientBuilder createDirectClientBuilder() {
+        HttpClientBuilder builder = HttpClients.custom()
+                .setConnectionManager(connSocketFactoryManager.getHttpConnectionManager())
+                .setConnectionManagerShared(true)
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setCircularRedirectsAllowed(true)
+                        .build())
+                .disableAutomaticRetries()
+                .disableRedirectHandling()
+                .disableCookieManagement();
+
+        if (systemConfig.isUseSystemProperties()) {
+            builder.useSystemProperties();
+        }
+        return builder;
+    }
+
+    private HttpClientBuilder createSocksClientBuilder(boolean isSocks4) {
+        HttpClientBuilder builder = HttpClients.custom()
+                .setConnectionManager(isSocks4
+                        ? connSocketFactoryManager.getSocks4ConnectionManager() : connSocketFactoryManager.getSocksConnectionManager())
                 .setConnectionManagerShared(true)
                 .disableAutomaticRetries()
                 .disableRedirectHandling()
@@ -83,11 +103,5 @@ class HttpClientBuilderFactory {
         return builder;
     }
 
-    RequestConfig createRequestConfig() {
-        return RequestConfig.custom()
-                .setProxy(new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort()))
-                .setCircularRedirectsAllowed(true)
-                .build();
-    }
 
 }

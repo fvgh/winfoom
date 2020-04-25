@@ -14,4 +14,31 @@ package org.kpax.winfoom.proxy;
 
 public enum ProxyType {
     HTTP, SOCKS4, SOCKS5, PAC;
+
+    public boolean isSocks4() {
+        return this == ProxyType.SOCKS4;
+    }
+
+    public boolean isSocks5() {
+        return this == ProxyType.SOCKS5;
+    }
+
+    public boolean isSocks() {
+        return this == ProxyType.SOCKS4 || this == ProxyType.SOCKS5;
+    }
+
+    public boolean isHttp() {
+        return this == ProxyType.HTTP;
+    }
+
+    public boolean isPac() {
+        return this == ProxyType.PAC;
+    }
+
+    public ProxyInfo.Type toProxyInfoType() {
+        if (!isPac()) {
+            return ProxyInfo.Type.valueOf(this.toString());
+        }
+        return null;
+    }
 }

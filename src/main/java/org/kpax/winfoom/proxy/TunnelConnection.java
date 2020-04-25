@@ -64,9 +64,9 @@ import java.net.Socket;
  */
 @Component
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-class CustomProxyClient {
+public class TunnelConnection {
 
-    private final Logger logger = LoggerFactory.getLogger(CustomProxyClient.class);
+    private final Logger logger = LoggerFactory.getLogger(TunnelConnection.class);
 
     @Autowired
     private CredentialsProvider credentialsProvider;

@@ -48,6 +48,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.logging.SocketHandler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -94,15 +95,15 @@ class SocketHandlerTests {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
         when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
-        when(userConfig.isHttp()).thenReturn(true);
+        when(userConfig.getProxyType().isHttp()).thenReturn(true);
     }
 
-    @BeforeAll
+/*    @BeforeAll
     void before() throws IOException {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
         when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
-        when(userConfig.isHttp()).thenReturn(true);
+        when(userConfig.getProxyType().isHttp()).thenReturn(true);
 
         remoteProxyServer = DefaultHttpProxyServer.bootstrap()
                 .withPort(PROXY_PORT)
@@ -157,7 +158,7 @@ class SocketHandlerTests {
             }
         }).start();
 
-    }
+    }*/
 
     @Test
     @Order(1)

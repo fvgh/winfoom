@@ -1,40 +1,35 @@
 /*
- * Copyright (c) 2020. Eugen Covaci
+ * Copyright (c) 2002-2020 Gargoyle Software Inc.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  http://www.apache.org/licenses/LICENSE-2.0
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.kpax.winfoom.util;
 
+import net.sourceforge.htmlunit.corejs.javascript.*;
+import org.apache.commons.net.util.SubnetUtils;
+
 import java.lang.reflect.Method;
 import java.net.InetAddress;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.apache.commons.net.util.SubnetUtils;
-
-import net.sourceforge.htmlunit.corejs.javascript.Context;
-import net.sourceforge.htmlunit.corejs.javascript.FunctionObject;
-import net.sourceforge.htmlunit.corejs.javascript.NativeFunction;
-import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
-import net.sourceforge.htmlunit.corejs.javascript.Undefined;
-
 /**
  * Provides an implementation of Proxy Auto-Config (PAC).
  *
- * @see <a href="http://lib.ru/WEBMASTER/proxy-live.txt">PAC file format</a>
- *
  * @author Ahmed Ashour
  * @author Ronald Brill
+ * @see <a href="http://lib.ru/WEBMASTER/proxy-live.txt">PAC file format</a>
  */
 public final class ProxyAutoConfig {
     private static final String TIMEZONE_GMT = "GMT";
@@ -44,11 +39,12 @@ public final class ProxyAutoConfig {
 
     /**
      * Evaluates the <tt>FindProxyForURL</tt> method of the specified content.
+     *
      * @param content the JavaScript content
-     * @param url the URL to be retrieved
+     * @param url     the URL to be retrieved
      * @return semicolon-separated result
      */
-    public static String evaluate(final String content, final URL url) {
+    public static String evaluate(final String content, final String url, final String hostname) {
         final Context cx = Context.enter();
         try {
             final ProxyAutoConfig config = new ProxyAutoConfig();
@@ -69,14 +65,13 @@ public final class ProxyAutoConfig {
 
             cx.evaluateString(scope, "var ProxyConfig = function() {}; ProxyConfig.bindings = {}", "<init>", 1, null);
             cx.evaluateString(scope, content, "<Proxy Auto-Config>", 1, null);
-            final Object[] functionArgs = {url.toExternalForm(), url.getHost()};
+            final Object[] functionArgs = {url, hostname};
             final Object fObj = scope.get("FindProxyForURL", scope);
 
             final NativeFunction f = (NativeFunction) fObj;
             final Object result = f.call(cx, scope, scope, functionArgs);
             return Context.toString(result);
-        }
-        finally {
+        } finally {
             Context.exit();
         }
     }
@@ -92,6 +87,7 @@ public final class ProxyAutoConfig {
 
     /**
      * Returns true if there is no domain name in the hostname (no dots).
+     *
      * @param host the hostname from the URL (excluding port number).
      * @return true if there is no domain name in the hostname (no dots).
      */
@@ -101,7 +97,8 @@ public final class ProxyAutoConfig {
 
     /**
      * Returns true if the domain of hostname matches.
-     * @param host the hostname from the URL
+     *
+     * @param host   the hostname from the URL
      * @param domain the domain name to test the hostname against
      * @return true if the domain of hostname matches.
      */
@@ -112,7 +109,8 @@ public final class ProxyAutoConfig {
     /**
      * Returns true if the hostname matches exactly the specified hostname,
      * or if there is no domain name part in the hostname, but the unqualified hostname matches.
-     * @param host the hostname from the URL
+     *
+     * @param host    the hostname from the URL
      * @param hostdom fully qualified hostname to match against
      * @return true if the hostname matches exactly the specified hostname,
      * or if there is no domain name part in the hostname, but the unqualified hostname matches.
@@ -123,6 +121,7 @@ public final class ProxyAutoConfig {
 
     /**
      * Tries to resolve the hostname. Returns true if succeeds.
+     *
      * @param host the hostname from the URL.
      * @return true if the specific hostname is resolvable.
      */
@@ -132,11 +131,12 @@ public final class ProxyAutoConfig {
 
     /**
      * Returns true if the IP address of the host matches the specified IP address pattern.
-     * @param host a DNS hostname, or IP address.
-     * If a hostname is passed, it will be resolved into an IP address by this function.
+     *
+     * @param host    a DNS hostname, or IP address.
+     *                If a hostname is passed, it will be resolved into an IP address by this function.
      * @param pattern an IP address pattern in the dot-separated format
-     * @param mask mask for the IP address pattern informing which parts of the IP address should be matched against.
-     * 0 means ignore, 255 means match
+     * @param mask    mask for the IP address pattern informing which parts of the IP address should be matched against.
+     *                0 means ignore, 255 means match
      * @return true if the IP address of the host matches the specified IP address pattern.
      */
     public static boolean isInNet(final String host, final String pattern, final String mask) {
@@ -151,33 +151,34 @@ public final class ProxyAutoConfig {
 
     /**
      * Resolves the given DNS hostname into an IP address, and returns it in the dot separated format as a string.
+     *
      * @param host the hostname to resolve
      * @return the resolved IP address
      */
     public static String dnsResolve(final String host) {
         try {
             return InetAddress.getByName(host).getHostAddress();
-        }
-        catch (final Exception e) {
+        } catch (final Exception e) {
             return null;
         }
     }
 
     /**
      * Returns the IP address of the local host, as a string in the dot-separated integer format.
+     *
      * @return the IP address of the local host, as a string in the dot-separated integer format.
      */
     public static String myIpAddress() {
         try {
             return InetAddress.getLocalHost().getHostAddress();
-        }
-        catch (final Exception e) {
+        } catch (final Exception e) {
             throw Context.throwAsScriptRuntimeEx(e);
         }
     }
 
     /**
      * Returns the number (integer) of DNS domain levels (number of dots) in the hostname.
+     *
      * @param host the hostname from the URL
      * @return the number (integer) of DNS domain levels (number of dots) in the hostname.
      */
@@ -193,7 +194,8 @@ public final class ProxyAutoConfig {
 
     /**
      * Matches the specified string against a shell expression, not regular expression.
-     * @param str a string to match
+     *
+     * @param str   a string to match
      * @param shexp the shell expression
      * @return if the string matches
      */
@@ -204,6 +206,7 @@ public final class ProxyAutoConfig {
 
     /**
      * Checks if today is included in the specified range.
+     *
      * @param wd1 week day 1
      * @param wd2 week day 2, optional
      * @param gmt string of "GMT", or not specified
@@ -235,6 +238,7 @@ public final class ProxyAutoConfig {
 
     /**
      * Checks if today is included in the specified range.
+     *
      * @param value1 the value 1
      * @param value2 the value 2
      * @param value3 the value 3
@@ -245,7 +249,7 @@ public final class ProxyAutoConfig {
      * @return if today is in range
      */
     public static boolean dateRange(final String value1, final Object value2, final Object value3,
-            final Object value4, final Object value5, final Object value6, final Object value7) {
+                                    final Object value4, final Object value5, final Object value6, final Object value7) {
         final Object[] values = {value1, value2, value3, value4, value5, value6, value7};
         TimeZone timezone = TimeZone.getDefault();
 
@@ -255,8 +259,7 @@ public final class ProxyAutoConfig {
             if (TIMEZONE_GMT.equals(Context.toString(values[length]))) {
                 timezone = TimeZone.getTimeZone(TIMEZONE_GMT);
                 break;
-            }
-            else if (!Undefined.isUndefined(values[length])) {
+            } else if (!Undefined.isUndefined(values[length])) {
                 length++;
                 break;
             }
@@ -298,8 +301,7 @@ public final class ProxyAutoConfig {
                     month2 = dateRange_getMonth(value4);
                     cal1 = dateRange_createCalendar(timezone, day1, month1, -1);
                     cal2 = dateRange_createCalendar(timezone, day2, month2, -1);
-                }
-                else {
+                } else {
                     month1 = dateRange_getMonth(value1);
                     year1 = dateRange_getMonth(value2);
                     month2 = getSmallInt(value3);
@@ -331,7 +333,7 @@ public final class ProxyAutoConfig {
     }
 
     private static Calendar dateRange_createCalendar(final TimeZone timezone,
-            final int day, final int month, final int year) {
+                                                     final int day, final int month, final int year) {
         final Calendar calendar = Calendar.getInstance(timezone);
         if (day != -1) {
             calendar.set(Calendar.DAY_OF_MONTH, day);
@@ -364,8 +366,7 @@ public final class ProxyAutoConfig {
                 cal.clear();
                 cal.setTime(new SimpleDateFormat("MMM", Locale.ROOT).parse(s));
                 return cal.get(Calendar.MONTH);
-            }
-            catch (final Exception e) {
+            } catch (final Exception e) {
                 //empty
             }
         }
@@ -385,6 +386,7 @@ public final class ProxyAutoConfig {
 
     /**
      * Checks if the time now is included in the specified range.
+     *
      * @param value1 the value 1
      * @param value2 the value 2
      * @param value3 the value 3
@@ -395,7 +397,7 @@ public final class ProxyAutoConfig {
      * @return if the time now is in the range
      */
     public static boolean timeRange(final String value1, final Object value2, final Object value3,
-            final Object value4, final Object value5, final Object value6, final Object value7) {
+                                    final Object value4, final Object value5, final Object value6, final Object value7) {
         final Object[] values = {value1, value2, value3, value4, value5, value6, value7};
         TimeZone timezone = TimeZone.getDefault();
 
@@ -405,8 +407,7 @@ public final class ProxyAutoConfig {
             if (TIMEZONE_GMT.equals(Context.toString(values[length]))) {
                 timezone = TimeZone.getTimeZone(TIMEZONE_GMT);
                 break;
-            }
-            else if (!Undefined.isUndefined(values[length])) {
+            } else if (!Undefined.isUndefined(values[length])) {
                 length++;
                 break;
             }
@@ -460,7 +461,7 @@ public final class ProxyAutoConfig {
     }
 
     private static Calendar timeRange_createCalendar(final TimeZone timezone,
-            final int hour, final int minute, final int second) {
+                                                     final int hour, final int minute, final int second) {
         final Calendar calendar = Calendar.getInstance(timezone);
         if (hour != -1) {
             calendar.set(Calendar.HOUR_OF_DAY, hour);

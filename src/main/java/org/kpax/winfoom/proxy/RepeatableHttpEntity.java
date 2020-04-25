@@ -31,7 +31,7 @@ import java.nio.file.StandardOpenOption;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/6/2020
  */
-class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
+public class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
 
     private final SessionInputBufferImpl inputBuffer;
 
@@ -51,10 +51,10 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
 
     private boolean firstTry = true;
 
-    RepeatableHttpEntity(final SessionInputBufferImpl inputBuffer,
-                         final Path tempDirectory,
-                         final HttpRequest request,
-                         final int internalBufferLength) throws IOException {
+    public RepeatableHttpEntity(final SessionInputBufferImpl inputBuffer,
+                                final Path tempDirectory,
+                                final HttpRequest request,
+                                final int internalBufferLength) throws IOException {
         this.inputBuffer = inputBuffer;
         this.tempDirectory = tempDirectory;
         this.contentType = request.getFirstHeader(HttpHeaders.CONTENT_TYPE);

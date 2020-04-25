@@ -10,25 +10,24 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy;
+package org.kpax.winfoom.proxy.client;
 
-import org.apache.http.HttpRequest;
+import org.kpax.winfoom.proxy.ProxyInfo;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/13/2020
  */
-public interface RequestHandler {
+public interface ClientConnectionProcessor {
 
     /**
-     * Process the client's HTTP request.
+     * Process the client.
      *
-     * @param request       The request.
-     * @param socketWrapper The {@link java.nio.channels.AsynchronousSocketChannel} wrapper instance.
+     * @param clientConnection the {@link ClientConnection} instance.
+     * @param proxyInfo
      * @throws Exception
      */
-    void handleRequest(HttpRequest request,
-                       SocketWrapper socketWrapper)
+    void process(ClientConnection clientConnection, ProxyInfo proxyInfo)
             throws Exception;
 
 }

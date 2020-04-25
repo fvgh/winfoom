@@ -15,6 +15,7 @@ package org.kpax.winfoom.proxy;
 import org.apache.commons.lang3.StringUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.client.ClientConnectionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,12 +75,11 @@ class LocalProxyServer implements Closeable {
 
             proxyContext.executorService().execute(() -> {
                 while (started) {
-                    try {
-                        Socket socket = serverSocket.accept();
+                    try (Socket socket = serverSocket.accept()) {
                         socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
                         proxyContext.executorService().execute(() -> {
                             try {
-                                applicationContext.getBean(SocketHandler.class)
+                                applicationContext.getBean(ClientConnectionHandler.class)
                                         .bind(socket)
                                         .handleConnection();
                             } catch (Exception e) {

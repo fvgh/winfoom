@@ -22,6 +22,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.client.ClientConnection;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -97,9 +98,9 @@ class CustomProxyClientTests {
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
-        SocketWrapper socketChannelWrapper = Mockito.mock(SocketWrapper.class);
+        ClientConnection socketChannelWrapper = Mockito.mock(ClientConnection.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
-        Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)
+        Tunnel tunnel = applicationContext.getBean(TunnelConnection.class)
                 .tunnel(proxy, target, HttpVersion.HTTP_1_1);
         tunnel.close();
     }
@@ -111,10 +112,10 @@ class CustomProxyClientTests {
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, "wrong_pass"));
-        SocketWrapper socketChannelWrapper = Mockito.mock(SocketWrapper.class);
+        ClientConnection socketChannelWrapper = Mockito.mock(ClientConnection.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(org.apache.http.impl.execchain.TunnelRefusedException.class, () -> {
-            Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)
+            Tunnel tunnel = applicationContext.getBean(TunnelConnection.class)
                     .tunnel(proxy, target, HttpVersion.HTTP_1_1);
             tunnel.close();
         });
@@ -126,10 +127,10 @@ class CustomProxyClientTests {
         HttpHost proxy = new HttpHost("wronghost", userConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
-        SocketWrapper socketChannelWrapper = Mockito.mock(SocketWrapper.class);
+        ClientConnection socketChannelWrapper = Mockito.mock(ClientConnection.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(java.net.UnknownHostException.class, () -> {
-            Tunnel tunnel = applicationContext.getBean(CustomProxyClient.class)
+            Tunnel tunnel = applicationContext.getBean(TunnelConnection.class)
                     .tunnel(proxy, target, HttpVersion.HTTP_1_1);
             tunnel.close();
         });

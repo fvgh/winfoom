@@ -10,103 +10,101 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy;
+package org.kpax.winfoom.proxy.client;
 
 import org.apache.commons.lang3.Validate;
 import org.apache.http.*;
-import org.apache.http.config.MessageConstraints;
-import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.LocalIOUtils;
 import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * A helper class that wraps an {@link AsynchronousSocketChannel}.
+ * A helper class that wraps an {@link Socket}.
  *
  * @author Eugen Covaci
  */
-class SocketWrapper implements Closeable {
+class ClientConnectionImpl implements ClientConnection {
 
-    private final Logger logger = LoggerFactory.getLogger(SocketWrapper.class);
+    private final Logger logger = LoggerFactory.getLogger(ClientConnectionImpl.class);
 
-    private final Socket socket;
+    private final Set<Flag> flags = new HashSet<>();
 
-    private final InputStream inputStream;
+    private InputStream inputStream;
 
-    private final OutputStream outputStream;
+    private OutputStream outputStream;
 
-    private final SessionInputBufferImpl sessionInputBuffer;
+    private SessionInputBufferImpl sessionInputBuffer;
 
+    private HttpRequest httpRequest;
 
-    SocketWrapper(Socket socket) throws IOException {
-        Validate.notNull(socket, "socket cannot be null");
-        this.socket = socket;
-        this.inputStream = this.socket.getInputStream();
-        this.outputStream = this.socket.getOutputStream();
-        this.sessionInputBuffer = createSessionInputBuffer();
+    ClientConnectionImpl(InputStream inputStream,
+                         OutputStream outputStream,
+                         SessionInputBufferImpl sessionInputBuffer,
+                         HttpRequest httpRequest) {
+        this.inputStream = inputStream;
+        this.outputStream = outputStream;
+        this.sessionInputBuffer = sessionInputBuffer;
+        this.httpRequest = httpRequest;
     }
 
-    Socket getSocketChannel() {
-        return socket;
-    }
-
-    InputStream getInputStream() {
+    @Override
+    public InputStream getInputStream() {
         return inputStream;
     }
 
-    OutputStream getOutputStream() {
+    @Override
+    public OutputStream getOutputStream() {
         return outputStream;
     }
 
-    SessionInputBufferImpl getSessionInputBuffer() {
+    @Override
+    public SessionInputBufferImpl getSessionInputBuffer() {
         return sessionInputBuffer;
     }
 
-    private SessionInputBufferImpl createSessionInputBuffer() {
-        SessionInputBufferImpl sessionInputBuffer = new SessionInputBufferImpl(
-                new HttpTransportMetricsImpl(),
-                LocalIOUtils.DEFAULT_BUFFER_SIZE,
-                LocalIOUtils.DEFAULT_BUFFER_SIZE,
-                MessageConstraints.DEFAULT,
-                StandardCharsets.UTF_8.newDecoder());
-        sessionInputBuffer.bind(this.inputStream);
-        return sessionInputBuffer;
+    @Override
+    public HttpRequest getHttpRequest() {
+        return httpRequest;
     }
 
-    void write(Object obj) throws IOException {
+    @Override
+    public void write(Object obj) throws IOException {
         outputStream.write(ObjectFormat.toCrlf(obj, StandardCharsets.UTF_8));
     }
 
-    void writeln() throws IOException {
+    @Override
+    public void writeln() throws IOException {
         outputStream.write(ObjectFormat.CRLF.getBytes());
     }
 
-    void writeErrorResponse(int statusCode, Exception e) {
+    @Override
+    public void writeErrorResponse(int statusCode, Exception e) {
         writeErrorResponse(HttpVersion.HTTP_1_1, statusCode, e);
     }
 
-    void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, String reasonPhrase) {
+    @Override
+    public void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, String reasonPhrase) {
         try {
             write(HttpUtils.toStatusLine(protocolVersion, statusCode, reasonPhrase));
             writeln();
         } catch (Exception ex) {
-            logger.debug("Error on writing response error", ex);
+            logger.debug("Error on writing error response", ex);
         }
     }
 
-    void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, Exception e) {
+    @Override
+    public void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, Exception e) {
         Validate.notNull(e, "Exception cannot be null");
         writeErrorResponse(protocolVersion, statusCode, e.getMessage());
     }
@@ -116,7 +114,8 @@ class SocketWrapper implements Closeable {
      *
      * @param httpResponse The HTTP response.
      */
-    void writeHttpResponse(final HttpResponse httpResponse) throws Exception {
+    @Override
+    public void writeHttpResponse(final HttpResponse httpResponse) throws Exception {
         StatusLine statusLine = httpResponse.getStatusLine();
         logger.debug("Write statusLine {}", statusLine);
         write(statusLine);
@@ -135,13 +134,11 @@ class SocketWrapper implements Closeable {
             entity.writeTo(outputStream);
         }
         EntityUtils.consume(entity);
-
     }
 
     @Override
-    public void close() throws IOException {
-        socket.close();
+    public Set<Flag> flags() {
+        return flags;
     }
-
 
 }

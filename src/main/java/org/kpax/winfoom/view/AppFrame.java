@@ -285,10 +285,10 @@ public class AppFrame extends JFrame {
 
     private JComboBox<ProxyType> getProxyTypeCombo() {
         if (proxyTypeCombo == null) {
-            proxyTypeCombo = new JComboBox<>(new ProxyType[]{ProxyType.HTTP, ProxyType.SOCKS5, ProxyType.PAC});
+            proxyTypeCombo = new JComboBox<>(ProxyType.values());
             proxyTypeCombo.setMinimumSize(new Dimension(80, 35));
             proxyTypeCombo.addActionListener((e) -> {
-                getBtnConfig().setVisible(userConfig.isSocks5() || userConfig.isPac());
+                getBtnConfig().setVisible(userConfig.getProxyType().isSocks5() || userConfig.getProxyType().isPac());
             });
         }
         return proxyTypeCombo;
@@ -534,7 +534,7 @@ public class AppFrame extends JFrame {
     }
 
     private void startServer() {
-        if (userConfig.isSocks5()) {
+        if (userConfig.getProxyType().isSocks5()) {
             if (StringUtils.isNotEmpty(userConfig.getProxySocksUsername())
                     && StringUtils.isEmpty(userConfig.getProxyPassword())) {
                 int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide any password." +

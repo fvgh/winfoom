@@ -10,10 +10,11 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy;
+package org.kpax.winfoom.proxy.client;
 
 import org.apache.http.RequestLine;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.util.HttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,28 +24,29 @@ import org.springframework.stereotype.Component;
  * Created on 4/13/2020
  */
 @Component
-class RequestHandlerFactory {
+public class ClientProcessorSelectorImpl implements ClientProcessorSelector {
 
     @Autowired
     private UserConfig userConfig;
 
     @Autowired
-    private HttpConnectRequestHandler httpConnectRequestHandler;
+    private HttpConnectClientConnectionProcessor httpConnectClientConnectionProcessor;
 
     @Autowired
-    private SocksConnectRequestHandler socksConnectRequestHandler;
+    private SocksConnectClientConnectionProcessor socksConnectClientConnectionProcessor;
 
     @Autowired
-    private NonConnectRequestHandler nonConnectRequestHandler;
+    private NonConnectClientConnectionProcessor nonConnectClientConnectionProcessor;
 
-    RequestHandler createRequestHandler(RequestLine requestLine) {
+    @Override
+    public ClientConnectionProcessor selectClientProcessor(RequestLine requestLine, ProxyInfo proxyInfo) {
         if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
-            if (userConfig.isSocks5()) {
-                return socksConnectRequestHandler;
+            if (proxyInfo.getType().isSocks()) {
+                return socksConnectClientConnectionProcessor;
             }
-            return httpConnectRequestHandler;
+            return httpConnectClientConnectionProcessor;
         } else {
-            return nonConnectRequestHandler;
+            return nonConnectClientConnectionProcessor;
         }
     }
 }

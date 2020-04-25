@@ -10,18 +10,15 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy;
+package org.kpax.winfoom.proxy.conn;
 
-import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.protocol.HttpContext;
-import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
@@ -29,25 +26,11 @@ import java.net.SocketTimeoutException;
 
 public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
 
-    private UserConfig userConfig;
-
-    public SocksConnectionSocketFactory(UserConfig userConfig) {
-        Validate.notNull(userConfig);
-        this.userConfig = userConfig;
-    }
-
     @Override
     public Socket createSocket(final HttpContext context) throws IOException {
         InetSocketAddress socketAddress = (InetSocketAddress) context.getAttribute(HttpUtils.SOCKS_ADDRESS);
         Proxy proxy = new Proxy(Proxy.Type.SOCKS, socketAddress);
         Socket socket = new Socket(proxy);
-        if (userConfig.isSocks4()) {
-            try {
-                HttpUtils.setSocks4(socket);
-            } catch (Exception e) {
-                throw new IOException(e);
-            }
-        }
         return socket;
     }
 
@@ -59,7 +42,7 @@ public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
             final InetSocketAddress remoteAddress,
             final InetSocketAddress localAddress,
             final HttpContext context) throws IOException, ConnectTimeoutException {
-        Socket currentSocket = socket != null ? socket: createSocket(context);
+        Socket currentSocket = socket != null ? socket : createSocket(context);
         if (localAddress != null) {
             currentSocket.bind(localAddress);
         }

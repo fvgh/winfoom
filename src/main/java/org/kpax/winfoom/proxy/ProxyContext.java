@@ -12,12 +12,10 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.conn.ConnectionSocketFactoryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,15 +49,14 @@ public class ProxyContext implements AutoCloseable {
     @Autowired
     private SystemConfig systemConfig;
 
+    @Autowired
+    private ConnectionSocketFactoryManager connectionSocketFactoryManager;
+
     private ThreadPoolExecutor threadPool;
 
     private ScheduledExecutorService cleanupConnectionManagerScheduler;
 
     private ScheduledFuture<?> cleanupConnectionManagerFuture;
-
-    private volatile PoolingHttpClientConnectionManager httpConnectionManager;
-
-    private volatile PoolingHttpClientConnectionManager socksConnectionManager;
 
     @PostConstruct
     private void init() {
@@ -93,18 +90,10 @@ public class ProxyContext implements AutoCloseable {
                 cleanupConnectionManagerFuture.cancel(true);
             }
 
-            if (httpConnectionManager != null) {
-                httpConnectionManager.close();
-                httpConnectionManager = null;
-            }
-
-            if (socksConnectionManager != null) {
-                socksConnectionManager.close();
-                socksConnectionManager = null;
-            }
+            connectionSocketFactoryManager.close();
 
             // Remove auth for SOCKS proxy
-            if (userConfig.isSocks5()) {
+            if (userConfig.getProxyType().isSocks5()) {
                 Authenticator.setDefault(null);
             }
 
@@ -144,64 +133,11 @@ public class ProxyContext implements AutoCloseable {
         }
     }
 
-    public PoolingHttpClientConnectionManager getHttpConnectionManager() {
-        if (httpConnectionManager == null) {
-            synchronized (this) {
-                if (httpConnectionManager == null) {
-                    httpConnectionManager = createHttpConnectionManager();
-                }
-            }
-        }
-        return httpConnectionManager;
-
-    }
-
-    public PoolingHttpClientConnectionManager getSocksConnectionManager() {
-        if (socksConnectionManager == null) {
-            synchronized (this) {
-                if (socksConnectionManager == null) {
-                    socksConnectionManager = createSocksConnectionManager();
-                }
-            }
-        }
-        return socksConnectionManager;
-    }
-
-    private PoolingHttpClientConnectionManager createHttpConnectionManager() {
-        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-        applySystemSettings(connectionManager);
-        return connectionManager;
-    }
-
-
-    private PoolingHttpClientConnectionManager createSocksConnectionManager() {
-        SocksConnectionSocketFactory connectionSocketFactory = new SocksConnectionSocketFactory(userConfig);
-        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("http", connectionSocketFactory)
-                .register("https", connectionSocketFactory)
-                .build();
-        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-        applySystemSettings(connectionManager);
-        return connectionManager;
-    }
-
-    private void applySystemSettings(final PoolingHttpClientConnectionManager connectionManager) {
-        logger.info("Configure connection manager");
-        if (systemConfig.getMaxConnections() != null) {
-            connectionManager.setMaxTotal(systemConfig.getMaxConnections());
-        }
-        if (systemConfig.getMaxConnectionsPerRoute() != null) {
-            connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
-        }
-    }
-
     private ScheduledFuture<?> setupConnectionManagerCleanupTask() {
         return cleanupConnectionManagerScheduler.scheduleWithFixedDelay(
                 () -> {
                     logger.debug("Execute connection manager pool clean up task");
-                    PoolingHttpClientConnectionManager connectionManager = userConfig.isSocks5()
-                            ? socksConnectionManager : httpConnectionManager;
-                    if (connectionManager != null) {
+                    for (PoolingHttpClientConnectionManager connectionManager : connectionSocketFactoryManager.getAllActiveConnectionManagers()) {
                         connectionManager.closeExpiredConnections();
                         connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
                         if (logger.isDebugEnabled()) {
