@@ -22,7 +22,7 @@ import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.util.HeaderDateGenerator;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,7 +87,7 @@ public class SocksConnectClientConnectionProcessor implements ClientConnectionPr
             try {
                 // The proxy facade mediates the full duplex communication
                 // between the client and the remote proxy
-                LocalIOUtils.duplex(proxyContext.executorService(),
+                IoUtils.duplex(proxyContext.executorService(),
                         socket.getInputStream(),
                         socket.getOutputStream(),
                         clientConnection.getInputStream(),

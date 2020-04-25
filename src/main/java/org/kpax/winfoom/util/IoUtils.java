@@ -28,13 +28,13 @@ import java.util.concurrent.Future;
 /**
  * @author Eugen Covaci
  */
-public final class LocalIOUtils {
+public final class IoUtils {
 
     public static final int DEFAULT_BUFFER_SIZE = 8192;
 
-    private static final Logger logger = LoggerFactory.getLogger(LocalIOUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(IoUtils.class);
 
-    private LocalIOUtils() {
+    private IoUtils() {
     }
 
     /**

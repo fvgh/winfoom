@@ -21,7 +21,7 @@ import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.proxy.ProxyInfo;
-import org.kpax.winfoom.proxy.conn.ConnectionSocketFactoryManager;
+import org.kpax.winfoom.proxy.conn.ConnectionPoolingManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +39,7 @@ class HttpClientBuilderFactory {
     private CredentialsProvider credentialsProvider;
 
     @Autowired
-    private ConnectionSocketFactoryManager connSocketFactoryManager;
+    private ConnectionPoolingManager connectionPoolingManager;
 
     HttpClientBuilder createClientBuilder(ProxyInfo proxyInfo) {
         if (proxyInfo.getType().isSocks()) {
@@ -57,7 +57,7 @@ class HttpClientBuilderFactory {
                 .setCircularRedirectsAllowed(true)
                 .build();
         HttpClientBuilder builder = WinHttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
-                .setConnectionManager(connSocketFactoryManager.getHttpConnectionManager())
+                .setConnectionManager(connectionPoolingManager.getHttpConnectionManager())
                 .setConnectionManagerShared(true)
                 .setDefaultRequestConfig(requestConfig)
                 .setRoutePlanner(new DefaultProxyRoutePlanner(requestConfig.getProxy()))
@@ -73,7 +73,7 @@ class HttpClientBuilderFactory {
 
     private HttpClientBuilder createDirectClientBuilder() {
         HttpClientBuilder builder = HttpClients.custom()
-                .setConnectionManager(connSocketFactoryManager.getHttpConnectionManager())
+                .setConnectionManager(connectionPoolingManager.getHttpConnectionManager())
                 .setConnectionManagerShared(true)
                 .setDefaultRequestConfig(RequestConfig.custom()
                         .setCircularRedirectsAllowed(true)
@@ -91,7 +91,7 @@ class HttpClientBuilderFactory {
     private HttpClientBuilder createSocksClientBuilder(boolean isSocks4) {
         HttpClientBuilder builder = HttpClients.custom()
                 .setConnectionManager(isSocks4
-                        ? connSocketFactoryManager.getSocks4ConnectionManager() : connSocketFactoryManager.getSocksConnectionManager())
+                        ? connectionPoolingManager.getSocks4ConnectionManager() : connectionPoolingManager.getSocksConnectionManager())
                 .setConnectionManagerShared(true)
                 .disableAutomaticRetries()
                 .disableRedirectHandling()

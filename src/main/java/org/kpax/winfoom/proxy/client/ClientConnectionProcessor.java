@@ -21,7 +21,7 @@ import org.kpax.winfoom.proxy.ProxyInfo;
 public interface ClientConnectionProcessor {
 
     /**
-     * Process the client.
+     * Process the client's connection.
      *
      * @param clientConnection the {@link ClientConnection} instance.
      * @param proxyInfo

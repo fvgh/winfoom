@@ -76,7 +76,7 @@ public class ClientConnectionHandler {
         for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
             ProxyInfo proxyInfo = itr.next();
             if (!itr.hasNext()) {
-                connection.flag(ClientConnection.Flag.LAST_RESORT);
+                connection.lastResort();
             }
             connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
             try {

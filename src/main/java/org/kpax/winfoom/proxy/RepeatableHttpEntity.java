@@ -18,7 +18,7 @@ import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.impl.io.ChunkedInputStream;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.IoUtils;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -71,7 +71,7 @@ public class RepeatableHttpEntity extends AbstractHttpEntity implements Closeabl
         byte[] buffer = new byte[OUTPUT_BUFFER_SIZE];
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         long remaining = contentLength;
-        while (remaining > 0 && LocalIOUtils.isAvailable(inputBuffer)) {
+        while (remaining > 0 && IoUtils.isAvailable(inputBuffer)) {
             length = inputBuffer.read(buffer, 0, (int) Math.min(OUTPUT_BUFFER_SIZE, remaining));
             if (length == -1) {
                 break;
@@ -125,7 +125,7 @@ public class RepeatableHttpEntity extends AbstractHttpEntity implements Closeabl
             outStream.flush();
         } else if (contentLength != 0) {
             if (firstTry) {
-                tempFilepath = tempDirectory.resolve(LocalIOUtils.generateCacheFilename());
+                tempFilepath = tempDirectory.resolve(IoUtils.generateCacheFilename());
                 try (AsynchronousFileChannel tempFileChannel
                              = AsynchronousFileChannel.open(tempFilepath,
                         StandardOpenOption.WRITE,
@@ -151,7 +151,7 @@ public class RepeatableHttpEntity extends AbstractHttpEntity implements Closeabl
 
                             // consume until EOF
                             int length;
-                            while (LocalIOUtils.isAvailable(inputBuffer)) {
+                            while (IoUtils.isAvailable(inputBuffer)) {
                                 length = inputBuffer.read(buffer);
                                 if (length == -1) {
                                     break;
@@ -170,7 +170,7 @@ public class RepeatableHttpEntity extends AbstractHttpEntity implements Closeabl
                         long remaining = contentLength;
 
                         // consume no more than maxLength
-                        while (remaining > 0 && LocalIOUtils.isAvailable(inputBuffer)) {
+                        while (remaining > 0 && IoUtils.isAvailable(inputBuffer)) {
                             length = inputBuffer.read(buffer, 0, (int) Math.min(OUTPUT_BUFFER_SIZE, remaining));
                             if (length == -1) {
                                 break;

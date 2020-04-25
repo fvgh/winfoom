@@ -17,23 +17,21 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
-public class ConnectionSocketFactoryManager implements AutoCloseable {
+public class ConnectionPoolingManager implements AutoCloseable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    @Autowired
-    private UserConfig userConfig;
 
     @Autowired
     private SystemConfig systemConfig;
@@ -43,6 +41,9 @@ public class ConnectionSocketFactoryManager implements AutoCloseable {
     private volatile PoolingHttpClientConnectionManager socksConnectionManager;
 
     private volatile PoolingHttpClientConnectionManager socks4ConnectionManager;
+
+    private volatile boolean started;
+
 
     public PoolingHttpClientConnectionManager getHttpConnectionManager() {
         if (httpConnectionManager == null) {
@@ -54,6 +55,12 @@ public class ConnectionSocketFactoryManager implements AutoCloseable {
         }
         return httpConnectionManager;
 
+    }
+
+    public synchronized void start() {
+        if (!started) {
+            started = true;
+        }
     }
 
     public PoolingHttpClientConnectionManager getSocksConnectionManager() {
@@ -92,10 +99,40 @@ public class ConnectionSocketFactoryManager implements AutoCloseable {
         return activeConnectionManagers;
     }
 
+    public boolean isStarted() {
+        return started;
+    }
+
+    /**
+     * A job that closes the idle/expired HTTP connections.
+     */
+    @Scheduled(fixedRateString = "#{systemConfig.connectionManagerCleanInterval * 1000}")
+    void cleanUpConnectionManager() {
+        if (isStarted()) {
+            logger.debug("Execute connection manager pool clean up task");
+            for (PoolingHttpClientConnectionManager connectionManager : getAllActiveConnectionManagers()) {
+                connectionManager.closeExpiredConnections();
+                connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
+                }
+            }
+        }
+    }
+
     private PoolingHttpClientConnectionManager createConnectionManager(Registry<ConnectionSocketFactory> socketFactoryRegistry) {
+        if (!started) {
+            throw new IllegalStateException("Cannot create connectionManagers: ConnectionPoolingManager is not started");
+        }
         PoolingHttpClientConnectionManager connectionManager = socketFactoryRegistry != null
                 ? new PoolingHttpClientConnectionManager(socketFactoryRegistry) : new PoolingHttpClientConnectionManager();
-        applySystemSettings(connectionManager);
+        logger.info("Configure connection manager");
+        if (systemConfig.getMaxConnections() != null) {
+            connectionManager.setMaxTotal(systemConfig.getMaxConnections());
+        }
+        if (systemConfig.getMaxConnectionsPerRoute() != null) {
+            connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
+        }
         return connectionManager;
     }
 
@@ -110,23 +147,23 @@ public class ConnectionSocketFactoryManager implements AutoCloseable {
         return createConnectionManager(socketFactoryRegistry);
     }
 
-    private void applySystemSettings(final PoolingHttpClientConnectionManager connectionManager) {
-        logger.info("Configure connection manager");
-        if (systemConfig.getMaxConnections() != null) {
-            connectionManager.setMaxTotal(systemConfig.getMaxConnections());
-        }
-        if (systemConfig.getMaxConnectionsPerRoute() != null) {
-            connectionManager.setDefaultMaxPerRoute(systemConfig.getMaxConnectionsPerRoute());
+    public synchronized boolean stop() {
+        if (started) {
+            started = false;
+            IoUtils.close(httpConnectionManager);
+            IoUtils.close(socksConnectionManager);
+            IoUtils.close(socks4ConnectionManager);
+            httpConnectionManager = null;
+            socksConnectionManager = null;
+            socks4ConnectionManager = null;
+            return true;
+        } else {
+            return false;
         }
     }
 
     @Override
     public void close() {
-        LocalIOUtils.close(httpConnectionManager);
-        LocalIOUtils.close(socksConnectionManager);
-        LocalIOUtils.close(socks4ConnectionManager);
-        httpConnectionManager = null;
-        socksConnectionManager = null;
-        socks4ConnectionManager = null;
+        stop();
     }
 }

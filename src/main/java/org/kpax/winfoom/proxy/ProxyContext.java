@@ -15,7 +15,7 @@ package org.kpax.winfoom.proxy;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.proxy.conn.ConnectionSocketFactoryManager;
+import org.kpax.winfoom.proxy.conn.ConnectionPoolingManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +28,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * It provides a thread pool, a HTTP connection manager etc.
- * mostly for the {@link SocketHandler} instance.<br/>
+ * It provides a thread pool, a HTTP connection manager etc.<br/>
  * We rely on the Spring context to close this instance!
  *
  * @author Eugen Covaci
@@ -50,13 +49,9 @@ public class ProxyContext implements AutoCloseable {
     private SystemConfig systemConfig;
 
     @Autowired
-    private ConnectionSocketFactoryManager connectionSocketFactoryManager;
+    private ConnectionPoolingManager connectionPoolingManager;
 
     private ThreadPoolExecutor threadPool;
-
-    private ScheduledExecutorService cleanupConnectionManagerScheduler;
-
-    private ScheduledFuture<?> cleanupConnectionManagerFuture;
 
     @PostConstruct
     private void init() {
@@ -66,16 +61,13 @@ public class ProxyContext implements AutoCloseable {
                 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
                 new DefaultThreadFactory());
 
-        // The connection clean up job executor
-        this.cleanupConnectionManagerScheduler = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory());
-
         logger.info("Done proxy context's initialization");
     }
 
     public synchronized boolean start() throws Exception {
         if (!isStarted()) {
+            connectionPoolingManager.start();
             localProxyServer.start();
-            cleanupConnectionManagerFuture = setupConnectionManagerCleanupTask();
             return true;
         }
         return false;
@@ -84,13 +76,7 @@ public class ProxyContext implements AutoCloseable {
     public synchronized boolean stop() {
         if (isStarted()) {
             localProxyServer.close();
-
-            // Cancel cleanup scheduler
-            if (cleanupConnectionManagerFuture != null) {
-                cleanupConnectionManagerFuture.cancel(true);
-            }
-
-            connectionSocketFactoryManager.close();
+            connectionPoolingManager.stop();
 
             // Remove auth for SOCKS proxy
             if (userConfig.getProxyType().isSocks5()) {
@@ -126,37 +112,16 @@ public class ProxyContext implements AutoCloseable {
             logger.warn("Error on closing thread pool", e);
         }
 
-        try {
-            cleanupConnectionManagerScheduler.shutdownNow();
-        } catch (Exception e) {
-            logger.warn("Error on closing cleanup connection manager scheduler", e);
-        }
     }
 
-    private ScheduledFuture<?> setupConnectionManagerCleanupTask() {
-        return cleanupConnectionManagerScheduler.scheduleWithFixedDelay(
-                () -> {
-                    logger.debug("Execute connection manager pool clean up task");
-                    for (PoolingHttpClientConnectionManager connectionManager : connectionSocketFactoryManager.getAllActiveConnectionManagers()) {
-                        connectionManager.closeExpiredConnections();
-                        connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
-                        }
-                    }
-                },
-                systemConfig.getConnectionManagerIdleTimeout(),
-                systemConfig.getConnectionManagerIdleTimeout(),
-                TimeUnit.SECONDS);
-    }
 
-    private static class DefaultThreadFactory implements ThreadFactory {
+    public static class DefaultThreadFactory implements ThreadFactory {
         private static final AtomicInteger poolNumber = new AtomicInteger(1);
         private final ThreadGroup group;
         private final AtomicInteger threadNumber = new AtomicInteger(1);
         private final String namePrefix;
 
-        DefaultThreadFactory() {
+        public DefaultThreadFactory() {
             SecurityManager securityManager = System.getSecurityManager();
             group = (securityManager != null) ? securityManager.getThreadGroup() :
                     Thread.currentThread().getThreadGroup();

@@ -44,7 +44,7 @@ import org.apache.http.util.Args;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -156,7 +156,7 @@ public class TunnelConnection {
                         EntityUtils.consume(response.getEntity());
                     } else {
                         logger.debug("Close tunnel connection");
-                        LocalIOUtils.close(connection);
+                        IoUtils.close(connection);
                     }
                     // discard previous auth header
                     connect.removeHeaders(AUTH.PROXY_AUTH_RESP);
@@ -180,7 +180,7 @@ public class TunnelConnection {
                 response.setEntity(new BufferedHttpEntity(entity));
             }
             logger.debug("Close tunnel connection");
-            LocalIOUtils.close(connection);
+            IoUtils.close(connection);
             throw new TunnelRefusedException("CONNECT refused by proxy: " + response.getStatusLine(), response);
         }
 

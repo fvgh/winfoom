@@ -26,8 +26,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * A helper class that wraps an {@link Socket}.
@@ -38,8 +36,6 @@ class ClientConnectionImpl implements ClientConnection {
 
     private final Logger logger = LoggerFactory.getLogger(ClientConnectionImpl.class);
 
-    private final Set<Flag> flags = new HashSet<>();
-
     private InputStream inputStream;
 
     private OutputStream outputStream;
@@ -47,6 +43,10 @@ class ClientConnectionImpl implements ClientConnection {
     private SessionInputBufferImpl sessionInputBuffer;
 
     private HttpRequest httpRequest;
+
+    private boolean requestPrepared;
+
+    private boolean lastResort;
 
     ClientConnectionImpl(InputStream inputStream,
                          OutputStream outputStream,
@@ -137,8 +137,24 @@ class ClientConnectionImpl implements ClientConnection {
     }
 
     @Override
-    public Set<Flag> flags() {
-        return flags;
+    public boolean isRequestPrepared() {
+        return this.requestPrepared;
     }
+
+    @Override
+    public void requestPrepared() {
+        this.requestPrepared = true;
+    }
+
+    @Override
+    public boolean isLastResort() {
+        return this.lastResort;
+    }
+
+    @Override
+    public void lastResort() {
+        this.lastResort = true;
+    }
+
 
 }

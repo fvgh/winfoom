@@ -20,14 +20,13 @@ import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.IoUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
 
 public interface ClientConnection {
 
@@ -51,28 +50,20 @@ public interface ClientConnection {
 
     void writeHttpResponse(HttpResponse httpResponse) throws Exception;
 
-    Set<Flag> flags();
+    boolean isRequestPrepared ();
 
-    default boolean flag(Flag flag) {
-        if (flag != null) {
-            return flags().add(flag);
-        }
-        return false;
-    }
+    void requestPrepared ();
 
-    default boolean isFlagged(Flag flag) {
-        if (flag != null) {
-            return flags().contains(flag);
-        }
-        return false;
-    }
+    boolean isLastResort();
+
+    void lastResort();
 
     static ClientConnection create(Socket socket) throws IOException, HttpException {
         InputStream inputStream = socket.getInputStream();
         SessionInputBufferImpl sessionInputBuffer = new SessionInputBufferImpl(
                 new HttpTransportMetricsImpl(),
-                LocalIOUtils.DEFAULT_BUFFER_SIZE,
-                LocalIOUtils.DEFAULT_BUFFER_SIZE,
+                IoUtils.DEFAULT_BUFFER_SIZE,
+                IoUtils.DEFAULT_BUFFER_SIZE,
                 MessageConstraints.DEFAULT,
                 StandardCharsets.UTF_8.newDecoder());
         sessionInputBuffer.bind(inputStream);
@@ -80,8 +71,5 @@ public interface ClientConnection {
         return new ClientConnectionImpl(inputStream, socket.getOutputStream(), sessionInputBuffer, httpRequest);
     }
 
-    enum Flag {
-        REQUEST_PREPARED,
-        LAST_RESORT
-    }
+
 }

@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.security.auth.login.CredentialException;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -67,6 +68,10 @@ public class AppFrame extends JFrame {
 
     private JLabel proxyHostLabel;
     private JTextField proxyHostJTextField;
+
+    private JLabel pacFileLabel;
+    private JTextField pacFileJTextField;
+
     private JLabel proxyPortLabel;
     private JSpinner proxyPortJSpinner;
     private JLabel localPortLabel;
@@ -79,6 +84,10 @@ public class AppFrame extends JFrame {
     private JButton btnStart;
     private JButton btnStop;
 
+    private JPanel mainContentPanel;
+    private JPanel labelsFieldsPanel;
+    private JPanel labelPanel;
+    private JPanel fieldPanel;
     private JPanel btnPanel;
 
     private JMenuBar menuBar;
@@ -138,102 +147,7 @@ public class AppFrame extends JFrame {
         //
         setTitle("WinFoom");
         setJMenuBar(getMainMenuBar());
-        JPanel mainContentPane = new JPanel();
-        setContentPane(mainContentPane);
-        //
-        GridBagLayout gridBagLayout = new GridBagLayout();
-        gridBagLayout.columnWidths = new int[]{0, 0, 0};
-        gridBagLayout.rowHeights = new int[]{35, 35, 35, 35, 35, 35, 10};
-        gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0};
-        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0E-4};
-        mainContentPane.setLayout(gridBagLayout);
-
-        GridBagConstraints labelGbc1 = new GridBagConstraints();
-        labelGbc1.fill = GridBagConstraints.BOTH;
-        labelGbc1.insets = new Insets(5, 5, 5, 5);
-        labelGbc1.gridx = 0;
-        labelGbc1.gridy = 0;
-        mainContentPane.add(getProxyTypeLabel(), labelGbc1);
-
-        GridBagConstraints componentGbc1 = new GridBagConstraints();
-        componentGbc1.insets = new Insets(5, 5, 5, 5);
-        componentGbc1.anchor = GridBagConstraints.WEST;
-        componentGbc1.gridx = 1;
-        componentGbc1.gridy = 0;
-        mainContentPane.add(getProxyTypeCombo(), componentGbc1);
-
-        GridBagConstraints componentGbc2 = new GridBagConstraints();
-        componentGbc2.insets = new Insets(5, 5, 5, 5);
-        componentGbc2.anchor = GridBagConstraints.WEST;
-        componentGbc2.gridx = 2;
-        componentGbc2.gridy = 0;
-        mainContentPane.add(getBtnConfig(), componentGbc2);
-
-        GridBagConstraints labelGbc3 = new GridBagConstraints();
-        labelGbc3.fill = GridBagConstraints.BOTH;
-        labelGbc3.insets = new Insets(5, 5, 5, 5);
-        labelGbc3.gridx = 0;
-        labelGbc3.gridy = 1;
-        mainContentPane.add(getProxyHostLabel(), labelGbc3);
-
-        GridBagConstraints componentGbc3 = new GridBagConstraints();
-        componentGbc3.insets = new Insets(5, 5, 5, 5);
-        componentGbc3.fill = GridBagConstraints.HORIZONTAL;
-        componentGbc3.gridx = 1;
-        componentGbc3.gridy = 1;
-        componentGbc3.gridwidth = 2;
-        mainContentPane.add(getProxyHostJTextField(), componentGbc3);
-
-        GridBagConstraints labelGbc4 = new GridBagConstraints();
-        labelGbc4.fill = GridBagConstraints.BOTH;
-        labelGbc4.insets = new Insets(5, 5, 5, 5);
-        labelGbc4.gridx = 0;
-        labelGbc4.gridy = 2;
-        mainContentPane.add(getProxyPortLabel(), labelGbc4);
-
-        GridBagConstraints componentGbc4 = new GridBagConstraints();
-        componentGbc4.anchor = GridBagConstraints.WEST;
-        componentGbc4.insets = new Insets(5, 5, 5, 5);
-        componentGbc4.gridx = 1;
-        componentGbc4.gridy = 2;
-        componentGbc4.gridwidth = 2;
-        mainContentPane.add(getProxyPortJSpinner(), componentGbc4);
-
-        GridBagConstraints labelGbc5 = new GridBagConstraints();
-        labelGbc5.fill = GridBagConstraints.BOTH;
-        labelGbc5.insets = new Insets(5, 5, 5, 5);
-        labelGbc5.gridx = 0;
-        labelGbc5.gridy = 3;
-        mainContentPane.add(getLocalPortLabel(), labelGbc5);
-
-        GridBagConstraints componentGbc5 = new GridBagConstraints();
-        componentGbc5.anchor = GridBagConstraints.WEST;
-        componentGbc5.insets = new Insets(5, 5, 5, 5);
-        componentGbc5.gridx = 1;
-        componentGbc5.gridy = 3;
-        componentGbc5.gridwidth = 2;
-        mainContentPane.add(getLocalPortJSpinner(), componentGbc5);
-
-        GridBagConstraints labelGbcTestUrl = new GridBagConstraints();
-        labelGbcTestUrl.fill = GridBagConstraints.BOTH;
-        labelGbcTestUrl.insets = new Insets(5, 5, 5, 5);
-        labelGbcTestUrl.gridx = 0;
-        labelGbcTestUrl.gridy = 4;
-        mainContentPane.add(getTestUrlLabel(), labelGbcTestUrl);
-
-        GridBagConstraints componentGbcTestUrl = new GridBagConstraints();
-        componentGbcTestUrl.insets = new Insets(5, 5, 5, 5);
-        componentGbcTestUrl.gridx = 1;
-        componentGbcTestUrl.gridy = 4;
-        componentGbcTestUrl.gridwidth = 2;
-        mainContentPane.add(getTestUrlJTextField(), componentGbcTestUrl);
-
-        GridBagConstraints gbcBtnPanel = new GridBagConstraints();
-        gbcBtnPanel.gridx = 0;
-        gbcBtnPanel.gridy = 5;
-        gbcBtnPanel.gridwidth = 3;
-        gbcBtnPanel.gridheight = 2;
-        mainContentPane.add(getBtnPanel(), gbcBtnPanel);
+        setContentPane(getMainContentPanel());
 
         initDataBindings();
     }
@@ -279,6 +193,13 @@ public class AppFrame extends JFrame {
         return testUrlLabel;
     }
 
+    private JLabel getPacFileLabel() {
+        if (pacFileLabel == null) {
+            pacFileLabel = new JLabel("PAC file location:");
+        }
+        return pacFileLabel;
+    }
+
     // ------- End Labels
 
     // -------- Fields
@@ -288,7 +209,18 @@ public class AppFrame extends JFrame {
             proxyTypeCombo = new JComboBox<>(ProxyType.values());
             proxyTypeCombo.setMinimumSize(new Dimension(80, 35));
             proxyTypeCombo.addActionListener((e) -> {
-                getBtnConfig().setVisible(userConfig.getProxyType().isSocks5() || userConfig.getProxyType().isPac());
+                clearLabelsAndFields();
+                ProxyType proxyType = (ProxyType) proxyTypeCombo.getSelectedItem();
+                switch (proxyType) {
+                    case HTTP:
+                    case SOCKS4:
+                        configureForHttp();
+                        break;
+                    case PAC:
+                        configureForPac();
+                        break;
+                }
+                this.pack();
             });
         }
         return proxyTypeCombo;
@@ -299,6 +231,13 @@ public class AppFrame extends JFrame {
             proxyHostJTextField = createTextField();
         }
         return proxyHostJTextField;
+    }
+
+    private JTextField getPacFileJTextField() {
+        if (pacFileJTextField == null) {
+            pacFileJTextField = createTextField();
+        }
+        return pacFileJTextField;
     }
 
     private JSpinner getProxyPortJSpinner() {
@@ -372,6 +311,83 @@ public class AppFrame extends JFrame {
 
     // --------- Panels
 
+    private JPanel getMainContentPanel() {
+        if (mainContentPanel == null) {
+            mainContentPanel = new JPanel(new BorderLayout());
+            mainContentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+            mainContentPanel.add(getLabelsFieldsPanel(), BorderLayout.CENTER);
+            mainContentPanel.add(getBtnPanel(), BorderLayout.SOUTH);
+        }
+        return mainContentPanel;
+    }
+
+    private JPanel getLabelPanel() {
+        if (labelPanel == null) {
+            labelPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+        }
+        return labelPanel;
+    }
+
+    private JPanel getFieldPanel() {
+        if (fieldPanel == null) {
+            fieldPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+        }
+        return fieldPanel;
+    }
+
+    private JPanel getLabelsFieldsPanel() {
+        if (labelsFieldsPanel == null) {
+            labelsFieldsPanel = new JPanel(new BorderLayout());
+            labelsFieldsPanel.setBorder(new EmptyBorder(5,5,5,5));
+            labelsFieldsPanel.add(getLabelPanel(), BorderLayout.WEST);
+            labelsFieldsPanel.add(getFieldPanel(), BorderLayout.CENTER);
+            getLabelPanel().add(getProxyTypeLabel());
+            getFieldPanel().add(getProxyTypeCombo());
+        }
+        return labelsFieldsPanel;
+    }
+
+    private void clearLabelsAndFields () {
+        getLabelPanel().removeAll();
+        getFieldPanel().removeAll();
+    }
+
+    private void configureForHttp() {
+        labelPanel.add(getProxyTypeLabel());
+        labelPanel.add(getProxyHostLabel());
+        labelPanel.add(getProxyPortLabel());
+        labelPanel.add(getLocalPortLabel());
+        labelPanel.add(getTestUrlLabel());
+
+        fieldPanel.add(getProxyTypeCombo());
+        fieldPanel.add(getProxyHostJTextField());
+        fieldPanel.add(wrapToPanel(getProxyPortJSpinner()));
+        fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
+        fieldPanel.add(getTestUrlJTextField());
+    }
+
+    private void configureForPac() {
+        labelPanel.add(getProxyTypeLabel());
+        labelPanel.add(getPacFileLabel());
+        labelPanel.add(getLocalPortLabel());
+        labelPanel.add(getTestUrlLabel());
+
+        fieldPanel.add(getProxyTypeCombo());
+        fieldPanel.add(getPacFileJTextField());
+        fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
+        fieldPanel.add(getTestUrlJTextField());
+    }
+
+
+    private JPanel wrapToPanel (java.awt.Component comp) {
+        FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 0, 0);
+        JPanel panel = new JPanel(flowLayout);
+        panel.setPreferredSize(comp.getPreferredSize());
+        panel.add(comp);
+        return panel;
+    }
+
     private JPanel getBtnPanel() {
         if (btnPanel == null) {
             btnPanel = new JPanel();
@@ -441,7 +457,7 @@ public class AppFrame extends JFrame {
     private JSpinner createJSpinner() {
         JSpinner jSpinner = new JSpinner();
         jSpinner.setPreferredSize(new Dimension(60, 25));
-        jSpinner.setMinimumSize(new Dimension(32, 25));
+        //jSpinner.setMaximumSize(new Dimension(50, 25));
         jSpinner.setEditor(new JSpinner.NumberEditor(jSpinner, "#"));
         SwingUtils.commitsOnValidEdit(jSpinner);
         return jSpinner;

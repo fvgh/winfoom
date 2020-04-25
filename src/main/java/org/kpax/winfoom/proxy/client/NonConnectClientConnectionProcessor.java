@@ -26,7 +26,7 @@ import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.proxy.RepeatableHttpEntity;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,7 +80,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
         logger.debug("Handle non-connect request");
         HttpRequest request = clientConnection.getHttpRequest();
 
-        if (!clientConnection.isFlagged(ClientConnection.Flag.REQUEST_PREPARED)) {
+        if (!clientConnection.isRequestPrepared()) {
 
             AbstractHttpEntity entity;
             if (request instanceof HttpEntityEnclosingRequest) {
@@ -136,7 +136,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
                 }
             }
 
-            clientConnection.flag(ClientConnection.Flag.REQUEST_PREPARED);
+            clientConnection.requestPrepared();
         }
 
         try (CloseableHttpClient httpClient = clientBuilderFactory.createClientBuilder(proxyInfo).build()) {
@@ -164,11 +164,11 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
                 }
             }
         } finally {
-            if (clientConnection.isFlagged(ClientConnection.Flag.LAST_RESORT)) {
+            if (clientConnection.isLastResort()) {
                 if (request instanceof HttpEntityEnclosingRequest) {
                     HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
                     if (entity instanceof AutoCloseable) {
-                        LocalIOUtils.close((AutoCloseable) entity);
+                        IoUtils.close((AutoCloseable) entity);
                     }
                 }
             }

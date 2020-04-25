@@ -16,7 +16,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.conn.ManagedHttpClientConnection;
-import org.kpax.winfoom.util.LocalIOUtils;
+import org.kpax.winfoom.util.IoUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -61,6 +61,6 @@ public class Tunnel implements Closeable {
 
     @Override
     public void close() {
-        LocalIOUtils.close(connection);
+        IoUtils.close(connection);
     }
 }
