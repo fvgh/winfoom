@@ -28,8 +28,6 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 /**
- * A helper class that wraps an {@link Socket}.
- *
  * @author Eugen Covaci
  */
 class ClientConnectionImpl implements ClientConnection {

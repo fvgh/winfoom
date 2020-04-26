@@ -58,7 +58,24 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
 
         try (Tunnel tunnel = tunnelConnection.tunnel(proxy, target, requestLine.getProtocolVersion())) {
             try {
-                handleResponse(tunnel, clientConnection);
+                // Handle the tunnel response
+                logger.debug("Write status line");
+                clientConnection.write(tunnel.getStatusLine());
+
+                logger.debug("Write headers");
+                for (Header header : tunnel.getResponse().getAllHeaders()) {
+                    clientConnection.write(header);
+                }
+                clientConnection.writeln();
+
+                // The proxy facade mediates the full duplex communication
+                // between the client and the remote proxy
+                IoUtils.duplex(proxyContext.executorService(),
+                        tunnel.getInputStream(),
+                        tunnel.getOutputStream(),
+                        clientConnection.getInputStream(),
+                        clientConnection.getOutputStream());
+
             } catch (Exception e) {
                 logger.debug("Error on handling CONNECT response", e);
             }
@@ -71,32 +88,6 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
             }
         }
 
-    }
-
-    /**
-     * Handles the tunnel's response.<br>
-     *
-     * @param tunnel The tunnel's instance
-     * @throws IOException
-     */
-    private void handleResponse(final Tunnel tunnel,
-                                ClientConnection clientConnection) throws IOException {
-        logger.debug("Write status line");
-        clientConnection.write(tunnel.getStatusLine());
-
-        logger.debug("Write headers");
-        for (Header header : tunnel.getResponse().getAllHeaders()) {
-            clientConnection.write(header);
-        }
-        clientConnection.writeln();
-
-        // The proxy facade mediates the full duplex communication
-        // between the client and the remote proxy
-        IoUtils.duplex(proxyContext.executorService(),
-                tunnel.getInputStream(),
-                tunnel.getOutputStream(),
-                clientConnection.getInputStream(),
-                clientConnection.getOutputStream());
     }
 
 }

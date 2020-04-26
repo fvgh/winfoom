@@ -28,36 +28,104 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Encapsulates a client's connection with a valid (parsable) HTTP request.
+ */
 public interface ClientConnection {
 
+    /**
+     * @return the input stream of the client's socket
+     */
     InputStream getInputStream();
 
+    /**
+     * @return the output stream of the client's socket
+     */
     OutputStream getOutputStream();
 
+    /**
+     * @return the session input buffer used to parse the request into a {@link HttpRequest} instance
+     */
     SessionInputBufferImpl getSessionInputBuffer();
 
+    /**
+     *
+     * @return the HTTP request.
+     */
     HttpRequest getHttpRequest();
 
+    /**
+     * Write an object to the output stream using CRLF format.
+     * @param obj the object
+     * @throws IOException
+     */
     void write(Object obj) throws IOException;
 
+    /**
+     * Write an empty line to the output stream using CRLF format.
+     * @throws IOException
+     */
     void writeln() throws IOException;
 
+    /**
+     * Write a simple response with only the status line with protocol version 1.1, followed by an empty line.
+     * @param statusCode the status code.
+     * @param e the message of this error becomes the reasonPhrase from the status line.
+     */
     void writeErrorResponse(int statusCode, Exception e);
 
+    /**
+     * Write a simple response with only the status line followed by an empty line.
+     * @param protocolVersion the HTTP version.
+     * @param statusCode the status code.
+     * @param reasonPhrase the reason code
+     */
     void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, String reasonPhrase);
 
+    /**
+     * Write a simple response with only the status line, followed by an empty line.
+     * @param protocolVersion the HTTP version.
+     * @param statusCode the status code.
+     * @param  e the message of this error becomes the reasonPhrase from the status line.
+     */
     void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, Exception e);
 
+    /**
+     * Write the response to the output stream as it is.
+     * @param httpResponse the response
+     * @throws Exception
+     */
     void writeHttpResponse(HttpResponse httpResponse) throws Exception;
 
+    /**
+     * Whether the request has been marked as prepared for execution.
+     * @return <code>true</code> iff the request has been marked as prepared.
+     */
     boolean isRequestPrepared ();
 
+    /**
+     * Mark the request as prepared for execution.
+     */
     void requestPrepared ();
 
+    /**
+     * Whether there are no more tries.
+     * @return <code>true</code> iff no more tries.
+     */
     boolean isLastResort();
 
+    /**
+     * Signals that there are no more tries.
+     */
     void lastResort();
 
+    /**
+     * Creates an instance.
+     * @param socket the client's socket.
+     * @return a new instance if the HTTP request is parsable.
+     * @throws IOException
+     * @throws HttpException
+     */
     static ClientConnection create(Socket socket) throws IOException, HttpException {
         InputStream inputStream = socket.getInputStream();
         SessionInputBufferImpl sessionInputBuffer = new SessionInputBufferImpl(

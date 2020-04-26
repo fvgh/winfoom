@@ -44,7 +44,6 @@ public class ConnectionPoolingManager implements AutoCloseable {
 
     private volatile boolean started;
 
-
     public PoolingHttpClientConnectionManager getHttpConnectionManager() {
         if (httpConnectionManager == null) {
             synchronized (this) {
@@ -111,10 +110,14 @@ public class ConnectionPoolingManager implements AutoCloseable {
         if (isStarted()) {
             logger.debug("Execute connection manager pool clean up task");
             for (PoolingHttpClientConnectionManager connectionManager : getAllActiveConnectionManagers()) {
-                connectionManager.closeExpiredConnections();
-                connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
+                try {
+                    connectionManager.closeExpiredConnections();
+                    connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
+                    }
+                } catch (Exception e) {
+                    logger.debug("Error on cleaning connection pool", e);
                 }
             }
         }
