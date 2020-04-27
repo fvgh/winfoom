@@ -10,25 +10,21 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.conn;
+package org.kpax.winfoom.exception;
 
-import org.apache.http.protocol.HttpContext;
-import org.kpax.winfoom.util.HttpUtils;
-
-import java.io.IOException;
-import java.net.Socket;
-
-public class Socks4ConnectionSocketFactory extends SocksConnectionSocketFactory {
-
-    @Override
-    public Socket createSocket(final HttpContext context) throws IOException {
-        Socket socket = super.createSocket(context);
-        try {
-            HttpUtils.setSocks4(socket);
-        } catch (UnsupportedOperationException e) {
-            throw new IOException(e);
-        }
-        return socket;
+public class InvalidPacFileException extends Exception {
+    public InvalidPacFileException() {
     }
 
+    public InvalidPacFileException(String message) {
+        super(message);
+    }
+
+    public InvalidPacFileException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public InvalidPacFileException(Throwable cause) {
+        super(cause);
+    }
 }

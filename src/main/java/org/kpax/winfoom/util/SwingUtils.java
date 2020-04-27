@@ -33,7 +33,7 @@ public class SwingUtils {
 
     private static final String DLG_WARN_TITLE = "Warning";
 
-    public static void setFont(Component component, Font font) {
+    public static void setFont(final Component component, final Font font) {
         component.setFont(font);
         if (component instanceof JMenu) {
             JMenu menu = (JMenu) component;
@@ -47,7 +47,7 @@ public class SwingUtils {
         }
     }
 
-    public static void setEnabled(Component component, boolean enabled) {
+    public static void setEnabled(final Component component,final  boolean enabled) {
         component.setEnabled(enabled);
         if (component instanceof Container) {
             for (Component child : ((Container) component).getComponents()) {
@@ -56,7 +56,7 @@ public class SwingUtils {
         }
     }
 
-    public static void commitsOnValidEdit(JSpinner spinner) {
+    public static void commitsOnValidEdit(final JSpinner spinner) {
         JComponent comp = spinner.getEditor();
         JFormattedTextField field = (JFormattedTextField) comp.getComponent(0);
         ((DefaultFormatter) field.getFormatter()).setCommitsOnValidEdit(true);

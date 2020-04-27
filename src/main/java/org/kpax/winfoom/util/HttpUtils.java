@@ -45,6 +45,7 @@ import javax.security.auth.login.CredentialException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -104,61 +105,7 @@ public final class HttpUtils {
         socket.setSendBufferSize(bufferSize);
     }
 
-    public static void testProxyConfig(final UserConfig userConfig)
-            throws IOException, CredentialException {
-        logger.info("Test proxy config {}", userConfig);
-        HttpClientBuilder httpClientBuilder;
 
-        if (userConfig.getProxyType().isSocks()) {
-            if (userConfig.getProxyType().isSocks5()) {
-                Authenticator.setDefault(new Authenticator() {
-                    public PasswordAuthentication getPasswordAuthentication() {
-                        return (new PasswordAuthentication(userConfig.getProxySocksUsername(),
-                                userConfig.getProxyPassword() != null ? userConfig.getProxyPassword().toCharArray() : new char[0]));
-                    }
-                });
-            }
-            ConnectionSocketFactory connectionSocketFactory = userConfig.getProxyType().isSocks4()
-                    ? new Socks4ConnectionSocketFactory() : new SocksConnectionSocketFactory();
-            Registry<ConnectionSocketFactory> factoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-                    .register("http", connectionSocketFactory)
-                    .register("https", connectionSocketFactory)
-                    .build();
-
-            httpClientBuilder = HttpClients.custom().setConnectionManager(new PoolingHttpClientConnectionManager(factoryRegistry));
-        } else {
-            httpClientBuilder = WinHttpClients.custom();
-        }
-
-        try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
-            HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
-            HttpGet request = new HttpGet("/");
-            if (userConfig.getProxyType().isHttp()) {
-                HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-                RequestConfig config = RequestConfig.custom()
-                        .setProxy(proxy)
-                        .build();
-                request.setConfig(config);
-            }
-            HttpClientContext context = HttpClientContext.create();
-            if (userConfig.getProxyType().isSocks()) {
-                context.setAttribute(HttpUtils.SOCKS_ADDRESS, new InetSocketAddress(userConfig.getProxyHost(), userConfig.getProxyPort()));
-            }
-            logger.info("Executing request {} to {}", request.getRequestLine(), target);
-            try (CloseableHttpResponse response = httpClient.execute(target, request, context)) {
-                StatusLine statusLine = response.getStatusLine();
-                logger.info("Test response status {}", statusLine);
-                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-                    logger.info("Test OK");
-                } else if (statusLine.getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
-                    throw new CredentialException(statusLine.getReasonPhrase());
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error on testing http proxy config", e);
-            throw e;
-        }
-    }
 
     public static BasicStatusLine toStatusLine(int httpCode) {
         return toStatusLine(HttpVersion.HTTP_1_1, httpCode, null);
@@ -212,14 +159,18 @@ public final class HttpUtils {
         return new StringBuilder("<html>").append(text).append("</html>").toString();
     }
 
-    public static void setSocks4(final Socket socket) throws Exception {
-        Field implField = Socket.class.getDeclaredField("impl");
-        implField.setAccessible(true);
-        Object impl = implField.get(socket);
-        Class<?> implType = impl.getClass();
-        Method setV4 = implType.getDeclaredMethod("setV4");
-        setV4.setAccessible(true);
-        setV4.invoke(impl);
+    public static void setSocks4(final Socket socket) throws UnsupportedOperationException {
+        try {
+            Field implField = Socket.class.getDeclaredField("impl");
+            implField.setAccessible(true);
+            Object impl = implField.get(socket);
+            Class<?> implType = impl.getClass();
+            Method setV4 = implType.getDeclaredMethod("setV4");
+            setV4.setAccessible(true);
+            setV4.invoke(impl);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException(e);
+        }
     }
 
     public static List<ProxyInfo> parsePacProxyLine(String proxyLine) {

@@ -16,11 +16,14 @@ package org.kpax.winfoom.util;
 
 import net.sourceforge.htmlunit.corejs.javascript.*;
 import org.apache.commons.net.util.SubnetUtils;
+import org.apache.http.HttpHost;
+import org.kpax.winfoom.proxy.ProxyInfo;
 
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -74,6 +77,11 @@ public final class ProxyAutoConfig {
         } finally {
             Context.exit();
         }
+    }
+
+    public static List<ProxyInfo> loadListProxyInfos (final String content, HttpHost host) {
+        String proxyLine = ProxyAutoConfig.evaluate(content, host.toURI(), host.getHostName());
+        return HttpUtils.parsePacProxyLine(proxyLine);
     }
 
     private void defineMethod(final String methodName, final Scriptable scope) {

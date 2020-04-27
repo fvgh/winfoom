@@ -38,7 +38,7 @@ import java.net.Socket;
  * Created on 4/16/2020
  */
 @Component
-public class SocksConnectClientConnectionProcessor implements ClientConnectionProcessor {
+public class SocketConnectClientConnectionProcessor implements ClientConnectionProcessor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
@@ -55,17 +55,21 @@ public class SocksConnectClientConnectionProcessor implements ClientConnectionPr
             throws IOException {
 
         RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
-
-        Proxy proxy = new Proxy(Proxy.Type.SOCKS,
-                new InetSocketAddress(userConfig.getProxyHost(), userConfig.getProxyPort()));
         HttpHost target = HttpHost.create(requestLine.getUri());
 
-        try (Socket socket = new Socket(proxy)) {
+        Proxy proxy = null;
+
+        if (proxyInfo.getType().isSocks()) {
+            proxy = new Proxy(Proxy.Type.SOCKS,
+                    new InetSocketAddress(userConfig.getProxyHost(), userConfig.getProxyPort()));
+        }
+
+        try (Socket socket = proxy != null ? new Socket(proxy) : new Socket()) {
             socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
             if (userConfig.getProxyType().isSocks4()) {
                 try {
                     HttpUtils.setSocks4(socket);
-                } catch (Exception e) {
+                } catch (UnsupportedOperationException e) {// FIXME Out of here
                     logger.debug("Error on setting SOCKS 4 version", e);
                     clientConnection.writeErrorResponse(clientConnection.getHttpRequest().getProtocolVersion(),
                             HttpStatus.SC_INTERNAL_SERVER_ERROR, "SOCKS 4 not supported by the JVM");

@@ -17,8 +17,10 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.PacFile;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.IoUtils;
 import org.kpax.winfoom.util.ProxyAutoConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +41,7 @@ import java.util.List;
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class ClientConnectionHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(ClientConnectionHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private Socket socket;
 
@@ -49,6 +51,9 @@ public class ClientConnectionHandler {
     @Autowired
     private ClientProcessorSelector clientProcessorSelector;
 
+    @Autowired
+    private PacFile pacFile;
+
     public ClientConnectionHandler bind(final Socket socket) {
         Assert.isNull(this.socket, "Socket already bound!");
         this.socket = socket;
@@ -56,43 +61,46 @@ public class ClientConnectionHandler {
     }
 
     public void handleConnection() throws IOException, HttpException {
-        ClientConnection connection = ClientConnection.create(socket);
-        RequestLine requestLine = connection.getHttpRequest().getRequestLine();
-        List<ProxyInfo> proxyInfos;
-        if (userConfig.getProxyType().isPac()) {
-            // TODO Get pac file content
-            String content = "TODO";
-
-            HttpHost host = HttpHost.create(requestLine.getUri());
-            String proxyLine = ProxyAutoConfig.evaluate(content, host.toURI(), host.getHostName());
-
-            proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
-
-        } else {
-            proxyInfos = Collections.singletonList(new ProxyInfo(userConfig.getProxyType().toProxyInfoType()));
-        }
-
-        ClientConnectionProcessor connectionProcessor;
-        for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
-            ProxyInfo proxyInfo = itr.next();
-            if (!itr.hasNext()) {
-                connection.lastResort();
+        try {
+            ClientConnection connection = ClientConnection.create(socket);
+            RequestLine requestLine = connection.getHttpRequest().getRequestLine();
+            logger.debug("Handle request: {}", requestLine);
+            List<ProxyInfo> proxyInfos;
+            if (userConfig.getProxyType().isPac()) {
+                String content = pacFile.getContent();
+                HttpHost host = HttpHost.create(requestLine.getUri());
+                String proxyLine = ProxyAutoConfig.evaluate(content, host.toURI(), host.getHostName());
+                logger.debug("proxyLine {}", proxyLine);
+                proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
+            } else {// Manual proxy case
+                proxyInfos = Collections.singletonList(new ProxyInfo(userConfig.getProxyType().toProxyInfoType()));
             }
-            connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
-            try {
-                connectionProcessor.process(connection, proxyInfo);
-            } catch (ConnectException e) {
-                if (itr.hasNext()) {
-                    continue;
-                } else {
-                    // Cannot connect to the remote proxy
-                    connection.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
+            logger.debug("proxyInfos {}", proxyInfos);
+            ClientConnectionProcessor connectionProcessor;
+            for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
+                ProxyInfo proxyInfo = itr.next();
+                if (!itr.hasNext()) {
+                    connection.lastResort();
                 }
-            } catch (Exception e) {
-                // Any other error, including client errors
-                connection.writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
-                break;
+                connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
+                try {
+                    logger.debug("Process connection with proxyInfo: {}", proxyInfo);
+                    connectionProcessor.process(connection, proxyInfo);
+                } catch (ConnectException e) {
+                    if (itr.hasNext()) {
+                        continue;
+                    } else {
+                        // Cannot connect to the remote proxy
+                        connection.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
+                    }
+                } catch (Exception e) {
+                    // Any other error, including client errors
+                    connection.writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+                    break;
+                }
             }
+        } finally {
+            IoUtils.close(socket);
         }
 
     }

@@ -24,15 +24,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 /**
  * @author Eugen Covaci
  */
-class ClientConnectionImpl implements ClientConnection {
+class RequestReadyClientConnection implements ClientConnection {
 
-    private final Logger logger = LoggerFactory.getLogger(ClientConnectionImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(RequestReadyClientConnection.class);
 
     private InputStream inputStream;
 
@@ -46,10 +45,10 @@ class ClientConnectionImpl implements ClientConnection {
 
     private boolean lastResort;
 
-    ClientConnectionImpl(InputStream inputStream,
-                         OutputStream outputStream,
-                         SessionInputBufferImpl sessionInputBuffer,
-                         HttpRequest httpRequest) {
+    RequestReadyClientConnection(InputStream inputStream,
+                                 OutputStream outputStream,
+                                 SessionInputBufferImpl sessionInputBuffer,
+                                 HttpRequest httpRequest) {
         this.inputStream = inputStream;
         this.outputStream = outputStream;
         this.sessionInputBuffer = sessionInputBuffer;

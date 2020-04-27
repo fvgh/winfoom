@@ -39,6 +39,13 @@ public class ProxyInfo {
         return host;
     }
 
+    @Override
+    public String toString() {
+        return "ProxyInfo{" +
+                "type=" + type +
+                ", host=" + host +
+                '}';
+    }
 
     public enum Type {
         PROXY, HTTP, HTTPS, SOCKS, SOCKS4, SOCKS5, DIRECT;

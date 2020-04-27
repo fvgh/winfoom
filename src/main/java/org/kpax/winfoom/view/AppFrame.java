@@ -22,6 +22,7 @@ import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.proxy.ProxyType;
+import org.kpax.winfoom.proxy.ProxyValidator;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.SwingUtils;
 import org.slf4j.Logger;
@@ -62,6 +63,9 @@ public class AppFrame extends JFrame {
 
     @Autowired
     private ProxyContext proxyContext;
+
+    @Autowired
+    private ProxyValidator proxyValidator;
 
     private JLabel proxyTypeLabel;
     private JComboBox<ProxyType> proxyTypeCombo;
@@ -210,6 +214,7 @@ public class AppFrame extends JFrame {
             proxyTypeCombo.setMinimumSize(new Dimension(80, 35));
             proxyTypeCombo.addActionListener((e) -> {
                 clearLabelsAndFields();
+                addProxyType();
                 ProxyType proxyType = (ProxyType) proxyTypeCombo.getSelectedItem();
                 switch (proxyType) {
                     case HTTP:
@@ -339,28 +344,30 @@ public class AppFrame extends JFrame {
     private JPanel getLabelsFieldsPanel() {
         if (labelsFieldsPanel == null) {
             labelsFieldsPanel = new JPanel(new BorderLayout());
-            labelsFieldsPanel.setBorder(new EmptyBorder(5,5,5,5));
+            labelsFieldsPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
             labelsFieldsPanel.add(getLabelPanel(), BorderLayout.WEST);
             labelsFieldsPanel.add(getFieldPanel(), BorderLayout.CENTER);
-            getLabelPanel().add(getProxyTypeLabel());
-            getFieldPanel().add(getProxyTypeCombo());
+            addProxyType();
         }
         return labelsFieldsPanel;
     }
 
-    private void clearLabelsAndFields () {
+    private void addProxyType() {
+        getLabelPanel().add(getProxyTypeLabel());
+        getFieldPanel().add(getProxyTypeCombo());
+    }
+
+    private void clearLabelsAndFields() {
         getLabelPanel().removeAll();
         getFieldPanel().removeAll();
     }
 
     private void configureForHttp() {
-        labelPanel.add(getProxyTypeLabel());
         labelPanel.add(getProxyHostLabel());
         labelPanel.add(getProxyPortLabel());
         labelPanel.add(getLocalPortLabel());
         labelPanel.add(getTestUrlLabel());
 
-        fieldPanel.add(getProxyTypeCombo());
         fieldPanel.add(getProxyHostJTextField());
         fieldPanel.add(wrapToPanel(getProxyPortJSpinner()));
         fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
@@ -368,19 +375,17 @@ public class AppFrame extends JFrame {
     }
 
     private void configureForPac() {
-        labelPanel.add(getProxyTypeLabel());
         labelPanel.add(getPacFileLabel());
         labelPanel.add(getLocalPortLabel());
         labelPanel.add(getTestUrlLabel());
 
-        fieldPanel.add(getProxyTypeCombo());
         fieldPanel.add(getPacFileJTextField());
         fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
         fieldPanel.add(getTestUrlJTextField());
     }
 
 
-    private JPanel wrapToPanel (java.awt.Component comp) {
+    private JPanel wrapToPanel(java.awt.Component comp) {
         FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 0, 0);
         JPanel panel = new JPanel(flowLayout);
         panel.setPreferredSize(comp.getPreferredSize());
@@ -457,7 +462,6 @@ public class AppFrame extends JFrame {
     private JSpinner createJSpinner() {
         JSpinner jSpinner = new JSpinner();
         jSpinner.setPreferredSize(new Dimension(60, 25));
-        //jSpinner.setMaximumSize(new Dimension(50, 25));
         jSpinner.setEditor(new JSpinner.NumberEditor(jSpinner, "#"));
         SwingUtils.commitsOnValidEdit(jSpinner);
         return jSpinner;
@@ -495,12 +499,19 @@ public class AppFrame extends JFrame {
                         getTestUrlJTextField(), BeanProperty.create("text"));
         autoBindingProxyTestUrl.bind();
         //
+        BeanProperty<UserConfig, String> proxyPacFileLocationProperty = BeanProperty.create("proxyPacFileLocation");
+        AutoBinding<UserConfig, String, JTextField, String> autoBindingProxyPacFileLocation = Bindings
+                .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, proxyPacFileLocationProperty,
+                        getPacFileJTextField(), BeanProperty.create("text"));
+        autoBindingProxyPacFileLocation.bind();
+        //
         BindingGroup bindingGroup = new BindingGroup();
         bindingGroup.addBinding(autoBindingProxyType);
         bindingGroup.addBinding(autoBindingProxyHost);
         bindingGroup.addBinding(autoBindingProxyPort);
         bindingGroup.addBinding(autoBindingLocalPort);
         bindingGroup.addBinding(autoBindingProxyTestUrl);
+        bindingGroup.addBinding(autoBindingProxyPacFileLocation);
         //
     }
 
@@ -531,7 +542,7 @@ public class AppFrame extends JFrame {
 
         // Test the proxy configuration
         try {
-            HttpUtils.testProxyConfig(userConfig);
+            proxyValidator.testProxyConfig();
         } catch (CredentialException e) {
             SwingUtils.showErrorMessage(this, "Wrong user/password!");
             return false;

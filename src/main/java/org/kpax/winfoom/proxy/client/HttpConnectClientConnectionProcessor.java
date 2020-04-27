@@ -40,9 +40,6 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
     private final Logger logger = LoggerFactory.getLogger(HttpConnectClientConnectionProcessor.class);
 
     @Autowired
-    private UserConfig userConfig;
-
-    @Autowired
     private ProxyContext proxyContext;
 
     @Autowired
@@ -53,8 +50,8 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
             throws IOException, HttpException {
         logger.debug("Handle connect request");
         RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
-        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
         HttpHost target = HttpHost.create(requestLine.getUri());
+        HttpHost proxy = new HttpHost(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort());
 
         try (Tunnel tunnel = tunnelConnection.tunnel(proxy, target, requestLine.getProtocolVersion())) {
             try {

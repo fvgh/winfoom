@@ -29,6 +29,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,6 +68,9 @@ public class UserConfig {
     @Value("${proxy.socks.password:#{null}}")
     private String proxySocksPassword;
 
+    @Value("${proxy.pac.fileLocation:#{null}}")
+    private String proxyPacFileLocation;
+
     private Path tempDirectory;
 
     @PostConstruct
@@ -74,19 +79,24 @@ public class UserConfig {
             try {
                 CommandExecutor.getSystemProxy().ifPresent((s) -> {
                     logger.info("proxyLine: {}", s);
-                    String firstProxy = s.split(";")[0];
-                    logger.info("firstProxy: {}", firstProxy);
-                    String[] split = firstProxy.split(":");
-                    if (split[0].startsWith("http=")) {
-                        proxyHost = split[0].substring("http=".length());
-                        proxyType = ProxyType.HTTP;
-                    } else if (split[0].startsWith("socks=")) {
-                        proxyHost = split[0].substring("socks=".length());
-                        proxyType = ProxyType.SOCKS5;
-                    } else {
-                        proxyHost = split[0];
+                    String[] proxies = s.split(";");
+                    if (proxies.length > 0) {
+                        String firstProxy = proxies[0];
+                        logger.info("firstProxy: {}", firstProxy);
+                        String[] elements = firstProxy.split(":");
+                        if (elements.length > 1) {
+                            if (elements[0].startsWith("http=")) {
+                                proxyHost = elements[0].substring("http=".length());
+                                proxyType = ProxyType.HTTP;
+                            } else if (elements[0].startsWith("socks=")) {
+                                proxyHost = elements[0].substring("socks=".length());
+                                proxyType = ProxyType.SOCKS5;
+                            } else {
+                                proxyHost = elements[0];
+                            }
+                            proxyPort = Integer.parseInt(elements[1]);
+                        }
                     }
-                    proxyPort = Integer.parseInt(split[1]);
                 });
             } catch (Exception e) {
                 logger.error("Error on getting system proxy", e);
@@ -180,6 +190,25 @@ public class UserConfig {
         this.proxySocksStorePassword = proxySocksStorePassword;
     }
 
+    public String getProxyPacFileLocation() {
+        return proxyPacFileLocation;
+    }
+
+    public void setProxyPacFileLocation(String proxyPacFileLocation) {
+        this.proxyPacFileLocation = proxyPacFileLocation;
+    }
+
+    public URL getProxyPacFileLocationAsURL () throws MalformedURLException {
+        if (StringUtils.isNotEmpty(proxyPacFileLocation)) {
+            if (proxyPacFileLocation.startsWith("http")) {
+                return new URL(proxyPacFileLocation);
+            } else {
+                return new URL("file:///" + proxyPacFileLocation);
+            }
+        }
+        return null;
+    }
+
     @Autowired
     private void setTempDirectory(@Value("${user.home}") String userHome) {
         tempDirectory = Paths.get(userHome, ".winfoom", "temp");
@@ -197,6 +226,8 @@ public class UserConfig {
         config.setProperty("proxy.test.url", this.proxyTestUrl);
         config.setProperty("proxy.socks.username", this.proxySocksUsername);
         config.setProperty("proxy.socks.store.password", this.proxySocksStorePassword);
+        config.setProperty("proxy.pac.fileLocation", this.proxyPacFileLocation);
+
         if (this.proxySocksStorePassword) {
             config.setProperty("proxy.socks.password", this.proxySocksPassword);
         } else {
@@ -207,6 +238,7 @@ public class UserConfig {
                 this.proxySocksPassword = null;
             }
         }
+
         propertiesBuilder.save();
     }
 

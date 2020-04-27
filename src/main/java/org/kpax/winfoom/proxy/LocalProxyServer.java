@@ -75,7 +75,8 @@ class LocalProxyServer implements Closeable {
 
             proxyContext.executorService().execute(() -> {
                 while (started) {
-                    try (Socket socket = serverSocket.accept()) {
+                    try {
+                        Socket socket = serverSocket.accept();
                         socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
                         proxyContext.executorService().execute(() -> {
                             try {

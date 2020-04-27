@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
  * Created on 4/13/2020
  */
 @Component
-public class ClientProcessorSelectorImpl implements ClientProcessorSelector {
+public class DefaultClientProcessorSelector implements ClientProcessorSelector {
 
     @Autowired
     private UserConfig userConfig;
@@ -33,7 +33,7 @@ public class ClientProcessorSelectorImpl implements ClientProcessorSelector {
     private HttpConnectClientConnectionProcessor httpConnectClientConnectionProcessor;
 
     @Autowired
-    private SocksConnectClientConnectionProcessor socksConnectClientConnectionProcessor;
+    private SocketConnectClientConnectionProcessor socketConnectClientConnectionProcessor;
 
     @Autowired
     private NonConnectClientConnectionProcessor nonConnectClientConnectionProcessor;
@@ -41,8 +41,8 @@ public class ClientProcessorSelectorImpl implements ClientProcessorSelector {
     @Override
     public ClientConnectionProcessor selectClientProcessor(RequestLine requestLine, ProxyInfo proxyInfo) {
         if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
-            if (proxyInfo.getType().isSocks()) {
-                return socksConnectClientConnectionProcessor;
+            if (proxyInfo.getType().isSocks() || proxyInfo.getType().isDirect()) {
+                return socketConnectClientConnectionProcessor;
             }
             return httpConnectClientConnectionProcessor;
         } else {
