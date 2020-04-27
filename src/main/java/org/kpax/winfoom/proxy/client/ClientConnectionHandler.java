@@ -17,11 +17,10 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.exception.InvalidPacFileException;
 import org.kpax.winfoom.proxy.PacFile;
 import org.kpax.winfoom.proxy.ProxyInfo;
-import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.IoUtils;
-import org.kpax.winfoom.util.ProxyAutoConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +32,7 @@ import org.springframework.util.Assert;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -60,7 +60,7 @@ public class ClientConnectionHandler {
         return this;
     }
 
-    public void handleConnection() throws IOException, HttpException {
+    public void handleConnection() throws IOException, HttpException, URISyntaxException, InvalidPacFileException {
         try {
             ClientConnection connection = ClientConnection.create(socket);
             RequestLine requestLine = connection.getHttpRequest().getRequestLine();
@@ -68,9 +68,8 @@ public class ClientConnectionHandler {
 
             List<ProxyInfo> proxyInfos;
             if (userConfig.getProxyType().isPac()) {
-                String content = pacFile.getContent();
                 HttpHost host = HttpHost.create(requestLine.getUri());
-                proxyInfos = ProxyAutoConfig.loadListProxyInfos(content, host);
+                proxyInfos = pacFile.loadListProxyInfos(host);
             } else {// Manual proxy case
                 HttpHost proxyHost = null;
                 if (!userConfig.getProxyType().isDirect()) {

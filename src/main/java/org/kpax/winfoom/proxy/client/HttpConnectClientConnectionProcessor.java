@@ -17,7 +17,6 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.RequestLine;
 import org.apache.http.impl.execchain.TunnelRefusedException;
-import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.proxy.Tunnel;

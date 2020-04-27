@@ -17,7 +17,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.util.HeaderDateGenerator;
@@ -54,14 +53,15 @@ public class SocketConnectClientConnectionProcessor implements ClientConnectionP
         RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
         HttpHost target = HttpHost.create(requestLine.getUri());
 
-        Proxy proxy = null;
-
+        Proxy proxy;
         if (proxyInfo.getType().isSocks()) {
             proxy = new Proxy(Proxy.Type.SOCKS,
                     new InetSocketAddress(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort()));
+        } else {
+            proxy = Proxy.NO_PROXY;
         }
 
-        try (Socket socket = proxy != null ? new Socket(proxy) : new Socket()) {
+        try (Socket socket = new Socket(proxy)) {
             socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
             if (proxyInfo.getType().isSocks4()) {
                 try {

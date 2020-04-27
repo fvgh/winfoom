@@ -22,8 +22,9 @@ public interface ClientProcessorSelector {
 
     /**
      * Select the appropriate {@link ClientConnectionProcessor} implementation to process the client's connection based on the request info and the proxy type.
+     *
      * @param requestLine the HTTP request's first line.
-     * @param proxyInfo the proxy info used to make the remote HTTP request.
+     * @param proxyInfo   the proxy info used to make the remote HTTP request.
      * @return the processor instance.
      */
     ClientConnectionProcessor selectClientProcessor(RequestLine requestLine, ProxyInfo proxyInfo);

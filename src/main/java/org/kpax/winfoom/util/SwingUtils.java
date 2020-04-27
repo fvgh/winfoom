@@ -47,7 +47,7 @@ public class SwingUtils {
         }
     }
 
-    public static void setEnabled(final Component component,final  boolean enabled) {
+    public static void setEnabled(final Component component, final boolean enabled) {
         component.setEnabled(enabled);
         if (component instanceof Container) {
             for (Component child : ((Container) component).getComponents()) {

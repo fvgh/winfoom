@@ -198,7 +198,7 @@ public class UserConfig {
         this.proxyPacFileLocation = proxyPacFileLocation;
     }
 
-    public URL getProxyPacFileLocationAsURL () throws MalformedURLException {
+    public URL getProxyPacFileLocationAsURL() throws MalformedURLException {
         if (StringUtils.isNotEmpty(proxyPacFileLocation)) {
             if (proxyPacFileLocation.startsWith("http")) {
                 return new URL(proxyPacFileLocation);

@@ -32,7 +32,7 @@ import org.kpax.winfoom.exception.InvalidPacFileException;
 import org.kpax.winfoom.proxy.conn.Socks4ConnectionSocketFactory;
 import org.kpax.winfoom.proxy.conn.SocksConnectionSocketFactory;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.ProxyAutoConfig;
+import org.netbeans.core.network.proxy.pac.PacValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.net.Authenticator;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -58,14 +59,14 @@ public class ProxyValidator {
     private PacFile pacFile;
 
     public void testProxyConfig()
-            throws IOException, CredentialException, InvalidPacFileException {
+            throws IOException, CredentialException, InvalidPacFileException, PacValidationException, URISyntaxException {
         logger.info("Test proxy config {}", userConfig);
 
         ProxyType proxyType = userConfig.getProxyType();
         if (proxyType.isPac()) {
-            String content = pacFile.loadContent();
+            pacFile.loadScript();
             HttpHost httpHost = HttpHost.create(userConfig.getProxyTestUrl());
-            List<ProxyInfo> proxyInfos = ProxyAutoConfig.loadListProxyInfos(content, httpHost);
+            List<ProxyInfo> proxyInfos = pacFile.loadListProxyInfos(httpHost);
             for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
                 ProxyInfo proxyInfo = itr.next();
                 ProxyInfo.Type type = proxyInfo.getType();
@@ -78,7 +79,7 @@ public class ProxyValidator {
                             host != null ? host.getHostName() : null,
                             host != null ? host.getPort() : -1,
                             null, null);
-                }  catch (Exception e) {
+                } catch (Exception e) {
                     logger.error("Error on validate proxy config", e);
                     if (!itr.hasNext()) {
                         throw e;
@@ -99,10 +100,10 @@ public class ProxyValidator {
     }
 
     private void testProxyConfig(boolean isPac, boolean isSocks5,
-                                 boolean isSocks4,boolean isHttp,
+                                 boolean isSocks4, boolean isHttp,
                                  String proxyHost, int proxyPort,
                                  String proxySocksUsername, String proxyPassword)
-            throws IOException, CredentialException, InvalidPacFileException {
+            throws IOException, CredentialException {
 
         HttpClientBuilder httpClientBuilder;
         if (isSocks4 || isSocks5) {

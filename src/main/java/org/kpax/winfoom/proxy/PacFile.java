@@ -13,9 +13,11 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHost;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.exception.InvalidPacFileException;
-import org.kpax.winfoom.util.ProxyAutoConfig;
+import org.kpax.winfoom.util.HttpUtils;
+import org.netbeans.core.network.proxy.pac.impl.NbPacScriptEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +25,11 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Component
 public class PacFile {
@@ -34,36 +39,40 @@ public class PacFile {
     @Autowired
     private UserConfig userConfig;
 
-    private String content;
+    private NbPacScriptEvaluator nbPacScriptEvaluator;
 
-    public synchronized String loadContent() throws IOException, InvalidPacFileException {
+    public synchronized NbPacScriptEvaluator loadScript() throws IOException, InvalidPacFileException {
         URL url = userConfig.getProxyPacFileLocationAsURL();
         if (url == null) {
             throw new IllegalStateException("No proxy PAC file location found");
         }
         logger.info("Get PAC file from: {}", url);
         try (InputStream inputStream = url.openStream()) {
-            this.content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
             logger.debug("PAC content: {}", content);
             try {
-                String proxyTestLine = ProxyAutoConfig.evaluate(content, "http://localhost:80", "localhost");
-                logger.debug("proxyTestLine: {}", proxyTestLine);
+                nbPacScriptEvaluator = new NbPacScriptEvaluator(content);
             } catch (Exception e) {
-                logger.error("Error on testing PAC file", e);
+                logger.error("Error on creating PAC file parser", e);
                 throw new InvalidPacFileException("The provided PAC file is not valid", e);
             }
         }
-        return this.content;
+        return nbPacScriptEvaluator;
     }
 
-    public String getContent() {
-        if (content == null) {
+    public NbPacScriptEvaluator getPacScriptEvaluator() {
+        if (nbPacScriptEvaluator == null) {
             throw new IllegalStateException("Proxy PAC file not loaded");
         }
-        return content;
+        return nbPacScriptEvaluator;
     }
 
     public boolean isLoaded() {
-        return content != null;
+        return nbPacScriptEvaluator != null;
+    }
+
+    public List<ProxyInfo> loadListProxyInfos(HttpHost host) throws URISyntaxException, InvalidPacFileException {
+        String proxyLine = nbPacScriptEvaluator.callFindProxyForURL(new URI(host.toURI()));
+        return HttpUtils.parsePacProxyLine(proxyLine);
     }
 }

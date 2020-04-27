@@ -31,7 +31,7 @@ public interface ClientConnectionProcessor {
      * </ul>
      *
      * @param clientConnection the client connection instance.
-     * @param proxyInfo The proxy info used to make the remote HTTP request.
+     * @param proxyInfo        The proxy info used to make the remote HTTP request.
      * @throws Exception
      */
     void process(ClientConnection clientConnection, ProxyInfo proxyInfo)

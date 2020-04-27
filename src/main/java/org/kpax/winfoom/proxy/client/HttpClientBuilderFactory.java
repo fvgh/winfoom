@@ -46,7 +46,7 @@ class HttpClientBuilderFactory {
             return createSocksClientBuilder(proxyInfo.getType().isSocks4());
         } else if (proxyInfo.getType().isHttp()) {
             return createHttpClientBuilder(proxyInfo);
-        } else { // Direct case
+        } else {
             return createDirectClientBuilder();
         }
     }
