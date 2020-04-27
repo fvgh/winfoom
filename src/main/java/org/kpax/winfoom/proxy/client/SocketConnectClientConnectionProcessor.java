@@ -42,9 +42,6 @@ public class SocketConnectClientConnectionProcessor implements ClientConnectionP
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    private UserConfig userConfig;
-
-    @Autowired
     private SystemConfig systemConfig;
 
     @Autowired
@@ -61,12 +58,12 @@ public class SocketConnectClientConnectionProcessor implements ClientConnectionP
 
         if (proxyInfo.getType().isSocks()) {
             proxy = new Proxy(Proxy.Type.SOCKS,
-                    new InetSocketAddress(userConfig.getProxyHost(), userConfig.getProxyPort()));
+                    new InetSocketAddress(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort()));
         }
 
         try (Socket socket = proxy != null ? new Socket(proxy) : new Socket()) {
             socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
-            if (userConfig.getProxyType().isSocks4()) {
+            if (proxyInfo.getType().isSocks4()) {
                 try {
                     HttpUtils.setSocks4(socket);
                 } catch (UnsupportedOperationException e) {// FIXME Out of here

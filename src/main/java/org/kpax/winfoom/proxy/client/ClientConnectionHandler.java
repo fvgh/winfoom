@@ -65,17 +65,21 @@ public class ClientConnectionHandler {
             ClientConnection connection = ClientConnection.create(socket);
             RequestLine requestLine = connection.getHttpRequest().getRequestLine();
             logger.debug("Handle request: {}", requestLine);
+
             List<ProxyInfo> proxyInfos;
             if (userConfig.getProxyType().isPac()) {
                 String content = pacFile.getContent();
                 HttpHost host = HttpHost.create(requestLine.getUri());
-                String proxyLine = ProxyAutoConfig.evaluate(content, host.toURI(), host.getHostName());
-                logger.debug("proxyLine {}", proxyLine);
-                proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
+                proxyInfos = ProxyAutoConfig.loadListProxyInfos(content, host);
             } else {// Manual proxy case
-                proxyInfos = Collections.singletonList(new ProxyInfo(userConfig.getProxyType().toProxyInfoType()));
+                HttpHost proxyHost = null;
+                if (!userConfig.getProxyType().isDirect()) {
+                    proxyHost = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
+                }
+                proxyInfos = Collections.singletonList(new ProxyInfo(userConfig.getProxyType().toProxyInfoType(), proxyHost));
             }
             logger.debug("proxyInfos {}", proxyInfos);
+
             ClientConnectionProcessor connectionProcessor;
             for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
                 ProxyInfo proxyInfo = itr.next();

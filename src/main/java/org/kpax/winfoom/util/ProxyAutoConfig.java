@@ -37,7 +37,7 @@ import java.util.TimeZone;
 public final class ProxyAutoConfig {
     private static final String TIMEZONE_GMT = "GMT";
 
-    private ProxyAutoConfig() {
+    ProxyAutoConfig() {
     }
 
     /**
@@ -84,7 +84,7 @@ public final class ProxyAutoConfig {
         return HttpUtils.parsePacProxyLine(proxyLine);
     }
 
-    private void defineMethod(final String methodName, final Scriptable scope) {
+    void defineMethod(final String methodName, final Scriptable scope) {
         for (Method method : getClass().getMethods()) {
             if (method.getName().equals(methodName)) {
                 final FunctionObject functionObject = new FunctionObject(methodName, method, scope);
