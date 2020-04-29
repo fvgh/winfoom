@@ -12,7 +12,7 @@
   -->
 
 <configuration>
-    <property name="LOG_PATH" value="logs"/>
+    <contextListener class="org.kpax.winfoom.config.LoggerStartupListener"/>
     <appender name="FILEAPP" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/winfoom.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">

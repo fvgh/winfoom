@@ -55,13 +55,13 @@ public class ProxyInfo {
         if (o == null || getClass() != o.getClass()) return false;
         ProxyInfo proxyInfo = (ProxyInfo) o;
         return type == proxyInfo.type &&
-                Objects.equals(host != null ? host.toHostString(): null,
-                        proxyInfo.host != null ? proxyInfo.host.toHostString(): null);
+                Objects.equals(host != null ? host.toHostString() : null,
+                        proxyInfo.host != null ? proxyInfo.host.toHostString() : null);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, host != null ? host.toHostString(): null);
+        return Objects.hash(type, host != null ? host.toHostString() : null);
     }
 
     public enum Type {

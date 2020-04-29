@@ -13,7 +13,6 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpHost;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.exception.InvalidPacFileException;
 import org.kpax.winfoom.util.HttpUtils;

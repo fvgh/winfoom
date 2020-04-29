@@ -129,9 +129,9 @@ public final class InputOutputs {
         Validate.notNull(who, "who cannot be null");
         Validate.notNull(where, "where cannot be null");
         for (String key : who.stringPropertyNames()) {
-           if (where.getProperty(key) == null) {
-               return false;
-           }
+            if (where.getProperty(key) == null) {
+                return false;
+            }
         }
         return true;
     }

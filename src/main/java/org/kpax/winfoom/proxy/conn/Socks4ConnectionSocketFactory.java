@@ -16,8 +16,6 @@ import org.apache.http.protocol.HttpContext;
 import org.kpax.winfoom.util.HttpUtils;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.Socket;
 
 public class Socks4ConnectionSocketFactory extends SocksConnectionSocketFactory {

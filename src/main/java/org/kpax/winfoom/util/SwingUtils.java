@@ -15,7 +15,6 @@
 package org.kpax.winfoom.util;
 
 import org.apache.commons.lang3.Validate;
-import org.kpax.winfoom.view.AppFrame;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -111,7 +110,7 @@ public class SwingUtils {
         thread.start();
     }
 
-    public static Image loadImage (Class<?> cls,  String filename) {
+    public static Image loadImage(Class<?> cls, String filename) {
         try {
             URL resource = cls.getResource("/img/" + filename);
             if (resource != null) {
