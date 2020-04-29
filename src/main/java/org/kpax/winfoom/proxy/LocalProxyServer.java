@@ -69,7 +69,7 @@ class LocalProxyServer implements Closeable {
 
         try {
             serverSocket = new ServerSocket(userConfig.getLocalPort(),
-                    systemConfig.getSocketChannelBacklog());
+                    systemConfig.getServerSocketBacklog());
 
             started = true;
 
@@ -77,7 +77,7 @@ class LocalProxyServer implements Closeable {
                 while (started) {
                     try {
                         Socket socket = serverSocket.accept();
-                        socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
+                        socket.setSoTimeout(systemConfig.getSocketSoTimeout() * 1000);
                         proxyContext.executorService().execute(() -> {
                             try {
                                 applicationContext.getBean(ClientConnectionHandler.class)
@@ -89,7 +89,8 @@ class LocalProxyServer implements Closeable {
                         });
                     } catch (SocketException e) {
 
-                        //Ignore java.net.SocketException: Interrupted function call
+                        // Ignore java.net.SocketException: Interrupted function call.
+                        // Get this whenever stop the server socket.
                         if (!StringUtils.startsWithIgnoreCase(e.getMessage(), "Interrupted function call")) {
                             logger.debug("Socket error on getting connection", e);
                         }

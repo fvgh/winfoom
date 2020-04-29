@@ -18,9 +18,10 @@ import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.exception.InvalidPacFileException;
+import org.kpax.winfoom.proxy.ProxyBlacklist;
 import org.kpax.winfoom.proxy.PacFile;
 import org.kpax.winfoom.proxy.ProxyInfo;
-import org.kpax.winfoom.util.IoUtils;
+import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ import org.springframework.util.Assert;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Iterator;
@@ -54,6 +56,10 @@ public class ClientConnectionHandler {
     @Autowired
     private PacFile pacFile;
 
+    @Autowired
+    private ProxyBlacklist proxyBlacklist;
+
+
     public ClientConnectionHandler bind(final Socket socket) {
         Assert.isNull(this.socket, "Socket already bound!");
         this.socket = socket;
@@ -69,41 +75,60 @@ public class ClientConnectionHandler {
             List<ProxyInfo> proxyInfos;
             if (userConfig.getProxyType().isPac()) {
                 HttpHost host = HttpHost.create(requestLine.getUri());
-                proxyInfos = pacFile.loadListProxyInfos(host);
-            } else {// Manual proxy case
+                proxyInfos = pacFile.findProxyForURL(new URI(host.toURI()));
+            } else { // Manual proxy case
                 HttpHost proxyHost = null;
                 if (!userConfig.getProxyType().isDirect()) {
                     proxyHost = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
                 }
                 proxyInfos = Collections.singletonList(new ProxyInfo(userConfig.getProxyType().toProxyInfoType(), proxyHost));
             }
+
             logger.debug("proxyInfos {}", proxyInfos);
 
             ClientConnectionProcessor connectionProcessor;
             for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
                 ProxyInfo proxyInfo = itr.next();
-                if (!itr.hasNext()) {
+
+                if (itr.hasNext()) {
+                    if (proxyBlacklist.isBlacklisted(proxyInfo)) {
+                        logger.debug("Blacklisted proxyInfo {} - skip it", proxyInfo);
+                        continue;
+                    }
+                } else {
                     connection.lastResort();
                 }
+
                 connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
+
                 try {
                     logger.debug("Process connection with proxyInfo: {}", proxyInfo);
                     connectionProcessor.process(connection, proxyInfo);
+
+                    // Success, stop the iteration
+                    break;
                 } catch (ConnectException e) {
+                    logger.debug("Connection error", e);
                     if (itr.hasNext()) {
-                        continue;
+                        logger.debug("Failed to process connection with proxyInfo: {}, retry with the next one", proxyInfo);
+                        proxyBlacklist.blacklist(proxyInfo);
                     } else {
+                        logger.debug("Failed to process connection with proxyInfo: {}, send the error response", proxyInfo);
+
                         // Cannot connect to the remote proxy
                         connection.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
                     }
                 } catch (Exception e) {
+                    logger.debug("Generic error, send the error response", e);
+
                     // Any other error, including client errors
                     connection.writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
                     break;
                 }
             }
+            logger.debug("Done handling request: {}", requestLine);
         } finally {
-            IoUtils.close(socket);
+            InputOutputs.close(socket);
         }
 
     }

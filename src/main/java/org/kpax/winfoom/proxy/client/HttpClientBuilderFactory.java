@@ -52,7 +52,7 @@ class HttpClientBuilderFactory {
     }
 
     private HttpClientBuilder createHttpClientBuilder(ProxyInfo proxyInfo) {
-        RequestConfig requestConfig = RequestConfig.custom()
+        RequestConfig requestConfig = systemConfig.applyConfig(RequestConfig.custom())
                 .setProxy(new HttpHost(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort()))
                 .setCircularRedirectsAllowed(true)
                 .build();
@@ -75,7 +75,7 @@ class HttpClientBuilderFactory {
         HttpClientBuilder builder = HttpClients.custom()
                 .setConnectionManager(connectionPoolingManager.getHttpConnectionManager())
                 .setConnectionManagerShared(true)
-                .setDefaultRequestConfig(RequestConfig.custom()
+                .setDefaultRequestConfig(systemConfig.applyConfig(RequestConfig.custom())
                         .setCircularRedirectsAllowed(true)
                         .build())
                 .disableAutomaticRetries()
@@ -92,6 +92,9 @@ class HttpClientBuilderFactory {
         HttpClientBuilder builder = HttpClients.custom()
                 .setConnectionManager(isSocks4
                         ? connectionPoolingManager.getSocks4ConnectionManager() : connectionPoolingManager.getSocksConnectionManager())
+                .setDefaultRequestConfig(systemConfig.applyConfig(RequestConfig.custom())
+                        .setCircularRedirectsAllowed(true)
+                        .build())
                 .setConnectionManagerShared(true)
                 .disableAutomaticRetries()
                 .disableRedirectHandling()

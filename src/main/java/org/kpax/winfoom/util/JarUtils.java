@@ -10,27 +10,25 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.conn;
-
-import org.apache.http.protocol.HttpContext;
-import org.kpax.winfoom.util.HttpUtils;
+package org.kpax.winfoom.util;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
-public class Socks4ConnectionSocketFactory extends SocksConnectionSocketFactory {
+public class JarUtils {
 
-    @Override
-    public Socket createSocket(final HttpContext context) throws IOException {
-        Socket socket = super.createSocket(context);
-        try {
-            HttpUtils.setSocks4(socket);
-        } catch (UnsupportedOperationException e) {
-            throw new IOException(e);
-        }
-        return socket;
+    private JarUtils() {
     }
 
+    public static String getVersion(Class<?> cls) throws IOException {
+        Object version = new Manifest(cls.getResourceAsStream("/META-INF/MANIFEST.MF"))
+                .getMainAttributes()
+                .get(Attributes.Name.IMPLEMENTATION_VERSION);
+        if (version != null) {
+            return version.toString();
+        } else {
+            throw new IllegalStateException("Version not found withing the MANIFEST.MF file");
+        }
+    }
 }

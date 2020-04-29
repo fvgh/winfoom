@@ -25,15 +25,13 @@ import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ReflectionUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -154,7 +152,7 @@ public final class HttpUtils {
             setV4.setAccessible(true);
             setV4.invoke(impl);
         } catch (Exception e) {
-            throw new UnsupportedOperationException(e);
+            throw new UnsupportedOperationException("SOCKS 4 not supported by the JVM", e);
         }
     }
 
@@ -175,6 +173,10 @@ public final class HttpUtils {
             }
         }
         return proxyInfos;
+    }
+
+    public static boolean isConnectionRefused(Exception e) {
+        return e instanceof SocketException && ((SocketException) e).getMessage().startsWith("Connection refused");
     }
 
 }

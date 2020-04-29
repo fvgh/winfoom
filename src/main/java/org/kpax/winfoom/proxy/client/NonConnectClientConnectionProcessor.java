@@ -26,7 +26,7 @@ import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.proxy.RepeatableHttpEntity;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.IoUtils;
+import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -168,7 +168,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
                 if (request instanceof HttpEntityEnclosingRequest) {
                     HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
                     if (entity instanceof AutoCloseable) {
-                        IoUtils.close((AutoCloseable) entity);
+                        InputOutputs.close((AutoCloseable) entity);
                     }
                 }
             }

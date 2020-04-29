@@ -14,10 +14,6 @@ package org.kpax.winfoom.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.HttpHostConnectException;
-import org.jdesktop.beansbinding.AutoBinding;
-import org.jdesktop.beansbinding.BeanProperty;
-import org.jdesktop.beansbinding.BindingGroup;
-import org.jdesktop.beansbinding.Bindings;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.ProxyContext;
@@ -33,14 +29,15 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.imageio.ImageIO;
 import javax.security.auth.login.CredentialException;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 @Profile("!test")
@@ -70,21 +67,12 @@ public class AppFrame extends JFrame {
     private JLabel proxyTypeLabel;
     private JComboBox<ProxyType> proxyTypeCombo;
 
-    private JLabel proxyHostLabel;
-    private JTextField proxyHostJTextField;
-
-    private JLabel pacFileLabel;
-    private JTextField pacFileJTextField;
-
-    private JLabel proxyPortLabel;
-    private JSpinner proxyPortJSpinner;
     private JLabel localPortLabel;
     private JSpinner localPortJSpinner;
 
     private JLabel testUrlLabel;
     private JTextField testUrlJTextField;
 
-    private JButton btnConfig;
     private JButton btnStart;
     private JButton btnStop;
 
@@ -115,7 +103,7 @@ public class AppFrame extends JFrame {
             }
         });
 
-        Image iconImage = Toolkit.getDefaultToolkit().getImage("config/img/icon.png");
+        Image iconImage = SwingUtils.loadImage(AppFrame.class, "icon.png");
         setIconImage(iconImage);
         //
         if (SystemTray.isSupported()) {
@@ -153,7 +141,8 @@ public class AppFrame extends JFrame {
         setJMenuBar(getMainMenuBar());
         setContentPane(getMainContentPanel());
 
-        initDataBindings();
+        getProxyTypeCombo().setSelectedItem(userConfig.getProxyType());
+
     }
 
     public void focusOnStartButton() {
@@ -164,44 +153,44 @@ public class AppFrame extends JFrame {
 
     private JLabel getProxyTypeLabel() {
         if (proxyTypeLabel == null) {
-            proxyTypeLabel = new JLabel("Proxy type:");
+            proxyTypeLabel = new JLabel("Proxy type* ");
         }
         return proxyTypeLabel;
     }
 
     private JLabel getProxyHostLabel() {
-        if (proxyHostLabel == null) {
-            proxyHostLabel = new JLabel("Proxy host:");
-        }
-        return proxyHostLabel;
+        return new JLabel("Proxy host* ");
     }
 
     private JLabel getProxyPortLabel() {
-        if (proxyPortLabel == null) {
-            proxyPortLabel = new JLabel("Proxy port:");
-        }
-        return proxyPortLabel;
+        return new JLabel("Proxy port* ");
     }
 
     private JLabel getLocalPortLabel() {
-        if (localPortLabel == null) {
-            localPortLabel = new JLabel("Local proxy port:");
-        }
-        return localPortLabel;
+        return new JLabel("Local proxy port* ");
     }
 
     private JLabel getTestUrlLabel() {
         if (testUrlLabel == null) {
-            testUrlLabel = new JLabel("Test URL:");
+            testUrlLabel = new JLabel("Test URL* ");
         }
         return testUrlLabel;
     }
 
     private JLabel getPacFileLabel() {
-        if (pacFileLabel == null) {
-            pacFileLabel = new JLabel("PAC file location:");
-        }
-        return pacFileLabel;
+        return new JLabel("PAC file location* ");
+    }
+
+    private JLabel getUsernameLabel() {
+        return new JLabel("Username ");
+    }
+
+    private JLabel getPasswordLabel() {
+        return new JLabel("Password ");
+    }
+
+    private JLabel getStorePasswordLabel() {
+        return new JLabel("Store password ");
     }
 
     // ------- End Labels
@@ -216,13 +205,20 @@ public class AppFrame extends JFrame {
                 clearLabelsAndFields();
                 addProxyType();
                 ProxyType proxyType = (ProxyType) proxyTypeCombo.getSelectedItem();
+                userConfig.setProxyType(proxyType);
                 switch (proxyType) {
                     case HTTP:
                     case SOCKS4:
                         configureForHttp();
                         break;
+                    case SOCKS5:
+                        configureForSocks5();
+                        break;
                     case PAC:
                         configureForPac();
+                        break;
+                    case DIRECT:
+                        configureForDirect();
                         break;
                 }
                 this.pack();
@@ -232,38 +228,85 @@ public class AppFrame extends JFrame {
     }
 
     private JTextField getProxyHostJTextField() {
-        if (proxyHostJTextField == null) {
-            proxyHostJTextField = createTextField();
-        }
+        JTextField proxyHostJTextField = createTextField(userConfig.getProxyHost());
+        proxyHostJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
+            userConfig.setProxyHost(proxyHostJTextField.getText());
+        });
         return proxyHostJTextField;
     }
 
     private JTextField getPacFileJTextField() {
-        if (pacFileJTextField == null) {
-            pacFileJTextField = createTextField();
-        }
+        JTextField pacFileJTextField = createTextField(userConfig.getProxyPacFileLocation());
+        pacFileJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
+            userConfig.setProxyPacFileLocation(pacFileJTextField.getText());
+        });
         return pacFileJTextField;
     }
 
     private JSpinner getProxyPortJSpinner() {
-        if (proxyPortJSpinner == null) {
-            proxyPortJSpinner = createJSpinner();
-        }
+        JSpinner proxyPortJSpinner = createJSpinner(userConfig.getProxyPort());
+        proxyPortJSpinner.addChangeListener(e -> {
+            userConfig.setProxyPort((Integer) proxyPortJSpinner.getValue());
+        });
         return proxyPortJSpinner;
     }
 
     private JSpinner getLocalPortJSpinner() {
         if (localPortJSpinner == null) {
-            localPortJSpinner = createJSpinner();
+            localPortJSpinner = createJSpinner(userConfig.getLocalPort());
+            localPortJSpinner.addChangeListener(e -> {
+                userConfig.setLocalPort((Integer) localPortJSpinner.getValue());
+            });
         }
         return localPortJSpinner;
     }
 
     private JTextField getTestUrlJTextField() {
         if (testUrlJTextField == null) {
-            testUrlJTextField = createTextField();
+            testUrlJTextField = createTextField(userConfig.getProxyTestUrl());
+            testUrlJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
+                userConfig.setProxyTestUrl(testUrlJTextField.getText());
+            });
         }
         return testUrlJTextField;
+    }
+
+    private JTextField getUsernameJTextField() {
+        JTextField usernameJTextField = createTextField(userConfig.getProxyUsername());
+        usernameJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
+            userConfig.setProxyUsername(usernameJTextField.getText());
+        });
+        return usernameJTextField;
+    }
+
+
+    private JPasswordField getPasswordField() {
+        JPasswordField passwordField = new JPasswordField(userConfig.getProxyPassword());
+        passwordField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
+            userConfig.setProxyPassword(new String(passwordField.getPassword()));
+        });
+        return passwordField;
+    }
+
+    private JCheckBox getStorePasswordJCheckBox() {
+        JCheckBox storePasswordJCheckBox = new JCheckBox();
+        storePasswordJCheckBox.setSelected(userConfig.isProxyStorePassword());
+        storePasswordJCheckBox.addActionListener((e -> {
+            if (storePasswordJCheckBox.isSelected()) {
+                int option = JOptionPane.showConfirmDialog(AppFrame.this,
+                        "This is not recomanded!" +
+                                "\nThe password is stored in a text file, encoded but not encrypted.",
+                        "Warning",
+                        JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+                if (option != JOptionPane.OK_OPTION) {
+                    storePasswordJCheckBox.setSelected(false);
+                }
+            }
+            userConfig.setProxyStorePassword(storePasswordJCheckBox.isSelected());
+        }));
+
+        return storePasswordJCheckBox;
     }
 
     // ---------- End Fields
@@ -274,7 +317,7 @@ public class AppFrame extends JFrame {
         if (btnStart == null) {
             btnStart = new JButton("Start");
             btnStart.setMargin(new Insets(2, 6, 2, 6));
-            btnStart.setIcon(new TunedImageIcon("config/img/arrow-right.png"));
+            btnStart.setIcon(new TunedImageIcon("arrow-right.png"));
             btnStart.addActionListener(e -> {
                 startServer();
                 getBtnStop().requestFocus();
@@ -292,24 +335,11 @@ public class AppFrame extends JFrame {
                 stopServer();
                 focusOnStartButton();
             });
-            btnStop.setIcon(new TunedImageIcon("config/img/process-stop.png"));
+            btnStop.setIcon(new TunedImageIcon("process-stop.png"));
             btnStop.setEnabled(false);
             btnStop.setToolTipText("Stop the proxy facade");
         }
         return btnStop;
-    }
-
-    private JButton getBtnConfig() {
-        if (btnConfig == null) {
-            btnConfig = new JButton("Config");
-            btnConfig.setIcon(new TunedImageIcon("config/img/preferences-system.png"));
-            btnConfig.setPreferredSize(new Dimension(90, 25));
-            btnConfig.setMargin(new Insets(1, 1, 1, 1));
-            btnConfig.addActionListener(e -> showConfigInputDialog());
-            btnConfig.setToolTipText(HttpUtils.toHtml("Set the user/password required for this proxy." +
-                    "<br>Leave it empty if the proxy does not require authentication."));
-        }
-        return btnConfig;
     }
 
     // ------- End Buttons
@@ -354,7 +384,7 @@ public class AppFrame extends JFrame {
 
     private void addProxyType() {
         getLabelPanel().add(getProxyTypeLabel());
-        getFieldPanel().add(getProxyTypeCombo());
+        getFieldPanel().add(wrapToPanel(getProxyTypeCombo()));
     }
 
     private void clearLabelsAndFields() {
@@ -380,6 +410,33 @@ public class AppFrame extends JFrame {
         labelPanel.add(getTestUrlLabel());
 
         fieldPanel.add(getPacFileJTextField());
+        fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
+        fieldPanel.add(getTestUrlJTextField());
+    }
+
+
+    private void configureForDirect() {
+        labelPanel.add(getLocalPortLabel());
+        labelPanel.add(getTestUrlLabel());
+
+        fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
+        fieldPanel.add(getTestUrlJTextField());
+    }
+
+    private void configureForSocks5() {
+        labelPanel.add(getProxyHostLabel());
+        labelPanel.add(getProxyPortLabel());
+        labelPanel.add(getUsernameLabel());
+        labelPanel.add(getPasswordLabel());
+        labelPanel.add(getStorePasswordLabel());
+        labelPanel.add(getLocalPortLabel());
+        labelPanel.add(getTestUrlLabel());
+
+        fieldPanel.add(getProxyHostJTextField());
+        fieldPanel.add(wrapToPanel(getProxyPortJSpinner()));
+        fieldPanel.add(getUsernameJTextField());
+        fieldPanel.add(getPasswordField());
+        fieldPanel.add(getStorePasswordJCheckBox());
         fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
         fieldPanel.add(getTestUrlJTextField());
     }
@@ -424,7 +481,7 @@ public class AppFrame extends JFrame {
     private JMenuItem getMntmExit() {
         if (mntmExit == null) {
             mntmExit = new JMenuItem("Exit");
-            mntmExit.setIcon(new TunedImageIcon("config/img/application-exit.png"));
+            mntmExit.setIcon(new TunedImageIcon("application-exit.png"));
             mntmExit.addActionListener(e -> shutdownApp());
         }
         return mntmExit;
@@ -441,7 +498,7 @@ public class AppFrame extends JFrame {
     private JMenuItem getMntmAbout() {
         if (mntmAbout == null) {
             mntmAbout = new JMenuItem("About");
-            mntmAbout.setIcon(new TunedImageIcon("config/img/dialog-information.png"));
+            mntmAbout.setIcon(new TunedImageIcon("dialog-information.png"));
             mntmAbout.addActionListener(e -> SwingUtils.showInfoMessage(this, "About", "Winfoom - Basic Proxy Facade" +
                     "\nVersion: " + systemConfig.getReleaseVersion()
                     + "\nProject home page: https://github.com/ecovaci/winfoom"
@@ -452,67 +509,21 @@ public class AppFrame extends JFrame {
 
     // ------- End Menu
 
-    private JTextField createTextField() {
+    private JTextField createTextField(String text) {
         JTextField textField = new JTextField();
         textField.setPreferredSize(new Dimension(220, 25));
         textField.setMinimumSize(new Dimension(6, 25));
+        textField.setText(text);
         return textField;
     }
 
-    private JSpinner createJSpinner() {
+    private JSpinner createJSpinner(Integer value) {
         JSpinner jSpinner = new JSpinner();
         jSpinner.setPreferredSize(new Dimension(60, 25));
         jSpinner.setEditor(new JSpinner.NumberEditor(jSpinner, "#"));
         SwingUtils.commitsOnValidEdit(jSpinner);
+        jSpinner.setValue(value);
         return jSpinner;
-    }
-
-    private void initDataBindings() {
-        //
-        BeanProperty<UserConfig, ProxyType> proxyTypeProperty = BeanProperty.create("proxyType");
-        AutoBinding<UserConfig, ProxyType, JComboBox, Object> autoBindingProxyType = Bindings
-                .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, proxyTypeProperty,
-                        getProxyTypeCombo(), BeanProperty.create("selectedItem"));
-        autoBindingProxyType.bind();
-        //
-        BeanProperty<UserConfig, String> proxyHostProperty = BeanProperty.create("proxyHost");
-        AutoBinding<UserConfig, String, JTextField, String> autoBindingProxyHost = Bindings
-                .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, proxyHostProperty,
-                        getProxyHostJTextField(), BeanProperty.create("text"));
-        autoBindingProxyHost.bind();
-        //
-        BeanProperty<UserConfig, Integer> proxyPortProperty = BeanProperty.create("proxyPort");
-        AutoBinding<UserConfig, Integer, JSpinner, Object> autoBindingProxyPort = Bindings
-                .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, proxyPortProperty,
-                        getProxyPortJSpinner(), BeanProperty.create("value"));
-        autoBindingProxyPort.bind();
-        //
-        BeanProperty<UserConfig, Integer> localPortProperty = BeanProperty.create("localPort");
-        AutoBinding<UserConfig, Integer, JSpinner, Object> autoBindingLocalPort = Bindings
-                .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, localPortProperty,
-                        getLocalPortJSpinner(), BeanProperty.create("value"));
-        autoBindingLocalPort.bind();
-        //
-        BeanProperty<UserConfig, String> testUrlProperty = BeanProperty.create("proxyTestUrl");
-        AutoBinding<UserConfig, String, JTextField, String> autoBindingProxyTestUrl = Bindings
-                .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, testUrlProperty,
-                        getTestUrlJTextField(), BeanProperty.create("text"));
-        autoBindingProxyTestUrl.bind();
-        //
-        BeanProperty<UserConfig, String> proxyPacFileLocationProperty = BeanProperty.create("proxyPacFileLocation");
-        AutoBinding<UserConfig, String, JTextField, String> autoBindingProxyPacFileLocation = Bindings
-                .createAutoBinding(AutoBinding.UpdateStrategy.READ_WRITE, userConfig, proxyPacFileLocationProperty,
-                        getPacFileJTextField(), BeanProperty.create("text"));
-        autoBindingProxyPacFileLocation.bind();
-        //
-        BindingGroup bindingGroup = new BindingGroup();
-        bindingGroup.addBinding(autoBindingProxyType);
-        bindingGroup.addBinding(autoBindingProxyHost);
-        bindingGroup.addBinding(autoBindingProxyPort);
-        bindingGroup.addBinding(autoBindingLocalPort);
-        bindingGroup.addBinding(autoBindingProxyTestUrl);
-        bindingGroup.addBinding(autoBindingProxyPacFileLocation);
-        //
     }
 
     private void disableAll() {
@@ -520,15 +531,25 @@ public class AppFrame extends JFrame {
     }
 
     private boolean isValidInput() {
-        if (StringUtils.isBlank(proxyHostJTextField.getText())) {
-            SwingUtils.showErrorMessage(this, "Validation Error", "Fill in the proxy address");
+
+        if ((userConfig.getProxyType().isSocks() || userConfig.getProxyType().isHttp())
+                && StringUtils.isBlank(userConfig.getProxyHost())) {
+            SwingUtils.showErrorMessage(this, "Fill in the proxy host");
             return false;
         }
-        Integer proxyPort = (Integer) proxyPortJSpinner.getValue();
-        if (proxyPort == null || !HttpUtils.isValidPort(proxyPort)) {
-            SwingUtils.showErrorMessage(this, "Fill in a valid proxy port, between 1 and 65535");
+
+        if ((userConfig.getProxyType().isSocks() || userConfig.getProxyType().isHttp())) {
+            if (userConfig.getProxyPort() == null || !HttpUtils.isValidPort(userConfig.getProxyPort())) {
+                SwingUtils.showErrorMessage(this, "Fill in a valid proxy port, between 1 and 65535");
+                return false;
+            }
+        }
+
+        if (userConfig.getProxyType().isPac() && StringUtils.isBlank(userConfig.getProxyPacFileLocation())) {
+            SwingUtils.showErrorMessage(this, "Fill in a valid Pac file location");
             return false;
         }
+
         Integer localPort = (Integer) localPortJSpinner.getValue();
         if (localPort == null || !HttpUtils.isValidPort(localPort)) {
             SwingUtils.showErrorMessage(this, "Fill in a valid local proxy port, between 1 and 65535");
@@ -562,7 +583,7 @@ public class AppFrame extends JFrame {
 
     private void startServer() {
         if (userConfig.getProxyType().isSocks5()) {
-            if (StringUtils.isNotEmpty(userConfig.getProxySocksUsername())
+            if (StringUtils.isNotEmpty(userConfig.getProxyUsername())
                     && StringUtils.isEmpty(userConfig.getProxyPassword())) {
                 int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide any password." +
                         "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
@@ -615,58 +636,10 @@ public class AppFrame extends JFrame {
         }
     }
 
-
-    private void showConfigInputDialog() {
-        JPanel panel = new JPanel(new BorderLayout(5, 5));
-
-        JPanel labelPanel = new JPanel(new GridLayout(0, 1, 2, 2));
-        labelPanel.add(new JLabel("Username: ", SwingConstants.RIGHT));
-        labelPanel.add(new JLabel("Password: ", SwingConstants.RIGHT));
-        labelPanel.add(new JLabel("Store password: ", SwingConstants.RIGHT));
-        panel.add(labelPanel, BorderLayout.WEST);
-
-        JPanel controlsPanel = new JPanel(new GridLayout(0, 1, 2, 2));
-        JTextField username = new JTextField(userConfig.getProxySocksUsername());
-        controlsPanel.add(username);
-        JPasswordField password = new JPasswordField(userConfig.getProxyPassword());
-        controlsPanel.add(password);
-        JCheckBox storePassword = new JCheckBox();
-        storePassword.setSelected(userConfig.isProxySocksStorePassword());
-        storePassword.addActionListener((e -> {
-            if (storePassword.isSelected()) {
-                int option = JOptionPane.showConfirmDialog(AppFrame.this,
-                        "This is not recomanded!" +
-                                "\nThe password is stored in a text file, encoded but not encrypted.",
-                        "Warning",
-                        JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.WARNING_MESSAGE);
-                if (option != JOptionPane.OK_OPTION) {
-                    storePassword.setSelected(false);
-                }
-            }
-        }));
-
-        controlsPanel.add(storePassword);
-        panel.add(controlsPanel, BorderLayout.CENTER);
-
-        int option = JOptionPane.showConfirmDialog(
-                this,
-                panel,
-                "Config",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
-        if (option == JOptionPane.OK_OPTION) {
-            userConfig.setProxySocksUsername(username.getText());
-            userConfig.setProxyPassword(password.getPassword());
-            userConfig.setProxySocksStorePassword(storePassword.isSelected());
-        }
-
-    }
-
     private static class TunedImageIcon extends ImageIcon {
 
         TunedImageIcon(String filename) {
-            super(filename);
+            super(SwingUtils.loadImage(AppFrame.class, filename));
         }
 
         @Override
@@ -688,6 +661,25 @@ public class AppFrame extends JFrame {
             g2d.drawImage(getImage(), x, y, c);
             g2d.dispose();
         }
+    }
+
+    private interface TextChangeListener extends DocumentListener {
+        @Override
+        default void insertUpdate(DocumentEvent e) {
+            onTextChange(e);
+        }
+
+        @Override
+        default void removeUpdate(DocumentEvent e) {
+            onTextChange(e);
+        }
+
+        @Override
+        default void changedUpdate(DocumentEvent e) {
+            onTextChange(e);
+        }
+
+        void onTextChange(DocumentEvent e);
     }
 
 }

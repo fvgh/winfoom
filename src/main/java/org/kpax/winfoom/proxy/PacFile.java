@@ -71,8 +71,8 @@ public class PacFile {
         return nbPacScriptEvaluator != null;
     }
 
-    public List<ProxyInfo> loadListProxyInfos(HttpHost host) throws URISyntaxException, InvalidPacFileException {
-        String proxyLine = nbPacScriptEvaluator.callFindProxyForURL(new URI(host.toURI()));
+    public List<ProxyInfo> findProxyForURL(URI uri) throws URISyntaxException, InvalidPacFileException {
+        String proxyLine = nbPacScriptEvaluator.callFindProxyForURL(uri);
         return HttpUtils.parsePacProxyLine(proxyLine);
     }
 }

@@ -12,6 +12,8 @@
 
 package org.kpax.winfoom.config;
 
+//import org.apache.commons.configuration2.Configuration;
+
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -28,6 +30,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,33 +43,33 @@ import java.util.Base64;
  * @author Eugen Covaci
  */
 @Component
-@PropertySource(value = "file:${user.dir}/config/user.properties", name = "userProperties")
+@PropertySource(value = "file:${user.home}/.winfoom/user.properties", ignoreResourceNotFound = true)
 public class UserConfig {
     private final Logger logger = LoggerFactory.getLogger(UserConfig.class);
 
     @Value("${local.port:3129}")
     private Integer localPort;
 
-    @Value("${proxy.host}")
+    @Value("${proxy.host:}")
     private String proxyHost;
 
-    @Value("${proxy.test.url}")
+    @Value("${proxy.test.url:http://example.com}")
     private String proxyTestUrl;
 
     @Value("${proxy.port:0}")
     private Integer proxyPort;
 
-    @Value("${proxy.type}")
+    @Value("${proxy.type:HTTP}")
     private ProxyType proxyType;
 
-    @Value("${proxy.socks.username:#{null}}")
-    private String proxySocksUsername;
+    @Value("${proxy.username:#{null}}")
+    private String proxyUsername;
 
-    @Value("${proxy.socks.store.password:false}")
-    private boolean proxySocksStorePassword;
+    @Value("${proxy.storePassword:false}")
+    private boolean proxyStorePassword;
 
-    @Value("${proxy.socks.password:#{null}}")
-    private String proxySocksPassword;
+    @Value("${proxy.password:#{null}}")
+    private String proxyPassword;
 
     @Value("${proxy.pac.fileLocation:#{null}}")
     private String proxyPacFileLocation;
@@ -158,36 +161,36 @@ public class UserConfig {
         this.proxyType = proxyType;
     }
 
-    public String getProxySocksUsername() {
-        return proxySocksUsername;
+    public String getProxyUsername() {
+        return proxyUsername;
     }
 
-    public void setProxySocksUsername(String proxySocksUsername) {
-        this.proxySocksUsername = proxySocksUsername;
+    public void setProxyUsername(String proxyUsername) {
+        this.proxyUsername = proxyUsername;
     }
 
     public String getProxyPassword() {
-        if (StringUtils.isNotEmpty(proxySocksPassword)) {
-            return new String(Base64.getDecoder().decode(proxySocksPassword));
+        if (StringUtils.isNotEmpty(proxyPassword)) {
+            return new String(Base64.getDecoder().decode(proxyPassword));
         } else {
             return null;
         }
     }
 
-    public void setProxyPassword(char[] proxyPassword) {
-        if (proxyPassword != null && proxyPassword.length > 0) {
-            proxySocksPassword = Base64.getEncoder().encodeToString(String.valueOf(proxyPassword).getBytes());
+    public void setProxyPassword(String proxyPassword) {
+        if (StringUtils.isNotEmpty(proxyPassword)) {
+            this.proxyPassword = Base64.getEncoder().encodeToString(proxyPassword.getBytes());
         } else {
-            proxySocksPassword = null;
+            this.proxyPassword = null;
         }
     }
 
-    public boolean isProxySocksStorePassword() {
-        return proxySocksStorePassword;
+    public boolean isProxyStorePassword() {
+        return proxyStorePassword;
     }
 
-    public void setProxySocksStorePassword(boolean proxySocksStorePassword) {
-        this.proxySocksStorePassword = proxySocksStorePassword;
+    public void setProxyStorePassword(boolean proxyStorePassword) {
+        this.proxyStorePassword = proxyStorePassword;
     }
 
     public String getProxyPacFileLocation() {
@@ -214,28 +217,33 @@ public class UserConfig {
         tempDirectory = Paths.get(userHome, ".winfoom", "temp");
     }
 
-    public void save() throws ConfigurationException {
+    public void save() throws IOException, ConfigurationException {
+        File userProperties = Paths.get(System.getProperty("user.home"), ".winfoom",
+                "user.properties").toFile();
+        if (!userProperties.exists()) {
+            userProperties.createNewFile();
+        }
+
         FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder = new Configurations()
-                .propertiesBuilder(Paths.get(System.getProperty("user.dir"), "config",
-                        "user.properties").toFile());
+                .propertiesBuilder(userProperties);
         Configuration config = propertiesBuilder.getConfiguration();
         config.setProperty("proxy.type", this.proxyType);
-        config.setProperty("proxy.host", this.proxyHost);
-        config.setProperty("proxy.port", this.proxyPort);
+        config.setProperty("proxy.host", proxyType.isHttp() || proxyType.isSocks() ? this.proxyHost : null);
+        config.setProperty("proxy.port", proxyType.isHttp() || proxyType.isSocks() ? this.proxyPort : 0);
         config.setProperty("local.port", this.localPort);
         config.setProperty("proxy.test.url", this.proxyTestUrl);
-        config.setProperty("proxy.socks.username", this.proxySocksUsername);
-        config.setProperty("proxy.socks.store.password", this.proxySocksStorePassword);
-        config.setProperty("proxy.pac.fileLocation", this.proxyPacFileLocation);
+        config.setProperty("proxy.username", proxyType.isSocks5() ? this.proxyUsername : null);
+        config.setProperty("proxy.storePassword", proxyType.isSocks5() ? this.proxyStorePassword : null);
+        config.setProperty("proxy.pac.fileLocation", proxyType.isPac() ? this.proxyPacFileLocation : null);
 
-        if (this.proxySocksStorePassword) {
-            config.setProperty("proxy.socks.password", this.proxySocksPassword);
+        if (proxyType.isSocks5() && this.proxyStorePassword) {
+            config.setProperty("proxy.password", this.proxyPassword);
         } else {
 
             // Clear the stored password
-            if (StringUtils.isNotEmpty(proxySocksPassword)) {
-                config.setProperty("proxy.socks.password", null);
-                this.proxySocksPassword = null;
+            if (StringUtils.isNotEmpty(proxyPassword)) {
+                config.setProperty("proxy.password", null);
+                this.proxyPassword = null;
             }
         }
 
@@ -250,7 +258,9 @@ public class UserConfig {
                 ", proxyTestUrl='" + proxyTestUrl + '\'' +
                 ", proxyPort=" + proxyPort +
                 ", proxyType=" + proxyType +
-                ", proxySocksStorePassword=" + proxySocksStorePassword +
+                ", proxyUsername='" + proxyUsername + '\'' +
+                ", proxyStorePassword=" + proxyStorePassword +
+                ", proxyPacFileLocation='" + proxyPacFileLocation + '\'' +
                 ", tempDirectory=" + tempDirectory +
                 '}';
     }

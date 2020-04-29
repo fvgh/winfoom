@@ -21,7 +21,7 @@ import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.proxy.Tunnel;
 import org.kpax.winfoom.proxy.TunnelConnection;
-import org.kpax.winfoom.util.IoUtils;
+import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +47,7 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
     @Override
     public void process(final ClientConnection clientConnection, ProxyInfo proxyInfo)
             throws IOException, HttpException {
-        logger.debug("Handle connect request");
+        logger.debug("Handle HTTP connect request");
         RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
         HttpHost target = HttpHost.create(requestLine.getUri());
         HttpHost proxy = new HttpHost(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort());
@@ -66,7 +66,7 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
 
                 // The proxy facade mediates the full duplex communication
                 // between the client and the remote proxy
-                IoUtils.duplex(proxyContext.executorService(),
+                InputOutputs.duplex(proxyContext.executorService(),
                         tunnel.getInputStream(),
                         tunnel.getOutputStream(),
                         clientConnection.getInputStream(),

@@ -20,7 +20,7 @@ import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
-import org.kpax.winfoom.util.IoUtils;
+import org.kpax.winfoom.util.InputOutputs;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -138,8 +138,8 @@ public interface ClientConnection {
         InputStream inputStream = socket.getInputStream();
         SessionInputBufferImpl sessionInputBuffer = new SessionInputBufferImpl(
                 new HttpTransportMetricsImpl(),
-                IoUtils.DEFAULT_BUFFER_SIZE,
-                IoUtils.DEFAULT_BUFFER_SIZE,
+                InputOutputs.DEFAULT_BUFFER_SIZE,
+                InputOutputs.DEFAULT_BUFFER_SIZE,
                 MessageConstraints.DEFAULT,
                 StandardCharsets.UTF_8.newDecoder());
         sessionInputBuffer.bind(inputStream);

@@ -15,6 +15,8 @@ package org.kpax.winfoom.proxy;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpHost;
 
+import java.util.Objects;
+
 public class ProxyInfo {
 
     private Type type;
@@ -45,6 +47,21 @@ public class ProxyInfo {
                 "type=" + type +
                 ", host=" + host +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ProxyInfo proxyInfo = (ProxyInfo) o;
+        return type == proxyInfo.type &&
+                Objects.equals(host != null ? host.toHostString(): null,
+                        proxyInfo.host != null ? proxyInfo.host.toHostString(): null);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, host != null ? host.toHostString(): null);
     }
 
     public enum Type {

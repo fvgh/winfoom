@@ -12,61 +12,107 @@
 
 package org.kpax.winfoom.config;
 
-import org.kpax.winfoom.FoomApplication;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.http.client.config.RequestConfig;
+import org.kpax.winfoom.util.JarUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @author Eugen Covaci
  */
 @Component
-@PropertySource("file:${user.dir}/config/system.properties")
+@PropertySource(value = "file:${user.home}/.winfoom/system.properties", ignoreResourceNotFound = true)
 public class SystemConfig {
 
     private final Logger logger = LoggerFactory.getLogger(SystemConfig.class);
 
-    @Value("${max.connections.per.route}")
+    @Autowired
+    private ConfigurableApplicationContext applicationContext;
+
+    /**
+     * Connection pool property:  max polled connections per route.
+     */
+    @Value("${maxConnections.perRoute:20}")
     private Integer maxConnectionsPerRoute;
 
-    @Value("${max.connections}")
+    /**
+     * Connection pool property: max polled connections.
+     */
+    @Value("${maxConnections:600}")
     private Integer maxConnections;
 
-    @Value("${internal.buffer.length}")
+    /**
+     * The max size of the entity buffer (bytes).
+     */
+    @Value("${internalBuffer.length:102400}")
     private Integer internalBufferLength;
 
-    @Value("${connection.manager.clean.interval}")
+    /**
+     * The frequency of running purge idle
+     * on the connection manager pool (seconds).
+     */
+    @Value("${connectionManager.clean.interval:30}")
     private Integer connectionManagerCleanInterval;
 
-    @Value("${connection.manager.idleTimeout}")
+    /**
+     * The connections idle timeout,
+     * to be purged be a scheduled task (seconds).
+     */
+    @Value("${connectionManager.idleTimeout:30}")
     private Integer connectionManagerIdleTimeout;
 
-    @Value("${socket.channel.backlog}")
-    private Integer socketChannelBacklog;
+    /**
+     * The maximum number of pending connections.
+     */
+    @Value("${serverSocket.backlog:1000}")
+    private Integer serverSocketBacklog;
 
-    @Value("${socket.channel.timeout}")
-    private Integer socketChannelTimeout;
+    /**
+     * The timeout for read/write through socket channel (seconds).
+     */
+    @Value("${socket.soTimeout:30}")
+    private Integer socketSoTimeout;
 
-    @Value("${use.system.properties}")
+    /**
+     * The timeout for socket connect (seconds).
+     */
+    @Value("${socket.connectTimeout:10}")
+    private Integer socketConnectTimeout;
+
+    /**
+     * Whether to use the environment properties
+     * when configuring a HTTP client builder.
+     */
+    @Value("${useSystemProperties:false}")
     private boolean useSystemProperties;
 
+    @Value("${releaseVersion:Unknown}")
     private String releaseVersion;
 
     @PostConstruct
     public void init() {
         try {
             logger.info("Get application version from manifest file");
-            releaseVersion = new Manifest(FoomApplication.class.getResourceAsStream("/META-INF/MANIFEST.MF"))
-                    .getMainAttributes()
-                    .get(Attributes.Name.IMPLEMENTATION_VERSION).toString();
+            releaseVersion = JarUtils.getVersion(getClass());
         } catch (Exception e) {
-            releaseVersion = "Unknown";
             logger.warn("Error on getting application version from MANIFEST file, using Unknown");
         }
     }
@@ -99,11 +145,49 @@ public class SystemConfig {
         return connectionManagerIdleTimeout;
     }
 
-    public Integer getSocketChannelBacklog() {
-        return socketChannelBacklog;
+    public Integer getServerSocketBacklog() {
+        return serverSocketBacklog;
     }
 
-    public Integer getSocketChannelTimeout() {
-        return socketChannelTimeout;
+    public Integer getSocketSoTimeout() {
+        return socketSoTimeout;
     }
+
+    public Integer getSocketConnectTimeout() {
+        return socketConnectTimeout;
+    }
+
+    public RequestConfig.Builder applyConfig(final RequestConfig.Builder configBuilder) {
+        return configBuilder.setConnectTimeout(socketConnectTimeout * 1000)
+                .setConnectionRequestTimeout(socketSoTimeout * 1000)
+                .setSocketTimeout(socketSoTimeout * 1000);
+    }
+
+    @PostConstruct
+    public void save() throws ConfigurationException, IOException, IllegalAccessException {
+        Path appPath = Paths.get(System.getProperty("user.home"), ".winfoom");
+        if (!Files.exists(appPath)) {
+            Files.createDirectory(appPath);
+        }
+        File systemProperties = appPath.resolve("system.properties").toFile();
+        if (!systemProperties.exists()) {
+            systemProperties.createNewFile();
+            FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder = new Configurations()
+                    .propertiesBuilder(systemProperties);
+            Configuration config = propertiesBuilder.getConfiguration();
+
+            for (Field field : this.getClass().getDeclaredFields()) {
+                Value valueAnnotation = field.getAnnotation(Value.class);
+                if (valueAnnotation != null) {
+                    String value = valueAnnotation.value();
+                    String propName = value.replaceAll("[\\$\\{\\}]", "").split(":")[0];
+                    config.setProperty(propName, field.get(this));
+                }
+            }
+
+            propertiesBuilder.save();
+        }
+
+    }
+
 }

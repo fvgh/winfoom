@@ -15,10 +15,15 @@
 package org.kpax.winfoom.util;
 
 import org.apache.commons.lang3.Validate;
+import org.kpax.winfoom.view.AppFrame;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.text.DefaultFormatter;
 import java.awt.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
 
 /**
  * Various Swing related methods.
@@ -104,6 +109,20 @@ public class SwingUtils {
         });
         thread.setDaemon(true);
         thread.start();
+    }
+
+    public static Image loadImage (Class<?> cls,  String filename) {
+        try {
+            URL resource = cls.getResource("/img/" + filename);
+            if (resource != null) {
+                return ImageIO.read(resource);
+            } else {
+                throw new FileNotFoundException("Resource not found");
+            }
+
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Cannot load the image named: " + filename, e);
+        }
     }
 
 }

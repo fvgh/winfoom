@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
  * Created on 4/13/2020
  */
 @Component
-public class DefaultClientProcessorSelector implements ClientProcessorSelector {
+class DefaultClientProcessorSelector implements ClientProcessorSelector {
 
     @Autowired
     private UserConfig userConfig;

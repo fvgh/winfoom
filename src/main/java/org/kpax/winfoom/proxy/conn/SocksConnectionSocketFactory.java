@@ -12,17 +12,16 @@
 
 package org.kpax.winfoom.proxy.conn;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.protocol.HttpContext;
 import org.kpax.winfoom.util.HttpUtils;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
+import java.net.*;
 
 public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
 
@@ -30,8 +29,7 @@ public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
     public Socket createSocket(final HttpContext context) throws IOException {
         InetSocketAddress socketAddress = (InetSocketAddress) context.getAttribute(HttpUtils.SOCKS_ADDRESS);
         Proxy proxy = new Proxy(Proxy.Type.SOCKS, socketAddress);
-        Socket socket = new Socket(proxy);
-        return socket;
+        return new Socket(proxy);
     }
 
     @Override
@@ -50,6 +48,11 @@ public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
             currentSocket.connect(remoteAddress, connectTimeout);
         } catch (SocketTimeoutException ex) {
             throw new ConnectTimeoutException(ex, host, remoteAddress.getAddress());
+        } catch (SocketException ex) {
+            if (StringUtils.startsWithIgnoreCase(ex.getMessage(), "Connection refused")) {
+                throw new ConnectException(ex.getMessage());
+            }
+            throw ex;
         }
         return currentSocket;
     }

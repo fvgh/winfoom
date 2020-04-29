@@ -12,6 +12,7 @@
 
 package org.kpax.winfoom.util;
 
+import org.apache.commons.lang3.Validate;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
+import java.util.Properties;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -28,13 +30,13 @@ import java.util.concurrent.Future;
 /**
  * @author Eugen Covaci
  */
-public final class IoUtils {
+public final class InputOutputs {
 
     public static final int DEFAULT_BUFFER_SIZE = 8192;
 
-    private static final Logger logger = LoggerFactory.getLogger(IoUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(InputOutputs.class);
 
-    private IoUtils() {
+    private InputOutputs() {
     }
 
     /**
@@ -123,5 +125,15 @@ public final class IoUtils {
         logger.debug("End full duplex communication");
     }
 
+    public static boolean isIncluded(Properties who, Properties where) {
+        Validate.notNull(who, "who cannot be null");
+        Validate.notNull(where, "where cannot be null");
+        for (String key : who.stringPropertyNames()) {
+           if (where.getProperty(key) == null) {
+               return false;
+           }
+        }
+        return true;
+    }
 
 }

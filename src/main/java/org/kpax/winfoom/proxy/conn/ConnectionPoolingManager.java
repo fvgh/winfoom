@@ -17,7 +17,7 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.util.IoUtils;
+import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -140,7 +140,7 @@ public class ConnectionPoolingManager implements AutoCloseable {
     }
 
     private PoolingHttpClientConnectionManager createSocksConnectionManager(boolean isSocks4) {
-        SocksConnectionSocketFactory connectionSocketFactory = isSocks4
+        ConnectionSocketFactory connectionSocketFactory = isSocks4
                 ? new Socks4ConnectionSocketFactory() : new SocksConnectionSocketFactory();
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", connectionSocketFactory)
@@ -153,9 +153,9 @@ public class ConnectionPoolingManager implements AutoCloseable {
     public synchronized boolean stop() {
         if (started) {
             started = false;
-            IoUtils.close(httpConnectionManager);
-            IoUtils.close(socksConnectionManager);
-            IoUtils.close(socks4ConnectionManager);
+            InputOutputs.close(httpConnectionManager);
+            InputOutputs.close(socksConnectionManager);
+            InputOutputs.close(socks4ConnectionManager);
             httpConnectionManager = null;
             socksConnectionManager = null;
             socks4ConnectionManager = null;

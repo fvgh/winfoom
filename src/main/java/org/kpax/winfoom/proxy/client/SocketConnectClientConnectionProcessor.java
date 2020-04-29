@@ -12,8 +12,8 @@
 
 package org.kpax.winfoom.proxy.client;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.config.SystemConfig;
@@ -21,23 +21,21 @@ import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.util.HeaderDateGenerator;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.IoUtils;
+import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
+import java.net.*;
 
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/16/2020
  */
 @Component
-public class SocketConnectClientConnectionProcessor implements ClientConnectionProcessor {
+class SocketConnectClientConnectionProcessor implements ClientConnectionProcessor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
@@ -49,7 +47,7 @@ public class SocketConnectClientConnectionProcessor implements ClientConnectionP
     @Override
     public void process(ClientConnection clientConnection, ProxyInfo proxyInfo)
             throws IOException {
-
+        logger.debug("Handle socket connect request");
         RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
         HttpHost target = HttpHost.create(requestLine.getUri());
 
@@ -62,20 +60,20 @@ public class SocketConnectClientConnectionProcessor implements ClientConnectionP
         }
 
         try (Socket socket = new Socket(proxy)) {
-            socket.setSoTimeout(systemConfig.getSocketChannelTimeout() * 1000);
+            socket.setSoTimeout(systemConfig.getSocketSoTimeout() * 1000);
             if (proxyInfo.getType().isSocks4()) {
-                try {
-                    HttpUtils.setSocks4(socket);
-                } catch (UnsupportedOperationException e) {// FIXME Out of here
-                    logger.debug("Error on setting SOCKS 4 version", e);
-                    clientConnection.writeErrorResponse(clientConnection.getHttpRequest().getProtocolVersion(),
-                            HttpStatus.SC_INTERNAL_SERVER_ERROR, "SOCKS 4 not supported by the JVM");
-                    return;
-                }
+                HttpUtils.setSocks4(socket);
             }
             logger.debug("Open connection");
-            socket.connect(new InetSocketAddress(target.getHostName(), target.getPort()),
-                    systemConfig.getSocketChannelTimeout() * 1000);
+            try {
+                socket.connect(new InetSocketAddress(target.getHostName(), target.getPort()),
+                        systemConfig.getSocketConnectTimeout() * 1000);
+            } catch (SocketException e) {
+                if (StringUtils.startsWithIgnoreCase(e.getMessage(), "Connection refused")) {
+                    throw new ConnectException(e.getMessage());
+                }
+                ;
+            }
             logger.debug("Connected to {}", target);
 
             // Respond with 200 code
@@ -88,7 +86,7 @@ public class SocketConnectClientConnectionProcessor implements ClientConnectionP
             try {
                 // The proxy facade mediates the full duplex communication
                 // between the client and the remote proxy
-                IoUtils.duplex(proxyContext.executorService(),
+                InputOutputs.duplex(proxyContext.executorService(),
                         socket.getInputStream(),
                         socket.getOutputStream(),
                         clientConnection.getInputStream(),
