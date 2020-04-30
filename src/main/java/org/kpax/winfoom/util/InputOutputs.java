@@ -17,6 +17,7 @@ import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -134,6 +135,25 @@ public final class InputOutputs {
             }
         }
         return true;
+    }
+
+
+    public static boolean deleteFile(File file) {
+        File[] files = file.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                deleteFile(f);
+            }
+        }
+        return file.delete();
+    }
+
+    public static boolean emptyDirectory(File directory) {
+        Validate.isTrue(directory.isDirectory());
+        for (File file : directory.listFiles()) {
+            deleteFile(file);
+        }
+        return directory.listFiles().length == 0;
     }
 
 }

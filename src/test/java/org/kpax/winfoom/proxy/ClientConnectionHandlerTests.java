@@ -32,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.TestConstants;
 import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.proxy.connection.ConnectionPoolingManager;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -48,7 +49,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.logging.SocketHandler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,7 +65,7 @@ import static org.mockito.Mockito.when;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
 @Timeout(10)
-class SocketHandlerTests {
+class ClientConnectionHandlerTests {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -82,7 +82,7 @@ class SocketHandlerTests {
     private CredentialsProvider credentialsProvider;
 
     @Autowired
-    private ApplicationEventPublisher publisher;
+    private ConnectionPoolingManager connectionPoolingManager;
 
     private ServerSocket serverSocket;
 
@@ -94,17 +94,10 @@ class SocketHandlerTests {
     void beforeEach() {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
-        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
-        when(userConfig.getProxyType().isHttp()).thenReturn(true);
     }
 
-/*    @BeforeAll
+    @BeforeAll
     void before() throws IOException {
-        when(userConfig.getProxyHost()).thenReturn("localhost");
-        when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
-        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
-        when(userConfig.getProxyType().isHttp()).thenReturn(true);
-
         remoteProxyServer = DefaultHttpProxyServer.bootstrap()
                 .withPort(PROXY_PORT)
                 .withName("AuthenticatedUpstreamProxy")
@@ -137,6 +130,7 @@ class SocketHandlerTests {
         remoteServer.start();
 
         serverSocket = new ServerSocket(TestConstants.LOCAL_PROXY_PORT);
+        connectionPoolingManager.start();
         final ServerSocket server = serverSocket;
         new Thread(() -> {
             while (!server.isClosed()) {
@@ -147,7 +141,7 @@ class SocketHandlerTests {
 
                         // Handle this connection.
                         try {
-                            applicationContext.getBean(SocketHandler.class).bind(socket).handleConnection();
+                            applicationContext.getBean(ClientConnectionHandler.class).bind(socket).handleConnection();
                         } catch (Exception e) {
                             logger.error("Error on handling connection", e);
                         }
@@ -158,11 +152,12 @@ class SocketHandlerTests {
             }
         }).start();
 
-    }*/
+    }
 
     @Test
     @Order(1)
-    void request_NonConnect_True() throws IOException {
+    void httpProxy_NonConnect_True() throws IOException {
+        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build()) {
             RequestConfig config = RequestConfig.custom()
@@ -183,7 +178,8 @@ class SocketHandlerTests {
 
     @Test
     @Order(2)
-    void request_Connect_200OK() throws IOException {
+    void httpProxy_Connect_200OK() throws IOException {
+        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
                 .setProxy(localProxy).build()) {
@@ -197,7 +193,8 @@ class SocketHandlerTests {
 
     @Test
     @Order(3)
-    void request_ConnectMalformedUri_500InternalServerError() throws IOException {
+    void httpProxy_ConnectMalformedUri_500InternalServerError() throws IOException {
+        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
                 .setProxy(localProxy).build()) {
@@ -212,7 +209,8 @@ class SocketHandlerTests {
 
     @Test
     @Order(4)
-    void request_NonConnectNoRemoteProxy_502BadGateway() throws IOException {
+    void httpProxy_NonConnectNoRemoteProxy_502BadGateway() throws IOException {
+        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
         remoteProxyServer.stop();
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build()) {

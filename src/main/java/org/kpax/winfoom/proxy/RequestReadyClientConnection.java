@@ -14,9 +14,13 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.Validate;
 import org.apache.http.*;
+import org.apache.http.config.MessageConstraints;
+import org.apache.http.impl.io.DefaultHttpRequestParser;
+import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.InputOutputs;
 import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -33,6 +38,8 @@ import java.nio.charset.StandardCharsets;
 class RequestReadyClientConnection implements ClientConnection {
 
     private final Logger logger = LoggerFactory.getLogger(RequestReadyClientConnection.class);
+
+    private Socket socket;
 
     private InputStream inputStream;
 
@@ -46,14 +53,18 @@ class RequestReadyClientConnection implements ClientConnection {
 
     private boolean lastResort;
 
-    RequestReadyClientConnection(InputStream inputStream,
-                                 OutputStream outputStream,
-                                 SessionInputBufferImpl sessionInputBuffer,
-                                 HttpRequest httpRequest) {
-        this.inputStream = inputStream;
-        this.outputStream = outputStream;
-        this.sessionInputBuffer = sessionInputBuffer;
-        this.httpRequest = httpRequest;
+    RequestReadyClientConnection(Socket socket) throws IOException, HttpException {
+        this.socket = socket;
+        this.inputStream = socket.getInputStream();
+        this.sessionInputBuffer = new SessionInputBufferImpl(
+                new HttpTransportMetricsImpl(),
+                InputOutputs.DEFAULT_BUFFER_SIZE,
+                InputOutputs.DEFAULT_BUFFER_SIZE,
+                MessageConstraints.DEFAULT,
+                StandardCharsets.UTF_8.newDecoder());
+        this.sessionInputBuffer.bind(this.inputStream);
+        this.httpRequest = new DefaultHttpRequestParser(this.sessionInputBuffer).parse();
+        this.outputStream = socket.getOutputStream();
     }
 
     @Override
@@ -150,4 +161,8 @@ class RequestReadyClientConnection implements ClientConnection {
     }
 
 
+    @Override
+    public void close() {
+        InputOutputs.close(socket);
+    }
 }

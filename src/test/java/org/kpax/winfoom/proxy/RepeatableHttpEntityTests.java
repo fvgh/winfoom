@@ -12,6 +12,7 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -19,16 +20,24 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
 import org.kpax.winfoom.TestConstants;
+import org.kpax.winfoom.util.HttpUtils;
+import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Timeout(10)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Disabled
-class RepeatableHttpEntityTests {// FIXME - cleanup temp files
+class RepeatableHttpEntityTests {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -55,7 +64,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
 
     private Path tempDirectory;
 
-/*    @BeforeAll
+    @BeforeAll
     void before() throws IOException {
         tempDirectory = Paths.get(System.getProperty("user.dir"), "target", "temp");
         Files.createDirectories(tempDirectory);
@@ -72,21 +81,11 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
                     new Thread(() -> {
 
                         // Handle this connection.
-                        try (ClientConnection clientConnection = new ClientConnection(socket)) {
-                            HttpRequest request;
+                        try (ClientConnection clientConnection = ClientConnection.create(socket)) {
                             RepeatableHttpEntity requestEntity;
+                            HttpRequest request = clientConnection.getHttpRequest();
                             try {
-                                SessionInputBufferImpl inputBuffer = new SessionInputBufferImpl(
-                                        new HttpTransportMetricsImpl(),
-                                        LocalIOUtils.DEFAULT_BUFFER_SIZE,
-                                        LocalIOUtils.DEFAULT_BUFFER_SIZE,
-                                        MessageConstraints.DEFAULT,
-                                        StandardCharsets.UTF_8.newDecoder());
-                                inputBuffer.bind(clientConnection.getInputStream());
-
-                                HttpMessageParser<HttpRequest> requestParser = new DefaultHttpRequestParser(inputBuffer);
-                                request = requestParser.parse();
-                                requestEntity = new RepeatableHttpEntity(inputBuffer, tempDirectory, request,
+                                requestEntity = new RepeatableHttpEntity(clientConnection.getSessionInputBuffer(), tempDirectory, request,
                                         bufferSize);
                                 Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
                                 if (transferEncoding != null && HTTP.CHUNK_CODING.equalsIgnoreCase(transferEncoding.getValue())) {
@@ -132,6 +131,10 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
                             e.printStackTrace();
                         }
                     }).start();
+                } catch (SocketException e) {
+                    if (!StringUtils.startsWithIgnoreCase(e.getMessage(), "Interrupted function call")) {
+                        logger.error("Socket error on getting connection", e);
+                    }
                 } catch (Exception e) {
                     logger.error("Error on getting connection", e);
                 }
@@ -139,7 +142,7 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
         }).start();
 
 
-    }*/
+    }
 
     @Test
     void repeatable_BufferLessThanContentLength_UseTempFile() throws IOException {//OK
@@ -271,6 +274,9 @@ class RepeatableHttpEntityTests {// FIXME - cleanup temp files
     @AfterAll
     void after() throws IOException {
         serverSocket.close();
+        if (tempDirectory != null) {
+            InputOutputs.emptyDirectory(tempDirectory.toFile());
+        }
     }
 
 }

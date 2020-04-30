@@ -59,7 +59,6 @@ class ClientConnectionHandler {
     @Autowired
     private ProxyBlacklist proxyBlacklist;
 
-
     ClientConnectionHandler bind(final Socket socket) {
         Assert.isNull(this.socket, "Socket already bound!");
         this.socket = socket;
@@ -77,8 +76,7 @@ class ClientConnectionHandler {
      * @throws InvalidPacFileException
      */
     void handleConnection() throws IOException, HttpException, URISyntaxException, InvalidPacFileException {
-        try {
-            ClientConnection connection = ClientConnection.create(socket);
+        try (ClientConnection connection = ClientConnection.create(socket)) {
             RequestLine requestLine = connection.getHttpRequest().getRequestLine();
             logger.debug("Handle request: {}", requestLine);
 
@@ -137,8 +135,6 @@ class ClientConnectionHandler {
                 }
             }
             logger.debug("Done handling request: {}", requestLine);
-        } finally {
-            InputOutputs.close(socket);
         }
 
     }

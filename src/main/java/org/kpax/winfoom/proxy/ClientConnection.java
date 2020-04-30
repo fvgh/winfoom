@@ -22,6 +22,7 @@ import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.util.InputOutputs;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Encapsulates a client's connection with a valid (parsable) HTTP request.
  */
-public interface ClientConnection {
+public interface ClientConnection extends Closeable {
 
     /**
      * @return the input stream of the client's socket
@@ -127,7 +128,7 @@ public interface ClientConnection {
     void lastResort();
 
     /**
-     * Creates an instance.
+     * Creates a {@link RequestReadyClientConnection} instance.
      *
      * @param socket the client's socket.
      * @return a new instance if the HTTP request is parsable.
@@ -135,16 +136,7 @@ public interface ClientConnection {
      * @throws HttpException
      */
     static ClientConnection create(Socket socket) throws IOException, HttpException {
-        InputStream inputStream = socket.getInputStream();
-        SessionInputBufferImpl sessionInputBuffer = new SessionInputBufferImpl(
-                new HttpTransportMetricsImpl(),
-                InputOutputs.DEFAULT_BUFFER_SIZE,
-                InputOutputs.DEFAULT_BUFFER_SIZE,
-                MessageConstraints.DEFAULT,
-                StandardCharsets.UTF_8.newDecoder());
-        sessionInputBuffer.bind(inputStream);
-        HttpRequest httpRequest = new DefaultHttpRequestParser(sessionInputBuffer).parse();
-        return new RequestReadyClientConnection(inputStream, socket.getOutputStream(), sessionInputBuffer, httpRequest);
+        return new RequestReadyClientConnection(socket);
     }
 
 
