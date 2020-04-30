@@ -100,7 +100,7 @@ class CustomProxyClientTests {
         ClientConnection socketChannelWrapper = Mockito.mock(ClientConnection.class);
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         Tunnel tunnel = applicationContext.getBean(TunnelConnection.class)
-                .tunnel(proxy, target, HttpVersion.HTTP_1_1);
+                .open(proxy, target, HttpVersion.HTTP_1_1);
         tunnel.close();
     }
 
@@ -115,7 +115,7 @@ class CustomProxyClientTests {
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(org.apache.http.impl.execchain.TunnelRefusedException.class, () -> {
             Tunnel tunnel = applicationContext.getBean(TunnelConnection.class)
-                    .tunnel(proxy, target, HttpVersion.HTTP_1_1);
+                    .open(proxy, target, HttpVersion.HTTP_1_1);
             tunnel.close();
         });
     }
@@ -130,7 +130,7 @@ class CustomProxyClientTests {
         when(socketChannelWrapper.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         assertThrows(java.net.UnknownHostException.class, () -> {
             Tunnel tunnel = applicationContext.getBean(TunnelConnection.class)
-                    .tunnel(proxy, target, HttpVersion.HTTP_1_1);
+                    .open(proxy, target, HttpVersion.HTTP_1_1);
             tunnel.close();
         });
     }

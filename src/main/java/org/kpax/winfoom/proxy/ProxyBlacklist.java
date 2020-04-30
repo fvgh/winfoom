@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -69,4 +70,7 @@ class ProxyBlacklist {
         return (int) count;
     }
 
+    public Map<ProxyInfo, Instant> getBlacklistMap() {
+        return Collections.unmodifiableMap(blacklistMap) ;
+    }
 }

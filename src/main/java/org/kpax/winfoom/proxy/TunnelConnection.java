@@ -100,8 +100,8 @@ public class TunnelConnection {
                 .build();
     }
 
-    public Tunnel tunnel(final HttpHost proxy, final HttpHost target,
-                         final ProtocolVersion protocolVersion)
+    public Tunnel open(final HttpHost proxy, final HttpHost target,
+                       final ProtocolVersion protocolVersion)
             throws IOException, HttpException {
         Args.notNull(proxy, "Proxy host");
         Args.notNull(target, "Target host");

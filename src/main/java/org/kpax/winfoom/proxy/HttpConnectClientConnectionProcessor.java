@@ -50,7 +50,7 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
         HttpHost target = HttpHost.create(requestLine.getUri());
         HttpHost proxy = new HttpHost(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort());
 
-        try (Tunnel tunnel = tunnelConnection.tunnel(proxy, target, requestLine.getProtocolVersion())) {
+        try (Tunnel tunnel = tunnelConnection.open(proxy, target, requestLine.getProtocolVersion())) {
             try {
                 // Handle the tunnel response
                 logger.debug("Write status line");

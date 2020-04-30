@@ -17,19 +17,19 @@ import org.apache.http.HttpHost;
 
 import java.util.Objects;
 
-public class ProxyInfo {
+public final class ProxyInfo {
 
-    private Type type;
+    private final Type type;
 
-    private HttpHost host;
+    private final HttpHost host;
 
     public ProxyInfo(Type type) {
-        Validate.notNull(type, "type cannot be null");
-        this.type = type;
+        this(type, null);
     }
 
     public ProxyInfo(Type type, HttpHost host) {
-        this(type);
+        Validate.notNull(type, "type cannot be null");
+        this.type = type;
         this.host = host;
     }
 

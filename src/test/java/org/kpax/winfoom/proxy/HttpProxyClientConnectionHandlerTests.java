@@ -65,7 +65,7 @@ import static org.mockito.Mockito.when;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
 @Timeout(10)
-class ClientConnectionHandlerTests {
+class HttpProxyClientConnectionHandlerTests {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -94,6 +94,7 @@ class ClientConnectionHandlerTests {
     void beforeEach() {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
     }
 
     @BeforeAll
@@ -157,7 +158,6 @@ class ClientConnectionHandlerTests {
     @Test
     @Order(1)
     void httpProxy_NonConnect_True() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build()) {
             RequestConfig config = RequestConfig.custom()
@@ -179,7 +179,6 @@ class ClientConnectionHandlerTests {
     @Test
     @Order(2)
     void httpProxy_Connect_200OK() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
                 .setProxy(localProxy).build()) {
@@ -194,7 +193,6 @@ class ClientConnectionHandlerTests {
     @Test
     @Order(3)
     void httpProxy_ConnectMalformedUri_500InternalServerError() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider)
                 .setProxy(localProxy).build()) {
@@ -210,7 +208,6 @@ class ClientConnectionHandlerTests {
     @Test
     @Order(4)
     void httpProxy_NonConnectNoRemoteProxy_502BadGateway() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.HTTP);
         remoteProxyServer.stop();
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build()) {

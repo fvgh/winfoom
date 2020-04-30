@@ -378,7 +378,9 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
             if (ex.getCause() != null) {
                 if (ex.getCause() instanceof ClassNotFoundException) {
                     // Is someone trying to break out of the sandbox ?
-                    LOGGER.log(Level.WARNING, "The downloaded PAC script is attempting to access Java class ''{0}'' which may be a sign of maliciousness. You should investigate this with your network administrator.", ex.getCause().getMessage());
+                    LOGGER.log(Level.WARNING, "The downloaded PAC script is attempting to access Java class ''{0}'' " +
+                            "which may be a sign of maliciousness. " +
+                            "You should investigate this with your network administrator.", ex.getCause().getMessage());
                 }
             }
             // other unforseen errors

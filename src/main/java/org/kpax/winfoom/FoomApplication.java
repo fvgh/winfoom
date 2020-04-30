@@ -71,7 +71,8 @@ public class FoomApplication {
                 frame.focusOnStartButton();
             } catch (Exception e) {
                 logger.error("GUI error", e);
-                SwingUtils.showErrorMessage(null, "Failed to load the graphical interface.\nPlease check the application's log file.");
+                SwingUtils.showErrorMessage(null, "Failed to load the graphical interface." +
+                        "\nPlease check the application's log file.");
             }
         });
     }
@@ -97,10 +98,12 @@ public class FoomApplication {
                 if (!Files.exists(backupDirPath)) {
                     Files.createDirectory(backupDirPath);
                 }
-                Files.move(systemPropertiesPath, backupDirPath.resolve("system.properties"), StandardCopyOption.REPLACE_EXISTING);
+                Files.move(systemPropertiesPath, backupDirPath.resolve("system.properties"),
+                        StandardCopyOption.REPLACE_EXISTING);
                 Path userPropertiesPath = appHomePath.resolve("user.properties");
                 if (Files.exists(userPropertiesPath)) {
-                    Files.move(userPropertiesPath, backupDirPath.resolve("user.properties"), StandardCopyOption.REPLACE_EXISTING);
+                    Files.move(userPropertiesPath, backupDirPath.resolve("user.properties"),
+                            StandardCopyOption.REPLACE_EXISTING);
                 }
             }
         }

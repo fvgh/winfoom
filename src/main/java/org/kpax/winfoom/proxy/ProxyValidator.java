@@ -60,7 +60,7 @@ public class ProxyValidator {
     private SystemConfig systemConfig;
 
     @Autowired
-    private PacFile pacFile;
+    private ProxyAutoConfig proxyAutoconfig;
 
     public void testProxyConfig()
             throws IOException, CredentialException, InvalidPacFileException, PacValidationException, URISyntaxException {
@@ -68,9 +68,9 @@ public class ProxyValidator {
 
         ProxyType proxyType = userConfig.getProxyType();
         if (proxyType.isPac()) {
-            pacFile.loadScript();
+            proxyAutoconfig.loadScript();
             HttpHost httpHost = HttpHost.create(userConfig.getProxyTestUrl());
-            List<ProxyInfo> proxyInfos = pacFile.findProxyForURL(new URI(httpHost.toURI()));
+            List<ProxyInfo> proxyInfos = proxyAutoconfig.findProxyForURL(new URI(httpHost.toURI()));
             for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
                 ProxyInfo proxyInfo = itr.next();
                 logger.info("Validate {}", proxyInfo);

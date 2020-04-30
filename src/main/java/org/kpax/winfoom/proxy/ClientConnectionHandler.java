@@ -18,7 +18,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.exception.InvalidPacFileException;
-import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +53,7 @@ class ClientConnectionHandler {
     private ClientProcessorSelector clientProcessorSelector;
 
     @Autowired
-    private PacFile pacFile;
+    private ProxyAutoConfig proxyAutoconfig;
 
     @Autowired
     private ProxyBlacklist proxyBlacklist;
@@ -83,7 +82,7 @@ class ClientConnectionHandler {
             List<ProxyInfo> proxyInfos;
             if (userConfig.getProxyType().isPac()) {
                 HttpHost host = HttpHost.create(requestLine.getUri());
-                proxyInfos = pacFile.findProxyForURL(new URI(host.toURI()));
+                proxyInfos = proxyAutoconfig.findProxyForURL(new URI(host.toURI()));
             } else { // Manual proxy case
                 HttpHost proxyHost = null;
                 if (!userConfig.getProxyType().isDirect()) {

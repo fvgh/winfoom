@@ -47,7 +47,7 @@ class PacLocationTests {
     private UserConfig userConfig;
 
     @Autowired
-    private PacFile pacFile;
+    private ProxyAutoConfig proxyAutoconfig;
 
     private HttpServer remoteServer;
 
@@ -69,20 +69,20 @@ class PacLocationTests {
     @Test
     void loadPacFileContent_validLocalFile_NoError () throws IOException, InvalidPacFileException {
         when(userConfig.getProxyPacFileLocationAsURL()).thenReturn(getClass().getClassLoader().getResource("proxy-simple.pac"));
-        pacFile.loadScript();
+        proxyAutoconfig.loadScript();
     }
 
     @Test
     void loadPacFileContent_validRemoteFile_NoError () throws IOException, InvalidPacFileException {
         when(userConfig.getProxyPacFileLocationAsURL()).thenReturn(new URL("http://localhost:" + remoteServer.getLocalPort() + "/pacFile"));
-        pacFile.loadScript();
+        proxyAutoconfig.loadScript();
     }
 
 
     @Test
     void loadPacFileContent_invalidLocalFile_InvalidPacFileException () throws IOException {
         when(userConfig.getProxyPacFileLocationAsURL()).thenReturn(getClass().getClassLoader().getResource("proxy-invalid.pac"));
-        Assertions.assertThrows(InvalidPacFileException.class, pacFile::loadScript);
+        Assertions.assertThrows(InvalidPacFileException.class, proxyAutoconfig::loadScript);
     }
 
     @AfterAll

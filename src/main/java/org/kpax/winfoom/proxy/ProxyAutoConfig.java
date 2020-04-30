@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
-public class PacFile {
+public class ProxyAutoConfig {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -70,7 +70,10 @@ public class PacFile {
         return nbPacScriptEvaluator != null;
     }
 
-    public List<ProxyInfo> findProxyForURL(URI uri) throws URISyntaxException, InvalidPacFileException {
+    public List<ProxyInfo> findProxyForURL(URI uri) throws InvalidPacFileException {
+        if (nbPacScriptEvaluator == null) {
+            throw new IllegalStateException("Proxy PAC file not loaded");
+        }
         String proxyLine = nbPacScriptEvaluator.callFindProxyForURL(uri);
         return HttpUtils.parsePacProxyLine(proxyLine);
     }
