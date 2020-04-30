@@ -74,6 +74,9 @@ public class UserConfig {
     @Value("${proxy.pac.fileLocation:#{null}}")
     private String proxyPacFileLocation;
 
+    @Value("${blacklist.timeout:30}")// minutes
+    private Integer blacklistTimeout;
+
     private Path tempDirectory;
 
     @PostConstruct
@@ -201,6 +204,14 @@ public class UserConfig {
         this.proxyPacFileLocation = proxyPacFileLocation;
     }
 
+    public Integer getBlacklistTimeout() {
+        return blacklistTimeout;
+    }
+
+    public void setBlacklistTimeout(Integer blacklistTimeout) {
+        this.blacklistTimeout = blacklistTimeout;
+    }
+
     public URL getProxyPacFileLocationAsURL() throws MalformedURLException {
         if (StringUtils.isNotEmpty(proxyPacFileLocation)) {
             if (proxyPacFileLocation.startsWith("http")) {
@@ -235,6 +246,10 @@ public class UserConfig {
         config.setProperty("proxy.username", proxyType.isSocks5() ? this.proxyUsername : null);
         config.setProperty("proxy.storePassword", proxyType.isSocks5() ? this.proxyStorePassword : null);
         config.setProperty("proxy.pac.fileLocation", proxyType.isPac() ? this.proxyPacFileLocation : null);
+
+        if (proxyType.isPac()) {
+            config.setProperty("blacklist.timeout", this.blacklistTimeout);
+        }
 
         if (proxyType.isSocks5() && this.proxyStorePassword) {
             config.setProperty("proxy.password", this.proxyPassword);

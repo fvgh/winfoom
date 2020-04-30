@@ -10,10 +10,9 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.client;
+package org.kpax.winfoom.proxy;
 
 import org.apache.http.RequestLine;
-import org.kpax.winfoom.proxy.ProxyInfo;
 
 /**
  * Select the appropriate {@link ClientConnectionProcessor} implementation.

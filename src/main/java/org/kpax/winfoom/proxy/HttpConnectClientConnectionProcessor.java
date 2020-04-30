@@ -10,17 +10,13 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.client;
+package org.kpax.winfoom.proxy;
 
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.RequestLine;
 import org.apache.http.impl.execchain.TunnelRefusedException;
-import org.kpax.winfoom.proxy.ProxyContext;
-import org.kpax.winfoom.proxy.ProxyInfo;
-import org.kpax.winfoom.proxy.Tunnel;
-import org.kpax.winfoom.proxy.TunnelConnection;
 import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +26,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 /**
+ * Process a CONNECT request through a HTTP proxy.
+ *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/13/2020
  */
@@ -65,7 +63,8 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
                 clientConnection.writeln();
 
                 // The proxy facade mediates the full duplex communication
-                // between the client and the remote proxy
+                // between the client and the remote proxy.
+                // This usually ends on connection reset, timeout or any other error
                 InputOutputs.duplex(proxyContext.executorService(),
                         tunnel.getInputStream(),
                         tunnel.getOutputStream(),

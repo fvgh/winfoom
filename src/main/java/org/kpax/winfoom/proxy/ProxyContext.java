@@ -14,7 +14,7 @@ package org.kpax.winfoom.proxy;
 
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.proxy.conn.ConnectionPoolingManager;
+import org.kpax.winfoom.proxy.connection.ConnectionPoolingManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +49,9 @@ public class ProxyContext implements AutoCloseable {
 
     @Autowired
     private ConnectionPoolingManager connectionPoolingManager;
+
+    @Autowired
+    private ProxyBlacklist proxyBlacklist;
 
     private ThreadPoolExecutor threadPool;
 
@@ -113,6 +116,9 @@ public class ProxyContext implements AutoCloseable {
 
     }
 
+    public int clearBlacklist () {
+        return proxyBlacklist.clear();
+    }
 
     public static class DefaultThreadFactory implements ThreadFactory {
         private static final AtomicInteger poolNumber = new AtomicInteger(1);

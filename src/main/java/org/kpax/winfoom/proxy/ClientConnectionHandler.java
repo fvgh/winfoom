@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.client;
+package org.kpax.winfoom.proxy;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -18,9 +18,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.exception.InvalidPacFileException;
-import org.kpax.winfoom.proxy.PacFile;
-import org.kpax.winfoom.proxy.ProxyBlacklist;
-import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,9 +36,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Prepares a connection for processing.
+ */
 @Component
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class ClientConnectionHandler {
+class ClientConnectionHandler {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -60,13 +60,23 @@ public class ClientConnectionHandler {
     private ProxyBlacklist proxyBlacklist;
 
 
-    public ClientConnectionHandler bind(final Socket socket) {
+    ClientConnectionHandler bind(final Socket socket) {
         Assert.isNull(this.socket, "Socket already bound!");
         this.socket = socket;
         return this;
     }
 
-    public void handleConnection() throws IOException, HttpException, URISyntaxException, InvalidPacFileException {
+    /**
+     * Get the proxy list for this request then process the client connection with
+     * each proxy found. Un un-responding proxy is blacklisted only if it is not the last
+     * one available.
+     *
+     * @throws IOException
+     * @throws HttpException
+     * @throws URISyntaxException
+     * @throws InvalidPacFileException
+     */
+    void handleConnection() throws IOException, HttpException, URISyntaxException, InvalidPacFileException {
         try {
             ClientConnection connection = ClientConnection.create(socket);
             RequestLine requestLine = connection.getHttpRequest().getRequestLine();

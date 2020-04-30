@@ -10,9 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.client;
-
-import org.kpax.winfoom.proxy.ProxyInfo;
+package org.kpax.winfoom.proxy;
 
 /**
  * Process the client's connection request.

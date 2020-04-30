@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.client;
+package org.kpax.winfoom.proxy;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.CredentialsProvider;
@@ -20,8 +20,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.proxy.ProxyInfo;
-import org.kpax.winfoom.proxy.conn.ConnectionPoolingManager;
+import org.kpax.winfoom.proxy.connection.ConnectionPoolingManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

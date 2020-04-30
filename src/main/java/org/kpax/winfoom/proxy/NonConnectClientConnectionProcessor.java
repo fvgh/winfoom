@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.client;
+package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
@@ -23,8 +23,6 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.proxy.ProxyInfo;
-import org.kpax.winfoom.proxy.RepeatableHttpEntity;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
@@ -41,6 +39,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Process any type of non-CONNECT request for any type of proxy.
+ *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/13/2020
  */

@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.conn;
+package org.kpax.winfoom.proxy.connection;
 
 import org.apache.http.protocol.HttpContext;
 import org.kpax.winfoom.util.HttpUtils;

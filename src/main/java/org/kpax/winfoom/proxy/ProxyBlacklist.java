@@ -12,8 +12,10 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.kpax.winfoom.config.UserConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -22,28 +24,49 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class ProxyBlacklist {
+class ProxyBlacklist {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final Map<ProxyInfo, Instant> blacklistMap = new ConcurrentHashMap<>();
 
-    public void blacklist(ProxyInfo proxyInfo) {
-        logger.debug("Blacklist proxy {}", proxyInfo);
-        blacklistMap.putIfAbsent(proxyInfo, Instant.now());
+    @Autowired
+    private UserConfig userConfig;
+
+    Instant blacklist(ProxyInfo proxyInfo) {
+        logger.debug("Attempt to blacklist proxy {}", proxyInfo);
+        return blacklistMap.compute(proxyInfo, (key, value) -> {
+            Instant now = Instant.now();
+            if (value == null || value.plus(userConfig.getBlacklistTimeout(),
+                    ChronoUnit.MINUTES).isBefore(now)) {
+                Instant timeoutInstant = now.plus(userConfig.getBlacklistTimeout(),
+                        ChronoUnit.MINUTES);
+                logger.debug("Blacklisted until {}", timeoutInstant);
+                return timeoutInstant;
+            } else {
+                logger.debug("Already blacklisted until {}", value);
+                return value;
+            }
+        });
     }
 
-    public boolean isBlacklisted(ProxyInfo proxyInfo) {
+    boolean isBlacklisted(ProxyInfo proxyInfo) {
         Instant instant = blacklistMap.get(proxyInfo);
-        if (instant != null) {
-            Instant now = Instant.now();
-            return instant.plus(1, ChronoUnit.HOURS).isAfter(now);// FIXME Configurable
+
+        if (instant != null && instant.plus(userConfig.getBlacklistTimeout(),
+                ChronoUnit.MINUTES).isAfter(Instant.now())) {
+            return true;
         }
         return false;
     }
 
-    public void clear() {
+    int clear() {
+        Instant now = Instant.now();
+        long count = blacklistMap.values().stream()
+                .filter(i -> i.plus(userConfig.getBlacklistTimeout(),
+                        ChronoUnit.MINUTES).isAfter(Instant.now())).count();
         blacklistMap.clear();
+        return (int) count;
     }
 
 }

@@ -50,6 +50,8 @@ public class AppFrame extends JFrame {
 
     private static final int ICON_SIZE = 16;
 
+    private static final int TOOLTIP_TIMEOUT = 10;
+
     @Autowired
     private ConfigurableApplicationContext applicationContext;
 
@@ -76,6 +78,7 @@ public class AppFrame extends JFrame {
 
     private JButton btnStart;
     private JButton btnStop;
+    private JButton btnCancelBlacklist;
 
     private JPanel mainContentPanel;
     private JPanel labelsFieldsPanel;
@@ -142,6 +145,8 @@ public class AppFrame extends JFrame {
         setJMenuBar(getMainMenuBar());
         setContentPane(getMainContentPanel());
 
+        ToolTipManager.sharedInstance().setDismissDelay(TOOLTIP_TIMEOUT * 1000);
+
         getProxyTypeCombo().setSelectedItem(userConfig.getProxyType());
 
     }
@@ -194,6 +199,10 @@ public class AppFrame extends JFrame {
         return new JLabel("Store password ");
     }
 
+    private JLabel getBlacklistTimeoutLabel() {
+        return new JLabel("Blacklist timeout* ");
+    }
+
     // ------- End Labels
 
     // -------- Fields
@@ -204,6 +213,7 @@ public class AppFrame extends JFrame {
             proxyTypeCombo.setMinimumSize(new Dimension(80, 35));
             proxyTypeCombo.addActionListener((e) -> {
                 clearLabelsAndFields();
+                getBtnCancelBlacklist().setVisible(false);
                 addProxyType();
                 ProxyType proxyType = (ProxyType) proxyTypeCombo.getSelectedItem();
                 userConfig.setProxyType(proxyType);
@@ -241,6 +251,8 @@ public class AppFrame extends JFrame {
         pacFileJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
             userConfig.setProxyPacFileLocation(pacFileJTextField.getText());
         });
+        pacFileJTextField.setToolTipText(HttpUtils.toHtml("The location of the Proxy Auto-Config file." +
+                "<br>It can be a local location (like <i>C:/pac/proxy.pac</i>) or a HTTP(s) address (like <i>http://pacserver:80/proxy.pac</i>)"));
         return pacFileJTextField;
     }
 
@@ -310,6 +322,18 @@ public class AppFrame extends JFrame {
         return storePasswordJCheckBox;
     }
 
+
+    private JSpinner getBlacklistTimeoutJSpinner() {
+        JSpinner proxyPortJSpinner = createJSpinner(userConfig.getBlacklistTimeout());
+        proxyPortJSpinner.addChangeListener(e -> {
+            userConfig.setBlacklistTimeout((Integer) proxyPortJSpinner.getValue());
+        });
+        proxyPortJSpinner.setToolTipText(HttpUtils.toHtml("If a proxy doesn't responds it is blacklisted"
+                + "<br> which means it will not be used again until the blacklist timeout (in minutes) happens."
+                + "<br>A value of zero or negative would disable the blacklisting mechanism."));
+        return proxyPortJSpinner;
+    }
+
     // ---------- End Fields
 
     // ------- Buttons
@@ -322,6 +346,9 @@ public class AppFrame extends JFrame {
             btnStart.addActionListener(e -> {
                 startServer();
                 getBtnStop().requestFocus();
+                if (userConfig.getProxyType().isPac()) {
+                    getBtnCancelBlacklist().setEnabled(true);
+                }
             });
             btnStart.setToolTipText("Start the proxy facade");
         }
@@ -335,12 +362,33 @@ public class AppFrame extends JFrame {
             btnStop.addActionListener(e -> {
                 stopServer();
                 focusOnStartButton();
+                if (userConfig.getProxyType().isPac()) {
+                    getBtnCancelBlacklist().setEnabled(false);
+                }
             });
             btnStop.setIcon(new TunedImageIcon("process-stop.png"));
             btnStop.setEnabled(false);
             btnStop.setToolTipText("Stop the proxy facade");
         }
         return btnStop;
+    }
+
+    private JButton getBtnCancelBlacklist() {
+        if (btnCancelBlacklist == null) {
+            btnCancelBlacklist = new JButton("Cancel blacklist");
+            btnCancelBlacklist.setMargin(new Insets(2, 6, 2, 6));
+            btnCancelBlacklist.addActionListener(e -> {
+                int clearCount = proxyContext.clearBlacklist();
+                SwingUtils.showInfoMessage(this, String.format("Found: %d blacklisted proxies!", clearCount));
+            });
+            btnCancelBlacklist.setIcon(new TunedImageIcon("clear-blacklist.png"));
+            btnCancelBlacklist.setVisible(false);
+            btnCancelBlacklist.setEnabled(false);
+            btnCancelBlacklist.setToolTipText(HttpUtils.toHtml("Remove all proxies from blacklist log." +
+                    "<br>Use this when you know that some blacklisted proxies are up" +
+                    "<br>and it doesn't make sense to wait for timeout."));
+        }
+        return btnCancelBlacklist;
     }
 
     // ------- End Buttons
@@ -407,12 +455,16 @@ public class AppFrame extends JFrame {
 
     private void configureForPac() {
         labelPanel.add(getPacFileLabel());
+        labelPanel.add(getBlacklistTimeoutLabel());
         labelPanel.add(getLocalPortLabel());
         labelPanel.add(getTestUrlLabel());
 
         fieldPanel.add(getPacFileJTextField());
+        fieldPanel.add(wrapToPanel(getBlacklistTimeoutJSpinner()));
         fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
         fieldPanel.add(getTestUrlJTextField());
+
+        getBtnCancelBlacklist().setVisible(true);
     }
 
 
@@ -456,6 +508,7 @@ public class AppFrame extends JFrame {
             btnPanel = new JPanel();
             btnPanel.add(getBtnStart());
             btnPanel.add(getBtnStop());
+            btnPanel.add(getBtnCancelBlacklist());
         }
         return btnPanel;
     }

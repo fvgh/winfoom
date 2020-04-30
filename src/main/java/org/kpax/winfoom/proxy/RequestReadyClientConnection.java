@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.client;
+package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.Validate;
 import org.apache.http.*;
@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
+ *
  * @author Eugen Covaci
  */
 class RequestReadyClientConnection implements ClientConnection {
@@ -106,11 +107,6 @@ class RequestReadyClientConnection implements ClientConnection {
         writeErrorResponse(protocolVersion, statusCode, e.getMessage());
     }
 
-    /**
-     * Writes the HTTP response as it is.
-     *
-     * @param httpResponse The HTTP response.
-     */
     @Override
     public void writeHttpResponse(final HttpResponse httpResponse) throws Exception {
         StatusLine statusLine = httpResponse.getStatusLine();

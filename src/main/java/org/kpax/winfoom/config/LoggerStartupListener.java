@@ -24,6 +24,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * Logback configuration class, used to add various context variables.
+ */
 public class LoggerStartupListener extends ContextAwareBase implements LoggerContextListener, LifeCycle {
 
     private boolean started = false;
@@ -37,7 +40,7 @@ public class LoggerStartupListener extends ContextAwareBase implements LoggerCon
         Path logDirPath = Paths.get(System.getProperty("user.home"), ".winfoom", "logs");
         if (!Files.exists(logDirPath)) {
             try {
-                Files.createDirectory(logDirPath);
+                Files.createDirectories(logDirPath);
             } catch (IOException e) {
                 return;
             }

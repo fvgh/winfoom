@@ -10,15 +10,13 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-package org.kpax.winfoom.proxy.client;
+package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.RequestLine;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.proxy.ProxyContext;
-import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.util.HeaderDateGenerator;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
@@ -31,6 +29,8 @@ import java.io.IOException;
 import java.net.*;
 
 /**
+ * Process a CONNECT request through a SOCKS proxy or no proxy.
+ *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/16/2020
  */
