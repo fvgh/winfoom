@@ -99,7 +99,7 @@ class ClientConnectionHandler {
 
                 if (itr.hasNext()) {
                     if (proxyBlacklist.checkBlacklist(proxyInfo)) {
-                        logger.debug("Blacklisted proxyInfo {} - skip it", proxyInfo);
+                        logger.debug("Blacklisted proxy {} - skip it", proxyInfo);
                         continue;
                     }
                 } else {
@@ -109,7 +109,7 @@ class ClientConnectionHandler {
                 connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
 
                 try {
-                    logger.debug("Process connection with proxyInfo: {}", proxyInfo);
+                    logger.debug("Process connection with proxy: {}", proxyInfo);
                     connectionProcessor.process(connection, proxyInfo);
 
                     // Success, stop the iteration
@@ -117,10 +117,10 @@ class ClientConnectionHandler {
                 } catch (ConnectException e) {
                     logger.debug("Connection error", e);
                     if (itr.hasNext()) {
-                        logger.debug("Failed to process connection with proxyInfo: {}, retry with the next one", proxyInfo);
+                        logger.debug("Failed to process connection with proxy: {}, retry with the next one", proxyInfo);
                         proxyBlacklist.blacklist(proxyInfo);
                     } else {
-                        logger.debug("Failed to process connection with proxyInfo: {}, send the error response", proxyInfo);
+                        logger.debug("Failed to process connection with proxy: {}, send the error response", proxyInfo);
 
                         // Cannot connect to the remote proxy
                         connection.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
