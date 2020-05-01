@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -61,7 +62,7 @@ public class FoomApplication {
             return;
         }
 
-        ConfigurableApplicationContext applicationContext = SpringApplication.run(FoomApplication.class, args);
+        ApplicationContext applicationContext = SpringApplication.run(FoomApplication.class, args);
         final AppFrame frame = applicationContext.getBean(AppFrame.class);
         EventQueue.invokeLater(() -> {
             try {
@@ -88,16 +89,26 @@ public class FoomApplication {
 
         Path appHomePath = Paths.get(System.getProperty("user.home"), ".winfoom");
         Path systemPropertiesPath = appHomePath.resolve("system.properties");
+
         if (Files.exists(systemPropertiesPath)) {
-            Resource resource = new FileSystemResource(systemPropertiesPath.toFile());
-            Properties systemProperties = PropertiesLoaderUtils.loadProperties(resource);
+            Properties systemProperties = PropertiesLoaderUtils.loadProperties(
+                    new FileSystemResource(systemPropertiesPath.toFile()));
             String existingVersion = systemProperties.getProperty("releaseVersion");
+            logger.debug("existingVersion [{}]", existingVersion);
             String actualVersion = JarUtils.getVersion(FoomApplication.class);
+            logger.debug("actualVersion [{}]", actualVersion);
+
             if (!actualVersion.equals(existingVersion)) {
+                logger.info("Different versions found: existent = {} , actual = {}", existingVersion, actualVersion);
                 Path backupDirPath = appHomePath.resolve(existingVersion + "-backup");
                 if (!Files.exists(backupDirPath)) {
                     Files.createDirectory(backupDirPath);
                 }
+
+                SwingUtils.showWarningMessage(null, "The configuration files found are from a different application version!\n" +
+                        String.format("The existent ones will be saved to %s directory", backupDirPath.toString()));
+
+                logger.info("Move the existent config files to: {} directory", backupDirPath);
                 Files.move(systemPropertiesPath, backupDirPath.resolve("system.properties"),
                         StandardCopyOption.REPLACE_EXISTING);
                 Path userPropertiesPath = appHomePath.resolve("user.properties");

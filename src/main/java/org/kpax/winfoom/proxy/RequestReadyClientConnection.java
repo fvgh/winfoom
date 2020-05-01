@@ -39,15 +39,15 @@ class RequestReadyClientConnection implements ClientConnection {
 
     private final Logger logger = LoggerFactory.getLogger(RequestReadyClientConnection.class);
 
-    private Socket socket;
+    private final Socket socket;
 
-    private InputStream inputStream;
+    private final InputStream inputStream;
 
-    private OutputStream outputStream;
+    private final OutputStream outputStream;
 
-    private SessionInputBufferImpl sessionInputBuffer;
+    private final SessionInputBufferImpl sessionInputBuffer;
 
-    private HttpRequest httpRequest;
+    private final HttpRequest httpRequest;
 
     private boolean requestPrepared;
 

@@ -52,7 +52,7 @@ class HttpClientBuilderFactory {
 
     private HttpClientBuilder createHttpClientBuilder(ProxyInfo proxyInfo) {
         RequestConfig requestConfig = systemConfig.applyConfig(RequestConfig.custom())
-                .setProxy(new HttpHost(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort()))
+                .setProxy(new HttpHost(proxyInfo.getProxyHost().getHostName(), proxyInfo.getProxyHost().getPort()))
                 .setCircularRedirectsAllowed(true)
                 .build();
         HttpClientBuilder builder = WinHttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)

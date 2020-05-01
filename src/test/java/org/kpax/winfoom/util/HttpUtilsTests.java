@@ -23,6 +23,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 /**
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 3/16/2020
@@ -34,34 +37,34 @@ class HttpUtilsTests {
     void parseUri_noQueryParams_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people";
         URI result = HttpUtils.parseUri(uri);
-        Assertions.assertEquals(uri, result.toString());
-        Assertions.assertEquals("/people", result.getPath());
+        assertEquals(uri, result.toString());
+        assertEquals("/people", result.getPath());
     }
 
     @Test
     void parseUri_oneQueryParam_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?meIncluded=not";
         URI result = HttpUtils.parseUri(uri);
-        Assertions.assertEquals(uri, result.toString());
-        Assertions.assertEquals("/people", result.getPath());
-        Assertions.assertEquals("meIncluded=not", result.getQuery());
+        assertEquals(uri, result.toString());
+        assertEquals("/people", result.getPath());
+        assertEquals("meIncluded=not", result.getQuery());
     }
 
     @Test
     void parseUri_multipleQueryParam_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?meIncluded=not&youIncluded=maybe";
         URI result = HttpUtils.parseUri(uri);
-        Assertions.assertEquals(uri, result.toString());
-        Assertions.assertEquals("/people", result.getPath());
-        Assertions.assertEquals("meIncluded=not&youIncluded=maybe", result.getQuery());
+        assertEquals(uri, result.toString());
+        assertEquals("/people", result.getPath());
+        assertEquals("meIncluded=not&youIncluded=maybe", result.getQuery());
     }
 
     @Test
     void parseUri_noQueryParamQuestionMark_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?";
         URI result = HttpUtils.parseUri(uri);
-        Assertions.assertEquals("http://happy/people", result.toString());
-        Assertions.assertNull(result.getQuery());
+        assertEquals("http://happy/people", result.toString());
+        assertNull(result.getQuery());
     }
 
     @Test
@@ -69,8 +72,8 @@ class HttpUtilsTests {
         HttpRequest request = new BasicHttpRequest("GET", "/");
         request.addHeader("Content-Type", "text/plain; charset=ISO-8859-1");
         ContentType contentType = HttpUtils.getContentType(request);
-        Assertions.assertEquals("text/plain", contentType.getMimeType());
-        Assertions.assertEquals("ISO-8859-1", contentType.getCharset().name());
+        assertEquals("text/plain", contentType.getMimeType());
+        assertEquals("ISO-8859-1", contentType.getCharset().name());
     }
 
     @Test
@@ -78,8 +81,8 @@ class HttpUtilsTests {
         HttpRequest request = new BasicHttpRequest("GET", "/");
         request.addHeader("Content-Type", "text/plain");
         ContentType contentType = HttpUtils.getContentType(request);
-        Assertions.assertEquals("text/plain", contentType.getMimeType());
-        Assertions.assertNull(contentType.getCharset());
+        assertEquals("text/plain", contentType.getMimeType());
+        assertNull(contentType.getCharset());
     }
 
 
@@ -88,29 +91,45 @@ class HttpUtilsTests {
         HttpRequest request = new BasicHttpRequest("GET", "/");
         request.addHeader("Content-Type", "text/plain; x=y; z=k");
         ContentType contentType = HttpUtils.getContentType(request);
-        Assertions.assertEquals("text/plain", contentType.getMimeType());
-        Assertions.assertNull(contentType.getCharset());
+        assertEquals("text/plain", contentType.getMimeType());
+        assertNull(contentType.getCharset());
     }
 
     @Test
     void parsePacProxyLine_directOnly_DIRECT () {
         String proxyLine = "DIRECT";
         List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
-        Assertions.assertEquals(1, proxyInfos.size());
-        Assertions.assertEquals(ProxyInfo.Type.DIRECT, proxyInfos.get(0).getType());
-        Assertions.assertNull(proxyInfos.get(0).getHost());
+        assertEquals(1, proxyInfos.size());
+        assertEquals(ProxyInfo.Type.DIRECT, proxyInfos.get(0).getType());
+        assertNull(proxyInfos.get(0).getProxyHost());
     }
 
     @Test
-    void parsePacProxyLine_proxyThenDirect_DIRECT () {
+    void parsePacProxyLine_proxyThenDirect_NoError () {
         String proxyLine = "PROXY localhost:1080;DIRECT";
 
         List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
-        Assertions.assertEquals(2, proxyInfos.size());
-        Assertions.assertEquals(ProxyInfo.Type.PROXY, proxyInfos.get(0).getType());
-        Assertions.assertEquals("localhost:1080", proxyInfos.get(0).getHost().toHostString());
-        Assertions.assertEquals(ProxyInfo.Type.DIRECT, proxyInfos.get(1).getType());
-        Assertions.assertNull(proxyInfos.get(1).getHost());
+        assertEquals(2, proxyInfos.size());
+        assertEquals(ProxyInfo.Type.PROXY, proxyInfos.get(0).getType());
+        assertEquals("localhost:1080", proxyInfos.get(0).getProxyHost().toHostString());
+        assertEquals(ProxyInfo.Type.DIRECT, proxyInfos.get(1).getType());
+        assertNull(proxyInfos.get(1).getProxyHost());
     }
+
+    @Test
+    void stripChunked_NotChunked_SameValue () {
+        String value = "bla";
+        String stripChunked = HttpUtils.stripChunked(value);
+        assertEquals(value, stripChunked);
+    }
+
+
+    @Test
+    void stripChunked_Chunked_StripChunked () {
+        String value = "bla, chunked";
+        String stripChunked = HttpUtils.stripChunked(value);
+        assertEquals("bla", stripChunked);
+    }
+
 
 }

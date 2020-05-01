@@ -75,7 +75,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
     private HttpClientBuilderFactory clientBuilderFactory;
 
     @Override
-    public void process(final ClientConnection clientConnection, ProxyInfo proxyInfo)
+    public void process(final ClientConnection clientConnection, final ProxyInfo proxyInfo)
             throws IOException, URISyntaxException {
         logger.debug("Handle non-connect request");
         HttpRequest request = clientConnection.getHttpRequest();
@@ -149,8 +149,8 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
 
             HttpClientContext context = HttpClientContext.create();
             if (proxyInfo.getType().isSocks()) {
-                InetSocketAddress proxySocketAddress = new InetSocketAddress(proxyInfo.getHost().getHostName(),
-                        proxyInfo.getHost().getPort());
+                InetSocketAddress proxySocketAddress = new InetSocketAddress(proxyInfo.getProxyHost().getHostName(),
+                        proxyInfo.getProxyHost().getPort());
                 context.setAttribute(HttpUtils.SOCKS_ADDRESS, proxySocketAddress);
             }
 

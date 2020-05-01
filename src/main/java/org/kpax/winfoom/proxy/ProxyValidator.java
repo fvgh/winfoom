@@ -63,7 +63,7 @@ public class ProxyValidator {
     private ProxyAutoConfig proxyAutoconfig;
 
     public void testProxyConfig()
-            throws IOException, CredentialException, InvalidPacFileException, PacValidationException, URISyntaxException {
+            throws IOException, CredentialException, InvalidPacFileException, URISyntaxException {
         logger.info("Test proxy config {}", userConfig);
 
         ProxyType proxyType = userConfig.getProxyType();
@@ -76,7 +76,7 @@ public class ProxyValidator {
                 logger.info("Validate {}", proxyInfo);
                 ProxyInfo.Type type = proxyInfo.getType();
                 try {
-                    HttpHost host = proxyInfo.getHost();
+                    HttpHost host = proxyInfo.getProxyHost();
                     testProxyConfig(true,
                             type.isSocks5(),
                             type.isSocks4(),

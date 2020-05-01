@@ -98,7 +98,7 @@ class ClientConnectionHandler {
                 ProxyInfo proxyInfo = itr.next();
 
                 if (itr.hasNext()) {
-                    if (proxyBlacklist.isBlacklisted(proxyInfo)) {
+                    if (proxyBlacklist.checkBlacklist(proxyInfo)) {
                         logger.debug("Blacklisted proxyInfo {} - skip it", proxyInfo);
                         continue;
                     }

@@ -47,8 +47,6 @@ public final class HttpUtils {
 
     public static final String SOCKS_ADDRESS = "socks.address";
 
-    private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
-
     private HttpUtils() {
     }
 
@@ -64,7 +62,7 @@ public final class HttpUtils {
     }
 
     public static String stripChunked(String value) {
-        return Arrays.stream(value.split(","))
+        return Arrays.stream(value.split(",")).map(String::trim)
                 .filter((item) -> !HTTP.CHUNK_CODING.equalsIgnoreCase(item))
                 .collect(Collectors.joining(","));
     }
@@ -178,7 +176,7 @@ public final class HttpUtils {
     }
 
     public static boolean isConnectionRefused(Exception e) {
-        return e instanceof SocketException && ((SocketException) e).getMessage().startsWith("Connection refused");
+        return e instanceof SocketException && e.getMessage().startsWith("Connection refused");
     }
 
 }

@@ -21,31 +21,31 @@ public final class ProxyInfo {
 
     private final Type type;
 
-    private final HttpHost host;
+    private final HttpHost proxyHost;
 
     public ProxyInfo(Type type) {
         this(type, null);
     }
 
-    public ProxyInfo(Type type, HttpHost host) {
+    public ProxyInfo(Type type, HttpHost proxyHost) {
         Validate.notNull(type, "type cannot be null");
         this.type = type;
-        this.host = host;
+        this.proxyHost = proxyHost;
     }
 
     public Type getType() {
         return type;
     }
 
-    public HttpHost getHost() {
-        return host;
+    public HttpHost getProxyHost() {
+        return proxyHost;
     }
 
     @Override
     public String toString() {
         return "ProxyInfo{" +
                 "type=" + type +
-                ", host=" + host +
+                ", host=" + proxyHost +
                 '}';
     }
 
@@ -55,13 +55,13 @@ public final class ProxyInfo {
         if (o == null || getClass() != o.getClass()) return false;
         ProxyInfo proxyInfo = (ProxyInfo) o;
         return type == proxyInfo.type &&
-                Objects.equals(host != null ? host.toHostString() : null,
-                        proxyInfo.host != null ? proxyInfo.host.toHostString() : null);
+                Objects.equals(proxyHost != null ? proxyHost.toHostString() : null,
+                        proxyInfo.proxyHost != null ? proxyInfo.proxyHost.toHostString() : null);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, host != null ? host.toHostString() : null);
+        return Objects.hash(type, proxyHost != null ? proxyHost.toHostString() : null);
     }
 
     public enum Type {

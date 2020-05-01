@@ -25,11 +25,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-class ProxyBlacklist {
+public class ProxyBlacklist {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    /**
+     * Key = the blacklisted ProxyInfo<br>
+     * Value = the blacklist timeout Instant
+     */
     private final Map<ProxyInfo, Instant> blacklistMap = new ConcurrentHashMap<>();
+
+    private final ChronoUnit temporalUnit = ChronoUnit.MINUTES;
 
     @Autowired
     private UserConfig userConfig;
@@ -38,10 +44,9 @@ class ProxyBlacklist {
         logger.debug("Attempt to blacklist proxy {}", proxyInfo);
         return blacklistMap.compute(proxyInfo, (key, value) -> {
             Instant now = Instant.now();
-            if (value == null || value.plus(userConfig.getBlacklistTimeout(),
-                    ChronoUnit.MINUTES).isBefore(now)) {
+            if (value == null || value.isBefore(now)) {
                 Instant timeoutInstant = now.plus(userConfig.getBlacklistTimeout(),
-                        ChronoUnit.MINUTES);
+                        temporalUnit);
                 logger.debug("Blacklisted until {}", timeoutInstant);
                 return timeoutInstant;
             } else {
@@ -51,26 +56,28 @@ class ProxyBlacklist {
         });
     }
 
-    boolean isBlacklisted(ProxyInfo proxyInfo) {
-        Instant instant = blacklistMap.get(proxyInfo);
-
-        if (instant != null && instant.plus(userConfig.getBlacklistTimeout(),
-                ChronoUnit.MINUTES).isAfter(Instant.now())) {
-            return true;
-        }
-        return false;
+    /**
+     * It verifies whether a proxy is blacklisted.<br>
+     * If the proxy is in the blacklist map but expired, will be removed.
+     *
+     * @param proxyInfo the proxy to be checked
+     * @return <code>true</code> iff the proxy is blacklisted
+     */
+    boolean checkBlacklist(ProxyInfo proxyInfo) {
+        Instant timeoutInstant = blacklistMap.computeIfPresent(proxyInfo, (key, value) -> {
+            return value.isBefore(Instant.now()) ? null : value;
+        });
+        return timeoutInstant != null;
     }
 
     int clear() {
-        Instant now = Instant.now();
-        long count = blacklistMap.values().stream()
-                .filter(i -> i.plus(userConfig.getBlacklistTimeout(),
-                        ChronoUnit.MINUTES).isAfter(Instant.now())).count();
+        long count = blacklistMap.keySet().stream()
+                .filter(this::checkBlacklist).count();
         blacklistMap.clear();
         return (int) count;
     }
 
     public Map<ProxyInfo, Instant> getBlacklistMap() {
-        return Collections.unmodifiableMap(blacklistMap) ;
+        return Collections.unmodifiableMap(blacklistMap);
     }
 }

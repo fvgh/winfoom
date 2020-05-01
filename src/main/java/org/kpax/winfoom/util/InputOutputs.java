@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -150,7 +151,7 @@ public final class InputOutputs {
 
     public static boolean emptyDirectory(File directory) {
         Validate.isTrue(directory.isDirectory());
-        for (File file : directory.listFiles()) {
+        for (File file : Objects.requireNonNull(directory.listFiles())) {
             deleteFile(file);
         }
         return directory.listFiles().length == 0;

@@ -26,8 +26,6 @@ import org.springframework.context.annotation.Primary;
 @SpringBootApplication
 public class FoomApplicationTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(FoomApplicationTest.class);
-
     public static void main(String[] args) {
         SpringApplication.run(FoomApplicationTest.class, args);
     }

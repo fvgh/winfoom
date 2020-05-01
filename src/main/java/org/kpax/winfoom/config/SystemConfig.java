@@ -180,7 +180,7 @@ public class SystemConfig {
                 Value valueAnnotation = field.getAnnotation(Value.class);
                 if (valueAnnotation != null) {
                     String value = valueAnnotation.value();
-                    String propName = value.replaceAll("[\\$\\{\\}]", "").split(":")[0];
+                    String propName = value.replaceAll("[${}]", "").split(":")[0];
                     config.setProperty(propName, field.get(this));
                 }
             }

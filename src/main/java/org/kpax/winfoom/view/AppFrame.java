@@ -40,6 +40,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.UnknownHostException;
+import java.util.Objects;
 
 @Profile("!test")
 @Component
@@ -217,7 +218,7 @@ public class AppFrame extends JFrame {
                 addProxyType();
                 ProxyType proxyType = (ProxyType) proxyTypeCombo.getSelectedItem();
                 userConfig.setProxyType(proxyType);
-                switch (proxyType) {
+                switch (Objects.requireNonNull(proxyType)) {
                     case HTTP:
                     case SOCKS4:
                         configureForHttp();

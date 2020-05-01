@@ -76,10 +76,7 @@ class CustomProxyClientTests {
                 .withName("AuthenticatedUpstreamProxy")
                 .withProxyAuthenticator(new ProxyAuthenticator() {
                     public boolean authenticate(String userName, String password) {
-                        if (userName.equals(USERNAME) && password.equals(PASSWORD)) {
-                            return true;
-                        }
-                        return false;
+                        return userName.equals(USERNAME) && password.equals(PASSWORD);
                     }
 
                     @Override
@@ -105,8 +102,7 @@ class CustomProxyClientTests {
     }
 
     @Test
-    void tunnel_rightProxyWrongCredentials_TunnelRefusedException()
-            throws IOException, HttpException {
+    void tunnel_rightProxyWrongCredentials_TunnelRefusedException() {
         HttpHost target = HttpHost.create("https://example.com");
         HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
         credentialsProvider.clear();
@@ -121,7 +117,7 @@ class CustomProxyClientTests {
     }
 
     @Test
-    void tunnel_wrongProxyRightCredentials_UnknownHostException() throws IOException, HttpException {
+    void tunnel_wrongProxyRightCredentials_UnknownHostException() {
         HttpHost target = HttpHost.create("https://example.com");
         HttpHost proxy = new HttpHost("wronghost", userConfig.getProxyPort(), "http");
         credentialsProvider.clear();

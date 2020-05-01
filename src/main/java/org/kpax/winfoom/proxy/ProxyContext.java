@@ -85,6 +85,8 @@ public class ProxyContext implements AutoCloseable {
                 Authenticator.setDefault(null);
             }
 
+            proxyBlacklist.clear();
+
             return true;
         }
         return false;

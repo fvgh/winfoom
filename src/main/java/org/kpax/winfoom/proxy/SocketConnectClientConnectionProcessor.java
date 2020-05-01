@@ -54,7 +54,7 @@ class SocketConnectClientConnectionProcessor implements ClientConnectionProcesso
         Proxy proxy;
         if (proxyInfo.getType().isSocks()) {
             proxy = new Proxy(Proxy.Type.SOCKS,
-                    new InetSocketAddress(proxyInfo.getHost().getHostName(), proxyInfo.getHost().getPort()));
+                    new InetSocketAddress(proxyInfo.getProxyHost().getHostName(), proxyInfo.getProxyHost().getPort()));
         } else {
             proxy = Proxy.NO_PROXY;
         }
@@ -72,7 +72,6 @@ class SocketConnectClientConnectionProcessor implements ClientConnectionProcesso
                 if (StringUtils.startsWithIgnoreCase(e.getMessage(), "Connection refused")) {
                     throw new ConnectException(e.getMessage());
                 }
-                ;
             }
             logger.debug("Connected to {}", target);
 
@@ -86,6 +85,7 @@ class SocketConnectClientConnectionProcessor implements ClientConnectionProcesso
             try {
                 // The proxy facade mediates the full duplex communication
                 // between the client and the remote proxy
+                // This usually ends on connection reset, timeout or any other error
                 InputOutputs.duplex(proxyContext.executorService(),
                         socket.getInputStream(),
                         socket.getOutputStream(),

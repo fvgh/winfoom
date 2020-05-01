@@ -38,7 +38,7 @@ public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
             final HttpHost host,
             final InetSocketAddress remoteAddress,
             final InetSocketAddress localAddress,
-            final HttpContext context) throws IOException, ConnectTimeoutException {
+            final HttpContext context) throws IOException {
         Socket currentSocket = socket != null ? socket : createSocket(context);
         if (localAddress != null) {
             currentSocket.bind(localAddress);
