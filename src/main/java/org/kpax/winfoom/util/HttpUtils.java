@@ -23,8 +23,6 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.protocol.HTTP;
 import org.kpax.winfoom.proxy.ProxyInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -172,7 +170,7 @@ public final class HttpUtils {
                 proxyInfos.add(new ProxyInfo(type, HttpHost.create(split[1])));
             }
         }
-        return proxyInfos;
+        return Collections.unmodifiableList(proxyInfos);
     }
 
     public static boolean isConnectionRefused(Exception e) {

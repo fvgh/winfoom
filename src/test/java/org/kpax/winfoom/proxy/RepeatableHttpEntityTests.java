@@ -23,11 +23,18 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.TestConstants;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
@@ -45,8 +52,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 2/29/2020
  */
-@Timeout(10)
+@ExtendWith(SpringExtension.class)
+@ActiveProfiles("test")
+@SpringBootTest(classes = FoomApplicationTest.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Timeout(10)
 @Disabled
 class RepeatableHttpEntityTests {
 
@@ -63,6 +74,9 @@ class RepeatableHttpEntityTests {
     private int bufferSize = 1024;
 
     private Path tempDirectory;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
     @BeforeAll
     void before() throws IOException {
@@ -81,7 +95,7 @@ class RepeatableHttpEntityTests {
                     new Thread(() -> {
 
                         // Handle this connection.
-                        try (ClientConnection clientConnection = ClientConnection.create(socket)) {
+                        try (ClientConnection clientConnection = applicationContext.getBean(ClientConnection.class, socket)) {
                             RepeatableHttpEntity requestEntity;
                             HttpRequest request = clientConnection.getHttpRequest();
                             try {

@@ -13,11 +13,28 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.http.RequestLine;
+import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.util.HttpUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Select the appropriate {@link ClientConnectionProcessor} implementation.
  */
-public interface ClientProcessorSelector {
+@Component
+class ClientProcessorSelector {
+
+    @Autowired
+    private UserConfig userConfig;
+
+    @Autowired
+    private HttpConnectClientConnectionProcessor httpConnectClientConnectionProcessor;
+
+    @Autowired
+    private SocketConnectClientConnectionProcessor socketConnectClientConnectionProcessor;
+
+    @Autowired
+    private NonConnectClientConnectionProcessor nonConnectClientConnectionProcessor;
 
     /**
      * Select the appropriate {@link ClientConnectionProcessor} implementation to process the client's connection based on the request info and the proxy type.
@@ -26,6 +43,14 @@ public interface ClientProcessorSelector {
      * @param proxyInfo   the proxy info used to make the remote HTTP request.
      * @return the processor instance.
      */
-    ClientConnectionProcessor selectClientProcessor(RequestLine requestLine, ProxyInfo proxyInfo);
-
+    public ClientConnectionProcessor selectClientProcessor(RequestLine requestLine, ProxyInfo proxyInfo) {
+        if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
+            if (proxyInfo.getType().isSocks() || proxyInfo.getType().isDirect()) {
+                return socketConnectClientConnectionProcessor;
+            }
+            return httpConnectClientConnectionProcessor;
+        } else {
+            return nonConnectClientConnectionProcessor;
+        }
+    }
 }

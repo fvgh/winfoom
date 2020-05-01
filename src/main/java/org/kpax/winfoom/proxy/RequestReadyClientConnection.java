@@ -19,22 +19,35 @@ import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.apache.http.util.EntityUtils;
+import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.exception.InvalidPacFileException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
 import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
- *
  * @author Eugen Covaci
  */
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+@Component
 class RequestReadyClientConnection implements ClientConnection {
 
     private final Logger logger = LoggerFactory.getLogger(RequestReadyClientConnection.class);
@@ -49,6 +62,21 @@ class RequestReadyClientConnection implements ClientConnection {
 
     private final HttpRequest httpRequest;
 
+    private final RequestLine requestLine;
+
+
+    @Autowired
+    private UserConfig userConfig;
+
+    @Autowired
+    private ProxyAutoConfig proxyAutoconfig;
+
+    @Autowired
+    private ProxyBlacklist proxyBlacklist;
+
+    @Autowired
+    private ClientProcessorSelector clientProcessorSelector;
+
     private boolean requestPrepared;
 
     private boolean lastResort;
@@ -56,6 +84,7 @@ class RequestReadyClientConnection implements ClientConnection {
     RequestReadyClientConnection(Socket socket) throws IOException, HttpException {
         this.socket = socket;
         this.inputStream = socket.getInputStream();
+        this.outputStream = socket.getOutputStream();
         this.sessionInputBuffer = new SessionInputBufferImpl(
                 new HttpTransportMetricsImpl(),
                 InputOutputs.DEFAULT_BUFFER_SIZE,
@@ -64,7 +93,7 @@ class RequestReadyClientConnection implements ClientConnection {
                 StandardCharsets.UTF_8.newDecoder());
         this.sessionInputBuffer.bind(this.inputStream);
         this.httpRequest = new DefaultHttpRequestParser(this.sessionInputBuffer).parse();
-        this.outputStream = socket.getOutputStream();
+        this.requestLine = httpRequest.getRequestLine();
     }
 
     @Override
@@ -165,4 +194,81 @@ class RequestReadyClientConnection implements ClientConnection {
     public void close() {
         InputOutputs.close(socket);
     }
+
+    @Override
+    public RequestLine getRequestLine() {
+        return requestLine;
+    }
+
+    @Override
+    public List<ProxyInfo> getProxyInfoList() throws URISyntaxException, InvalidPacFileException {
+        List<ProxyInfo> proxyInfoList;
+        if (userConfig.getProxyType().isPac()) {
+            HttpHost host = HttpHost.create(requestLine.getUri());
+            proxyInfoList = proxyAutoconfig.findProxyForURL(new URI(host.toURI()));
+        } else {
+
+            // Manual proxy case
+            HttpHost proxyHost = null;
+            if (!userConfig.getProxyType().isDirect()) {
+                proxyHost = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
+            }
+            proxyInfoList = Collections.singletonList(new ProxyInfo(userConfig.getProxyType().toProxyInfoType(), proxyHost));
+        }
+        return proxyInfoList;
+    }
+
+
+    @Override
+    public void handleRequest() throws URISyntaxException, InvalidPacFileException {
+        logger.debug("Process request: {}", requestLine);
+
+        List<ProxyInfo> proxyInfos = getProxyInfoList();
+
+        logger.debug("proxyInfos {}", proxyInfos);
+
+        ClientConnectionProcessor connectionProcessor;
+        for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
+            ProxyInfo proxyInfo = itr.next();
+
+            if (itr.hasNext()) {
+                if (proxyBlacklist.checkBlacklist(proxyInfo)) {
+                    logger.debug("Blacklisted proxy {} - skip it", proxyInfo);
+                    continue;
+                }
+            } else {
+                lastResort();
+            }
+
+            connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
+
+            try {
+                logger.debug("Process connection with proxy: {}", proxyInfo);
+                connectionProcessor.process(this, proxyInfo);
+
+                // Success, stop the iteration
+                break;
+            } catch (ConnectException e) {
+                logger.debug("Connection error", e);
+                if (itr.hasNext()) {
+                    logger.debug("Failed to process connection with proxy: {}, retry with the next one", proxyInfo);
+                    proxyBlacklist.blacklist(proxyInfo);
+                } else {
+                    logger.debug("Failed to process connection with proxy: {}, send the error response", proxyInfo);
+
+                    // Cannot connect to the remote proxy
+                    writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
+                }
+            } catch (Exception e) {
+                logger.debug("Generic error, send the error response", e);
+
+                // Any other error, including client errors
+                writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+                break;
+            }
+        }
+        logger.debug("Done handling request: {}", requestLine);
+
+    }
+
 }

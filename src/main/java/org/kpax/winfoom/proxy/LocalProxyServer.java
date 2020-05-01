@@ -79,9 +79,8 @@ class LocalProxyServer implements Closeable {
                         socket.setSoTimeout(systemConfig.getSocketSoTimeout() * 1000);
                         proxyContext.executorService().execute(() -> {
                             try {
-                                applicationContext.getBean(ClientConnectionHandler.class)
-                                        .bind(socket)
-                                        .handleConnection();
+                                applicationContext.getBean(ClientConnection.class, socket)
+                                        .handleRequest();
                             } catch (Exception e) {
                                 logger.error("Error on handling connection", e);
                             }

@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Timeout(10)
-public class SocksProxyClientConnectionHandlerTests {
+public class DirectProxyClientConnectionTests {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final int socketTimeout = 3; // seconds
@@ -58,8 +58,6 @@ public class SocksProxyClientConnectionHandlerTests {
     @Autowired
     private ConnectionPoolingManager connectionPoolingManager;
 
-    private ClientAndServer remoteProxyServer;
-
     private ServerSocket serverSocket;
 
     private HttpServer remoteServer;
@@ -68,12 +66,11 @@ public class SocksProxyClientConnectionHandlerTests {
     void beforeEach() {
         when(userConfig.getProxyHost()).thenReturn("localhost");
         when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+        when(userConfig.getProxyType()).thenReturn(ProxyType.DIRECT);
     }
 
     @BeforeAll
     void before() throws IOException {
-        remoteProxyServer = ClientAndServer.startClientAndServer(PROXY_PORT);
-
         remoteServer = ServerBootstrap.bootstrap().registerHandler("/get", new HttpRequestHandler() {
 
             @Override
@@ -97,7 +94,7 @@ public class SocksProxyClientConnectionHandlerTests {
 
                         // Handle this connection.
                         try {
-                            applicationContext.getBean(ClientConnectionHandler.class).bind(socket).handleConnection();
+                            applicationContext.getBean(ClientConnection.class, socket).handleRequest();
                         } catch (Exception e) {
                             logger.error("Error on handling connection", e);
                         }
@@ -112,8 +109,7 @@ public class SocksProxyClientConnectionHandlerTests {
 
     @Test
     @Order(0)
-    void socks4Proxy_NonConnect_CorrectResponse() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.SOCKS4);
+    void directProxy_NonConnect_CorrectResponse() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             RequestConfig config = RequestConfig.custom()
@@ -133,44 +129,7 @@ public class SocksProxyClientConnectionHandlerTests {
 
     @Test
     @Order(1)
-    void socks5Proxy_NonConnect_CorrectResponse() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.SOCKS5);
-        HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            RequestConfig config = RequestConfig.custom()
-                    .setProxy(localProxy)
-                    .build();
-            HttpHost target = HttpHost.create("http://localhost:" + remoteServer.getLocalPort());
-            HttpGet request = new HttpGet("/get");
-            request.setConfig(config);
-
-            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-                String responseBody = EntityUtils.toString(response.getEntity());
-                assertEquals("12345", responseBody);
-            }
-        }
-    }
-
-    @Test
-    @Order(2)
-    void socks5Proxy_Connect_200OK() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.SOCKS5);
-        HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create()
-                .setProxy(localProxy).build()) {
-            HttpHost target = HttpHost.create("http://localhost:" + remoteServer.getLocalPort());
-            HttpRequest request = new BasicHttpRequest("CONNECT", "localhost:" + remoteServer.getLocalPort());
-            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            }
-        }
-    }
-
-    @Test
-    @Order(3)
-    void socks4Proxy_Connect_200OK() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.SOCKS4);
+    void directProxy_Connect_200OK() throws IOException {
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setProxy(localProxy).build()) {
@@ -189,7 +148,6 @@ public class SocksProxyClientConnectionHandlerTests {
         } catch (IOException e) {
             // Ignore
         }
-        remoteProxyServer.stop();
         remoteServer.stop();
     }
 }

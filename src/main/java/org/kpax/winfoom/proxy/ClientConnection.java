@@ -12,14 +12,12 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.ProtocolVersion;
+import org.apache.http.*;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.kpax.winfoom.exception.InvalidPacFileException;
 import org.kpax.winfoom.util.InputOutputs;
 
 import java.io.Closeable;
@@ -27,7 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * Encapsulates a client's connection with a valid (parsable) HTTP request.
@@ -127,17 +127,24 @@ public interface ClientConnection extends Closeable {
      */
     void lastResort();
 
-    /**
-     * Creates a {@link RequestReadyClientConnection} instance.
-     *
-     * @param socket the client's socket.
-     * @return a new instance if the HTTP request is parsable.
-     * @throws IOException
-     * @throws HttpException
-     */
-    static ClientConnection create(Socket socket) throws IOException, HttpException {
-        return new RequestReadyClientConnection(socket);
-    }
+    RequestLine getRequestLine();
 
+    /**
+     * Get the proxy list for this request.
+     *
+     * @return the proxy list.
+     * @throws URISyntaxException
+     * @throws InvalidPacFileException
+     */
+    List<ProxyInfo> getProxyInfoList() throws URISyntaxException, InvalidPacFileException;
+
+    /**
+     * Process the client connection with each available proxy.<br>
+     * Un un-responding proxy is blacklisted only if it is not the last
+     * one available.
+     *
+     * @throws Exception
+     */
+    void handleRequest() throws Exception;
 
 }
