@@ -82,6 +82,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
 
         if (!clientConnection.isRequestPrepared()) {
 
+            // Prepare the request for execution
             AbstractHttpEntity entity;
             if (request instanceof HttpEntityEnclosingRequest) {
                 logger.debug("Set enclosing entity");
@@ -182,10 +183,11 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
      */
     private void handleResponse(final CloseableHttpResponse response,
                                 ClientConnection clientConnection) throws IOException {
+        StatusLine statusLine = response.getStatusLine();
         if (logger.isDebugEnabled()) {
-            logger.debug("Write status line: {}", response.getStatusLine());
+            logger.debug("Write status line: {}", statusLine);
         }
-        clientConnection.write(response.getStatusLine());
+        clientConnection.write(statusLine);
 
         for (Header header : response.getAllHeaders()) {
             if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {

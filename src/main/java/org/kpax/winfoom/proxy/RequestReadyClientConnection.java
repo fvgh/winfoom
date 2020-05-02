@@ -185,10 +185,9 @@ class RequestReadyClientConnection implements ClientConnection {
     }
 
     @Override
-    public void lastResort() {
-        this.lastResort = true;
+    public boolean isClosed() {
+        return socket.isClosed();
     }
-
 
     @Override
     public void close() {
@@ -201,71 +200,77 @@ class RequestReadyClientConnection implements ClientConnection {
     }
 
     @Override
-    public List<ProxyInfo> getProxyInfoList() throws URISyntaxException, InvalidPacFileException {
-        List<ProxyInfo> proxyInfoList;
-        if (userConfig.getProxyType().isPac()) {
-            HttpHost host = HttpHost.create(requestLine.getUri());
-            proxyInfoList = proxyAutoconfig.findProxyForURL(new URI(host.toURI()));
-        } else {
+    public void handleRequest() {
+        logger.debug("Handle request: {}", requestLine);
 
-            // Manual proxy case
-            HttpHost proxyHost = null;
-            if (!userConfig.getProxyType().isDirect()) {
-                proxyHost = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
-            }
-            proxyInfoList = Collections.singletonList(new ProxyInfo(userConfig.getProxyType().toProxyInfoType(), proxyHost));
-        }
-        return proxyInfoList;
-    }
-
-
-    @Override
-    public void handleRequest() throws URISyntaxException, InvalidPacFileException {
-        logger.debug("Process request: {}", requestLine);
-
-        List<ProxyInfo> proxyInfos = getProxyInfoList();
-
-        logger.debug("proxyInfos {}", proxyInfos);
-
-        ClientConnectionProcessor connectionProcessor;
-        for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
-            ProxyInfo proxyInfo = itr.next();
-
-            if (itr.hasNext()) {
-                if (proxyBlacklist.checkBlacklist(proxyInfo)) {
-                    logger.debug("Blacklisted proxy {} - skip it", proxyInfo);
-                    continue;
-                }
+        try {
+            List<ProxyInfo> proxyInfoList;
+            if (userConfig.getProxyType().isPac()) {
+                HttpHost host = HttpHost.create(requestLine.getUri());
+                proxyInfoList = proxyAutoconfig.findProxyForURL(new URI(host.toURI()));
             } else {
-                lastResort();
+
+                // Manual proxy case
+                HttpHost proxyHost = userConfig.getProxyType().isDirect() ? null :
+                        new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort());
+
+                proxyInfoList = Collections.singletonList(new ProxyInfo(userConfig.getProxyType().toProxyInfoType(), proxyHost));
             }
 
-            connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
+            logger.debug("proxyInfoList {}", proxyInfoList);
 
-            try {
-                logger.debug("Process connection with proxy: {}", proxyInfo);
-                connectionProcessor.process(this, proxyInfo);
+            ClientConnectionProcessor connectionProcessor;
+            for (Iterator<ProxyInfo> itr = proxyInfoList.iterator(); itr.hasNext(); ) {
+                ProxyInfo proxyInfo = itr.next();
 
-                // Success, stop the iteration
-                break;
-            } catch (ConnectException e) {
-                logger.debug("Connection error", e);
                 if (itr.hasNext()) {
-                    logger.debug("Failed to process connection with proxy: {}, retry with the next one", proxyInfo);
-                    proxyBlacklist.blacklist(proxyInfo);
+                    if (proxyBlacklist.checkBlacklist(proxyInfo)) {
+                        logger.debug("Blacklisted proxy {} - skip it", proxyInfo);
+                        continue;
+                    }
                 } else {
-                    logger.debug("Failed to process connection with proxy: {}, send the error response", proxyInfo);
-
-                    // Cannot connect to the remote proxy
-                    writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
+                    this.lastResort = true;
                 }
-            } catch (Exception e) {
-                logger.debug("Generic error, send the error response", e);
 
-                // Any other error, including client errors
-                writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
-                break;
+                connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
+
+                try {
+                    logger.debug("Process connection with proxy: {}", proxyInfo);
+                    connectionProcessor.process(this, proxyInfo);
+
+                    // Success, break the iteration
+                    break;
+                } catch (ConnectException e) {
+                    logger.debug("Connection error", e);
+                    if (itr.hasNext()) {
+                        logger.debug("Failed to process connection with proxy: {}, retry with the next one", proxyInfo);
+                        proxyBlacklist.blacklist(proxyInfo);
+                    } else {
+                        logger.debug("Failed to process connection with proxy: {}, send the error response", proxyInfo);
+
+                        // Cannot connect to the remote proxy
+                        writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
+                    }
+                } catch (Exception e) {
+                    logger.debug("Generic error, send the error response", e);
+
+                    // Any other error, including client errors
+                    writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+                    break;
+                }
             }
+        } catch (InvalidPacFileException e) {
+            writeErrorResponse(requestLine.getProtocolVersion(),
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                    "Invalid Proxy Auto Config file");
+            logger.debug("Error on calling PAC function", e);
+        } catch (URISyntaxException e) {
+            writeErrorResponse(requestLine.getProtocolVersion(),
+                    HttpStatus.SC_BAD_REQUEST,
+                    "Invalid request URI");
+            logger.debug("Error on calling PAC function", e);
+        } finally {
+            InputOutputs.close(socket);
         }
         logger.debug("Done handling request: {}", requestLine);
 

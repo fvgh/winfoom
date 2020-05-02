@@ -12,10 +12,13 @@
 
 package org.kpax.winfoom.util;
 
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpVersion;
 import org.apache.http.entity.ContentType;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpRequest;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.kpax.winfoom.proxy.ProxyInfo;
 
@@ -96,7 +99,7 @@ class HttpUtilsTests {
     }
 
     @Test
-    void parsePacProxyLine_directOnly_DIRECT () {
+    void parsePacProxyLine_directOnly_DIRECT() {
         String proxyLine = "DIRECT";
         List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
         assertEquals(1, proxyInfos.size());
@@ -105,7 +108,7 @@ class HttpUtilsTests {
     }
 
     @Test
-    void parsePacProxyLine_proxyThenDirect_NoError () {
+    void parsePacProxyLine_proxyThenDirect_NoError() {
         String proxyLine = "PROXY localhost:1080;DIRECT";
 
         List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
@@ -117,7 +120,7 @@ class HttpUtilsTests {
     }
 
     @Test
-    void stripChunked_NotChunked_SameValue () {
+    void stripChunked_NotChunked_SameValue() {
         String value = "bla";
         String stripChunked = HttpUtils.stripChunked(value);
         assertEquals(value, stripChunked);
@@ -125,11 +128,10 @@ class HttpUtilsTests {
 
 
     @Test
-    void stripChunked_Chunked_StripChunked () {
+    void stripChunked_Chunked_StripChunked() {
         String value = "bla, chunked";
         String stripChunked = HttpUtils.stripChunked(value);
         assertEquals("bla", stripChunked);
     }
-
 
 }

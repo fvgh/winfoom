@@ -465,6 +465,7 @@ public class AppFrame extends JFrame {
         fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
         fieldPanel.add(getTestUrlJTextField());
 
+        getBtnCancelBlacklist().setEnabled(false);
         getBtnCancelBlacklist().setVisible(true);
     }
 

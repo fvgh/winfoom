@@ -122,29 +122,20 @@ public interface ClientConnection extends Closeable {
      */
     boolean isLastResort();
 
-    /**
-     * Signals that there are no more tries.
-     */
-    void lastResort();
-
-    RequestLine getRequestLine();
+    boolean isClosed();
 
     /**
-     * Get the proxy list for this request.
      *
-     * @return the proxy list.
-     * @throws URISyntaxException
-     * @throws InvalidPacFileException
+     * @return the request's line
      */
-    List<ProxyInfo> getProxyInfoList() throws URISyntaxException, InvalidPacFileException;
+    RequestLine getRequestLine();
 
     /**
      * Process the client connection with each available proxy.<br>
      * Un un-responding proxy is blacklisted only if it is not the last
      * one available.
      *
-     * @throws Exception
      */
-    void handleRequest() throws Exception;
+    void handleRequest();
 
 }

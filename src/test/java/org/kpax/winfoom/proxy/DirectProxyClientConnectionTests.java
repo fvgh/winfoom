@@ -19,7 +19,6 @@ import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.TestConstants;
 import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.connection.ConnectionPoolingManager;
-import org.mockserver.integration.ClientAndServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
