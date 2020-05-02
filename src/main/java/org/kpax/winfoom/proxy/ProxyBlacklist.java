@@ -70,11 +70,15 @@ public class ProxyBlacklist {
         return timeoutInstant != null;
     }
 
-    int clear() {
+    public int clear() {
         long count = blacklistMap.keySet().stream()
                 .filter(this::checkBlacklist).count();
         blacklistMap.clear();
         return (int) count;
+    }
+
+    public ChronoUnit getTemporalUnit () {
+        return temporalUnit;
     }
 
     public Map<ProxyInfo, Instant> getBlacklistMap() {

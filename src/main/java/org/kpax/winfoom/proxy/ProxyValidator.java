@@ -52,12 +52,14 @@ public class ProxyValidator {
     @Autowired
     private ProxyConfig proxyConfig;
 
-
     @Autowired
     private SystemConfig systemConfig;
 
     @Autowired
     private ProxyAutoConfig proxyAutoconfig;
+
+    @Autowired
+    private ProxyBlacklist proxyBlacklist;
 
     public void testProxyConfig()
             throws IOException, CredentialException, InvalidPacFileException, URISyntaxException {
@@ -80,6 +82,7 @@ public class ProxyValidator {
                     break;
                 } catch (HttpHostConnectException e) {
                     if (itr.hasNext()) {
+                        proxyBlacklist.blacklist(proxyInfo);
                         logger.warn("Error on validate this proxy, will try the next one");
                     } else {
                         throw e;

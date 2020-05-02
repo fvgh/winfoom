@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.HttpHostConnectException;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.proxy.ProxyBlacklist;
 import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.proxy.ProxyValidator;
 import org.kpax.winfoom.util.HttpUtils;
@@ -66,6 +67,9 @@ public class AppFrame extends JFrame {
 
     @Autowired
     private ProxyValidator proxyValidator;
+
+    @Autowired
+    private ProxyBlacklist proxyBlacklist;
 
     private JLabel proxyTypeLabel;
     private JComboBox<ProxyConfig.Type> proxyTypeCombo;
@@ -378,7 +382,7 @@ public class AppFrame extends JFrame {
             btnCancelBlacklist = new JButton("Cancel blacklist");
             btnCancelBlacklist.setMargin(new Insets(2, 6, 2, 6));
             btnCancelBlacklist.addActionListener(e -> {
-                int clearCount = proxyContext.clearBlacklist();
+                int clearCount = proxyBlacklist.clear();
                 SwingUtils.showInfoMessage(this, String.format("Found: %d blacklisted proxies!", clearCount));
             });
             btnCancelBlacklist.setIcon(new TunedImageIcon("clear-blacklist.png"));
@@ -460,7 +464,8 @@ public class AppFrame extends JFrame {
         labelPanel.add(getTestUrlLabel());
 
         fieldPanel.add(getPacFileJTextField());
-        fieldPanel.add(wrapToPanel(getBlacklistTimeoutJSpinner(), new JLabel(" (min)")));
+        fieldPanel.add(wrapToPanel(getBlacklistTimeoutJSpinner(),
+                new JLabel(" (" + proxyBlacklist.getTemporalUnit().toString().toLowerCase() + ")")));
         fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
         fieldPanel.add(getTestUrlJTextField());
 

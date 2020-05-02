@@ -117,10 +117,6 @@ public class ProxyContext implements AutoCloseable {
 
     }
 
-    public int clearBlacklist() {
-        return proxyBlacklist.clear();
-    }
-
     public static class DefaultThreadFactory implements ThreadFactory {
         private static final AtomicInteger poolNumber = new AtomicInteger(1);
         private final ThreadGroup group;
