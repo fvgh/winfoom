@@ -20,6 +20,7 @@ import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.proxy.ProxyType;
 import org.kpax.winfoom.util.CommandExecutor;
 import org.slf4j.Logger;
@@ -43,9 +44,12 @@ import java.util.Base64;
  * @author Eugen Covaci
  */
 @Component
-@PropertySource(value = "file:${user.home}/.winfoom/user.properties", ignoreResourceNotFound = true)
-public class UserConfig {
-    private final Logger logger = LoggerFactory.getLogger(UserConfig.class);
+@PropertySource(value = "file:${user.home}/.winfoom/" + ProxyConfig.FILENAME, ignoreResourceNotFound = true)
+public class ProxyConfig {
+
+    public static final String FILENAME = "proxy.properties";
+
+    private final Logger logger = LoggerFactory.getLogger(ProxyConfig.class);
 
     @Value("${local.port:3129}")
     private Integer localPort;
@@ -60,7 +64,7 @@ public class UserConfig {
     private Integer proxyPort;
 
     @Value("${proxy.type:HTTP}")
-    private ProxyType proxyType;
+    private Type proxyType;
 
     @Value("${proxy.username:#{null}}")
     private String proxyUsername;
@@ -93,10 +97,10 @@ public class UserConfig {
                         if (elements.length > 1) {
                             if (elements[0].startsWith("http=")) {
                                 proxyHost = elements[0].substring("http=".length());
-                                proxyType = ProxyType.HTTP;
+                                proxyType = Type.HTTP;
                             } else if (elements[0].startsWith("socks=")) {
                                 proxyHost = elements[0].substring("socks=".length());
-                                proxyType = ProxyType.SOCKS5;
+                                proxyType = Type.SOCKS5;
                             } else {
                                 proxyHost = elements[0];
                             }
@@ -160,7 +164,7 @@ public class UserConfig {
         return proxyType;
     }
 
-    public void setProxyType(ProxyType proxyType) {
+    public void setProxyType(Type proxyType) {
         this.proxyType = proxyType;
     }
 
@@ -223,14 +227,18 @@ public class UserConfig {
         return null;
     }
 
+    public boolean isAutoConfig() {
+        return this.proxyType.isPac();
+    }
+
     @Autowired
     private void setTempDirectory(@Value("${user.home}") String userHome) {
-        tempDirectory = Paths.get(userHome, ".winfoom", "temp");
+        tempDirectory = Paths.get(userHome, SystemConfig.APP_HOME_DIR_NAME, "temp");
     }
 
     public void save() throws IOException, ConfigurationException {
-        File userProperties = Paths.get(System.getProperty("user.home"), ".winfoom",
-                "user.properties").toFile();
+        File userProperties = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME,
+                ProxyConfig.FILENAME).toFile();
         if (!userProperties.exists()) {
             userProperties.createNewFile();
         }
@@ -278,5 +286,34 @@ public class UserConfig {
                 ", proxyPacFileLocation='" + proxyPacFileLocation + '\'' +
                 ", tempDirectory=" + tempDirectory +
                 '}';
+    }
+
+    public enum Type implements ProxyType {
+        HTTP, SOCKS4, SOCKS5, PAC, DIRECT;
+
+        public boolean isPac() {
+            return this == PAC;
+        }
+
+        @Override
+        public boolean isSocks4() {
+            return this == SOCKS4;
+        }
+
+        @Override
+        public boolean isSocks5() {
+            return this == SOCKS5;
+        }
+
+        @Override
+        public boolean isHttp() {
+            return this == HTTP;
+        }
+
+        @Override
+        public boolean isDirect() {
+            return this == DIRECT;
+        }
+
     }
 }

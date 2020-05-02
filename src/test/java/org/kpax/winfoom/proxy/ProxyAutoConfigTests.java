@@ -22,7 +22,7 @@ import org.apache.http.protocol.HttpRequestHandler;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
-import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.exception.InvalidPacFileException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 class ProxyAutoConfigTests {
 
     @MockBean
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private ProxyAutoConfig proxyAutoconfig;
@@ -66,20 +66,20 @@ class ProxyAutoConfigTests {
 
     @Test
     void loadPacFileContent_validLocalFile_NoError() throws IOException, InvalidPacFileException {
-        when(userConfig.getProxyPacFileLocationAsURL()).thenReturn(getClass().getClassLoader().getResource("proxy-simple.pac"));
+        when(proxyConfig.getProxyPacFileLocationAsURL()).thenReturn(getClass().getClassLoader().getResource("proxy-simple.pac"));
         proxyAutoconfig.loadScript();
     }
 
     @Test
     void loadPacFileContent_validRemoteFile_NoError() throws IOException, InvalidPacFileException {
-        when(userConfig.getProxyPacFileLocationAsURL()).thenReturn(new URL("http://localhost:" + remoteServer.getLocalPort() + "/pacFile"));
+        when(proxyConfig.getProxyPacFileLocationAsURL()).thenReturn(new URL("http://localhost:" + remoteServer.getLocalPort() + "/pacFile"));
         proxyAutoconfig.loadScript();
     }
 
 
     @Test
     void loadPacFileContent_invalidLocalFile_InvalidPacFileException() throws IOException {
-        when(userConfig.getProxyPacFileLocationAsURL()).thenReturn(getClass().getClassLoader().getResource("proxy-invalid.pac"));
+        when(proxyConfig.getProxyPacFileLocationAsURL()).thenReturn(getClass().getClassLoader().getResource("proxy-invalid.pac"));
         Assertions.assertThrows(InvalidPacFileException.class, proxyAutoconfig::loadScript);
     }
 

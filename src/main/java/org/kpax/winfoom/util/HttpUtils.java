@@ -155,15 +155,15 @@ public final class HttpUtils {
 
     public static List<ProxyInfo> parsePacProxyLine(String proxyLine) {
         if (proxyLine == null) {
-            return Collections.singletonList(new ProxyInfo(ProxyInfo.Type.DIRECT));
+            return Collections.singletonList(new ProxyInfo(ProxyInfo.PacType.DIRECT));
         }
         List<ProxyInfo> proxyInfos = new ArrayList<>();
         for (String s : proxyLine.split(";")) {
             String[] split = s.split("\\s+");
             Validate.isTrue(split.length > 0);
-            ProxyInfo.Type type = ProxyInfo.Type.valueOf(split[0]);
-            if (type == ProxyInfo.Type.DIRECT) {
-                proxyInfos.add(new ProxyInfo(ProxyInfo.Type.DIRECT));
+            ProxyInfo.PacType type = ProxyInfo.PacType.valueOf(split[0]);
+            if (type == ProxyInfo.PacType.DIRECT) {
+                proxyInfos.add(new ProxyInfo(ProxyInfo.PacType.DIRECT));
             } else {
                 Validate.isTrue(split.length > 1);
                 proxyInfos.add(new ProxyInfo(type, HttpHost.create(split[1])));
@@ -174,6 +174,11 @@ public final class HttpUtils {
 
     public static boolean isConnectionRefused(Exception e) {
         return e instanceof SocketException && e.getMessage().startsWith("Connection refused");
+    }
+
+    public static boolean isConnectionAborted(Exception e) {
+        return e instanceof SocketException
+                && StringUtils.startsWithIgnoreCase(e.getMessage(), "Software caused connection abort");
     }
 
 }

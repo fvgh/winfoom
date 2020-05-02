@@ -13,10 +13,13 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.ConnectionClosedException;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanInstantiationException;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -41,7 +44,7 @@ class LocalProxyServer implements Closeable {
     private SystemConfig systemConfig;
 
     @Autowired
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private ProxyContext proxyContext;
@@ -64,10 +67,10 @@ class LocalProxyServer implements Closeable {
         if (started) {
             throw new IllegalStateException("Server already started!");
         }
-        logger.info("Start local proxy server with userConfig {}", userConfig);
+        logger.info("Start local proxy server with userConfig {}", proxyConfig);
 
         try {
-            serverSocket = new ServerSocket(userConfig.getLocalPort(),
+            serverSocket = new ServerSocket(proxyConfig.getLocalPort(),
                     systemConfig.getServerSocketBacklog());
 
             started = true;
@@ -81,6 +84,17 @@ class LocalProxyServer implements Closeable {
                             try {
                                 applicationContext.getBean(ClientConnection.class, socket)
                                         .handleRequest();
+                            } catch (BeanCreationException e) {
+                                if (e.getCause() instanceof BeanInstantiationException) {
+                                    Throwable cause = e.getCause().getCause();
+                                    if (cause instanceof ConnectionClosedException) {
+                                        logger.debug("Client unexpectedly closed connection", cause);
+                                    } else {
+                                        logger.debug("Error on init connection", cause);
+                                    }
+                                } else {
+                                    logger.error("Error on instantiating ClientConnection", e);
+                                }
                             } catch (Exception e) {
                                 logger.error("Error on handling connection", e);
                             }
@@ -100,12 +114,12 @@ class LocalProxyServer implements Closeable {
 
             try {
                 // Save the user properties
-                userConfig.save();
+                proxyConfig.save();
             } catch (Exception e) {
                 logger.warn("Error on saving user configuration", e);
             }
 
-            logger.info("Server started, listening on port: " + userConfig.getLocalPort());
+            logger.info("Server started, listening on port: " + proxyConfig.getLocalPort());
         } catch (Exception e) {
             // Cleanup on exception
             close();

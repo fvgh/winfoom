@@ -39,8 +39,12 @@ import java.nio.file.Paths;
  * @author Eugen Covaci
  */
 @Component
-@PropertySource(value = "file:${user.home}/.winfoom/system.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "file:${user.home}/.winfoom/" + SystemConfig.FILENAME, ignoreResourceNotFound = true)
 public class SystemConfig {
+
+    public static final String FILENAME = "system.properties";
+
+    public static final String APP_HOME_DIR_NAME = ".winfoom";
 
     private final Logger logger = LoggerFactory.getLogger(SystemConfig.class);
 
@@ -165,11 +169,11 @@ public class SystemConfig {
 
     @PostConstruct
     public void save() throws ConfigurationException, IOException, IllegalAccessException {
-        Path appPath = Paths.get(System.getProperty("user.home"), ".winfoom");
+        Path appPath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);
         if (!Files.exists(appPath)) {
             Files.createDirectory(appPath);
         }
-        File systemProperties = appPath.resolve("system.properties").toFile();
+        File systemProperties = appPath.resolve(SystemConfig.FILENAME).toFile();
         if (!systemProperties.exists()) {
             systemProperties.createNewFile();
             FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder = new Configurations()

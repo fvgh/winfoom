@@ -12,7 +12,7 @@
 
 package org.kpax.winfoom.proxy;
 
-import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,14 +38,14 @@ public class ProxyBlacklist {
     private final ChronoUnit temporalUnit = ChronoUnit.MINUTES;
 
     @Autowired
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     Instant blacklist(ProxyInfo proxyInfo) {
         logger.debug("Attempt to blacklist proxy {}", proxyInfo);
         return blacklistMap.compute(proxyInfo, (key, value) -> {
             Instant now = Instant.now();
             if (value == null || value.isBefore(now)) {
-                Instant timeoutInstant = now.plus(userConfig.getBlacklistTimeout(),
+                Instant timeoutInstant = now.plus(proxyConfig.getBlacklistTimeout(),
                         temporalUnit);
                 logger.debug("Blacklisted until {}", timeoutInstant);
                 return timeoutInstant;

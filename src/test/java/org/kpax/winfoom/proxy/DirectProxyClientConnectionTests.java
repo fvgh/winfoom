@@ -1,7 +1,10 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.*;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -18,8 +21,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.TestConstants;
-import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.proxy.connection.ConnectionPoolingManager;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +53,7 @@ public class DirectProxyClientConnectionTests {
     private final int socketTimeout = 3; // seconds
 
     @MockBean
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -65,9 +67,9 @@ public class DirectProxyClientConnectionTests {
 
     @BeforeEach
     void beforeEach() {
-        when(userConfig.getProxyHost()).thenReturn("localhost");
-        when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
-        when(userConfig.getProxyType()).thenReturn(ProxyType.DIRECT);
+        when(proxyConfig.getProxyHost()).thenReturn("localhost");
+        when(proxyConfig.getProxyPort()).thenReturn(PROXY_PORT);
+        when(proxyConfig.getProxyType()).thenReturn(ProxyConfig.Type.DIRECT);
     }
 
     @BeforeAll

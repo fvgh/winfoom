@@ -19,21 +19,21 @@ import java.util.Objects;
 
 public final class ProxyInfo {
 
-    private final Type type;
+    private final ProxyType type;
 
     private final HttpHost proxyHost;
 
-    public ProxyInfo(Type type) {
+    public ProxyInfo(PacType type) {
         this(type, null);
     }
 
-    public ProxyInfo(Type type, HttpHost proxyHost) {
+    public ProxyInfo(ProxyType type, HttpHost proxyHost) {
         Validate.notNull(type, "type cannot be null");
         this.type = type;
         this.proxyHost = proxyHost;
     }
 
-    public Type getType() {
+    public ProxyType getType() {
         return type;
     }
 
@@ -64,27 +64,28 @@ public final class ProxyInfo {
         return Objects.hash(type, proxyHost != null ? proxyHost.toHostString() : null);
     }
 
-    public enum Type {
+    public enum PacType implements ProxyType {
         PROXY, HTTP, HTTPS, SOCKS, SOCKS4, SOCKS5, DIRECT;
 
+        @Override
         public boolean isSocks4() {
-            return this == Type.SOCKS4;
+            return this == PacType.SOCKS4;
         }
 
+        @Override
         public boolean isSocks5() {
-            return this == Type.SOCKS5 || this == Type.SOCKS;
+            return this == PacType.SOCKS5 || this == PacType.SOCKS;
         }
 
-        public boolean isSocks() {
-            return this == Type.SOCKS || this == Type.SOCKS4 || this == Type.SOCKS5;
-        }
-
+        @Override
         public boolean isHttp() {
-            return this == Type.HTTP || this == Type.HTTPS || this == Type.PROXY;
+            return this == PacType.HTTP || this == PacType.HTTPS || this == PacType.PROXY;
         }
 
+        @Override
         public boolean isDirect() {
-            return this == Type.DIRECT;
+            return this == PacType.DIRECT;
         }
+
     }
 }

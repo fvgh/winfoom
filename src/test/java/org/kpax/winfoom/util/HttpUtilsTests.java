@@ -12,16 +12,13 @@
 
 package org.kpax.winfoom.util;
 
-import org.apache.http.Header;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
-import org.apache.http.HttpVersion;
 import org.apache.http.entity.ContentType;
-import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpRequest;
 import org.junit.jupiter.api.Test;
 import org.kpax.winfoom.proxy.ProxyInfo;
 
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -103,7 +100,7 @@ class HttpUtilsTests {
         String proxyLine = "DIRECT";
         List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
         assertEquals(1, proxyInfos.size());
-        assertEquals(ProxyInfo.Type.DIRECT, proxyInfos.get(0).getType());
+        assertEquals(ProxyInfo.PacType.DIRECT, proxyInfos.get(0).getType());
         assertNull(proxyInfos.get(0).getProxyHost());
     }
 
@@ -113,9 +110,9 @@ class HttpUtilsTests {
 
         List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
         assertEquals(2, proxyInfos.size());
-        assertEquals(ProxyInfo.Type.PROXY, proxyInfos.get(0).getType());
+        assertEquals(ProxyInfo.PacType.PROXY, proxyInfos.get(0).getType());
         assertEquals("localhost:1080", proxyInfos.get(0).getProxyHost().toHostString());
-        assertEquals(ProxyInfo.Type.DIRECT, proxyInfos.get(1).getType());
+        assertEquals(ProxyInfo.PacType.DIRECT, proxyInfos.get(1).getType());
         assertNull(proxyInfos.get(1).getProxyHost());
     }
 

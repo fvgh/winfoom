@@ -12,9 +12,8 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.proxy.connection.ConnectionPoolingManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +41,7 @@ public class ProxyContext implements AutoCloseable {
     private LocalProxyServer localProxyServer;
 
     @Autowired
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private SystemConfig systemConfig;
@@ -81,7 +80,7 @@ public class ProxyContext implements AutoCloseable {
             connectionPoolingManager.stop();
 
             // Remove auth for SOCKS proxy
-            if (userConfig.getProxyType().isSocks5()) {
+            if (proxyConfig.getProxyType().isSocks5()) {
                 Authenticator.setDefault(null);
             }
 
@@ -118,7 +117,7 @@ public class ProxyContext implements AutoCloseable {
 
     }
 
-    public int clearBlacklist () {
+    public int clearBlacklist() {
         return proxyBlacklist.clear();
     }
 

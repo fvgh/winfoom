@@ -20,7 +20,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.proxy.connection.ConnectionPoolingManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

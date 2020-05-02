@@ -21,8 +21,8 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
@@ -69,7 +69,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
     private SystemConfig systemConfig;
 
     @Autowired
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private HttpClientBuilderFactory clientBuilderFactory;
@@ -86,7 +86,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
             AbstractHttpEntity entity;
             if (request instanceof HttpEntityEnclosingRequest) {
                 logger.debug("Set enclosing entity");
-                if (userConfig.getProxyType().isSocks()) {
+                if (proxyConfig.getProxyType().isSocks()) {
 
                     // There is no need for caching since
                     // SOCKS communication is one step only
@@ -95,7 +95,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
                             HttpUtils.getContentType(request));
                 } else {
                     entity = new RepeatableHttpEntity(clientConnection.getSessionInputBuffer(),
-                            userConfig.getTempDirectory(),
+                            proxyConfig.getTempDirectory(),
                             request,
                             systemConfig.getInternalBufferLength());
                 }

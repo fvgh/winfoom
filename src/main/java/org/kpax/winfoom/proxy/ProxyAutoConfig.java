@@ -13,7 +13,7 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.io.IOUtils;
-import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.exception.InvalidPacFileException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.netbeans.core.network.proxy.pac.impl.NbPacScriptEvaluator;
@@ -25,7 +25,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -36,12 +35,12 @@ public class ProxyAutoConfig {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     private NbPacScriptEvaluator nbPacScriptEvaluator;
 
     public synchronized NbPacScriptEvaluator loadScript() throws IOException, InvalidPacFileException {
-        URL url = userConfig.getProxyPacFileLocationAsURL();
+        URL url = proxyConfig.getProxyPacFileLocationAsURL();
         if (url == null) {
             throw new IllegalStateException("No proxy PAC file location found");
         }

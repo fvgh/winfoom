@@ -14,10 +14,9 @@ package org.kpax.winfoom.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.HttpHostConnectException;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.proxy.ProxyContext;
-import org.kpax.winfoom.proxy.ProxyType;
 import org.kpax.winfoom.proxy.ProxyValidator;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.SwingUtils;
@@ -57,7 +56,7 @@ public class AppFrame extends JFrame {
     private ConfigurableApplicationContext applicationContext;
 
     @Autowired
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private SystemConfig systemConfig;
@@ -69,7 +68,7 @@ public class AppFrame extends JFrame {
     private ProxyValidator proxyValidator;
 
     private JLabel proxyTypeLabel;
-    private JComboBox<ProxyType> proxyTypeCombo;
+    private JComboBox<ProxyConfig.Type> proxyTypeCombo;
 
     private JLabel localPortLabel;
     private JSpinner localPortJSpinner;
@@ -148,7 +147,7 @@ public class AppFrame extends JFrame {
 
         ToolTipManager.sharedInstance().setDismissDelay(TOOLTIP_TIMEOUT * 1000);
 
-        getProxyTypeCombo().setSelectedItem(userConfig.getProxyType());
+        getProxyTypeCombo().setSelectedItem(proxyConfig.getProxyType());
 
     }
 
@@ -208,16 +207,16 @@ public class AppFrame extends JFrame {
 
     // -------- Fields
 
-    private JComboBox<ProxyType> getProxyTypeCombo() {
+    private JComboBox<ProxyConfig.Type> getProxyTypeCombo() {
         if (proxyTypeCombo == null) {
-            proxyTypeCombo = new JComboBox<>(ProxyType.values());
+            proxyTypeCombo = new JComboBox<>(ProxyConfig.Type.values());
             proxyTypeCombo.setMinimumSize(new Dimension(80, 35));
             proxyTypeCombo.addActionListener((e) -> {
                 clearLabelsAndFields();
                 getBtnCancelBlacklist().setVisible(false);
                 addProxyType();
-                ProxyType proxyType = (ProxyType) proxyTypeCombo.getSelectedItem();
-                userConfig.setProxyType(proxyType);
+                ProxyConfig.Type proxyType = (ProxyConfig.Type) proxyTypeCombo.getSelectedItem();
+                proxyConfig.setProxyType(proxyType);
                 switch (Objects.requireNonNull(proxyType)) {
                     case HTTP:
                     case SOCKS4:
@@ -240,17 +239,17 @@ public class AppFrame extends JFrame {
     }
 
     private JTextField getProxyHostJTextField() {
-        JTextField proxyHostJTextField = createTextField(userConfig.getProxyHost());
+        JTextField proxyHostJTextField = createTextField(proxyConfig.getProxyHost());
         proxyHostJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-            userConfig.setProxyHost(proxyHostJTextField.getText());
+            proxyConfig.setProxyHost(proxyHostJTextField.getText());
         });
         return proxyHostJTextField;
     }
 
     private JTextField getPacFileJTextField() {
-        JTextField pacFileJTextField = createTextField(userConfig.getProxyPacFileLocation());
+        JTextField pacFileJTextField = createTextField(proxyConfig.getProxyPacFileLocation());
         pacFileJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-            userConfig.setProxyPacFileLocation(pacFileJTextField.getText());
+            proxyConfig.setProxyPacFileLocation(pacFileJTextField.getText());
         });
         pacFileJTextField.setToolTipText(HttpUtils.toHtml("The location of the Proxy Auto-Config file." +
                 "<br>It can be a local location (like <i>C:/pac/proxy.pac</i>) or a HTTP(s) address (like <i>http://pacserver:80/proxy.pac</i>)"));
@@ -258,18 +257,18 @@ public class AppFrame extends JFrame {
     }
 
     private JSpinner getProxyPortJSpinner() {
-        JSpinner proxyPortJSpinner = createJSpinner(userConfig.getProxyPort());
+        JSpinner proxyPortJSpinner = createJSpinner(proxyConfig.getProxyPort());
         proxyPortJSpinner.addChangeListener(e -> {
-            userConfig.setProxyPort((Integer) proxyPortJSpinner.getValue());
+            proxyConfig.setProxyPort((Integer) proxyPortJSpinner.getValue());
         });
         return proxyPortJSpinner;
     }
 
     private JSpinner getLocalPortJSpinner() {
         if (localPortJSpinner == null) {
-            localPortJSpinner = createJSpinner(userConfig.getLocalPort());
+            localPortJSpinner = createJSpinner(proxyConfig.getLocalPort());
             localPortJSpinner.addChangeListener(e -> {
-                userConfig.setLocalPort((Integer) localPortJSpinner.getValue());
+                proxyConfig.setLocalPort((Integer) localPortJSpinner.getValue());
             });
         }
         return localPortJSpinner;
@@ -277,34 +276,34 @@ public class AppFrame extends JFrame {
 
     private JTextField getTestUrlJTextField() {
         if (testUrlJTextField == null) {
-            testUrlJTextField = createTextField(userConfig.getProxyTestUrl());
+            testUrlJTextField = createTextField(proxyConfig.getProxyTestUrl());
             testUrlJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-                userConfig.setProxyTestUrl(testUrlJTextField.getText());
+                proxyConfig.setProxyTestUrl(testUrlJTextField.getText());
             });
         }
         return testUrlJTextField;
     }
 
     private JTextField getUsernameJTextField() {
-        JTextField usernameJTextField = createTextField(userConfig.getProxyUsername());
+        JTextField usernameJTextField = createTextField(proxyConfig.getProxyUsername());
         usernameJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-            userConfig.setProxyUsername(usernameJTextField.getText());
+            proxyConfig.setProxyUsername(usernameJTextField.getText());
         });
         return usernameJTextField;
     }
 
 
     private JPasswordField getPasswordField() {
-        JPasswordField passwordField = new JPasswordField(userConfig.getProxyPassword());
+        JPasswordField passwordField = new JPasswordField(proxyConfig.getProxyPassword());
         passwordField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-            userConfig.setProxyPassword(new String(passwordField.getPassword()));
+            proxyConfig.setProxyPassword(new String(passwordField.getPassword()));
         });
         return passwordField;
     }
 
     private JCheckBox getStorePasswordJCheckBox() {
         JCheckBox storePasswordJCheckBox = new JCheckBox();
-        storePasswordJCheckBox.setSelected(userConfig.isProxyStorePassword());
+        storePasswordJCheckBox.setSelected(proxyConfig.isProxyStorePassword());
         storePasswordJCheckBox.addActionListener((e -> {
             if (storePasswordJCheckBox.isSelected()) {
                 int option = JOptionPane.showConfirmDialog(AppFrame.this,
@@ -317,7 +316,7 @@ public class AppFrame extends JFrame {
                     storePasswordJCheckBox.setSelected(false);
                 }
             }
-            userConfig.setProxyStorePassword(storePasswordJCheckBox.isSelected());
+            proxyConfig.setProxyStorePassword(storePasswordJCheckBox.isSelected());
         }));
 
         return storePasswordJCheckBox;
@@ -325,9 +324,9 @@ public class AppFrame extends JFrame {
 
 
     private JSpinner getBlacklistTimeoutJSpinner() {
-        JSpinner proxyPortJSpinner = createJSpinner(userConfig.getBlacklistTimeout());
+        JSpinner proxyPortJSpinner = createJSpinner(proxyConfig.getBlacklistTimeout());
         proxyPortJSpinner.addChangeListener(e -> {
-            userConfig.setBlacklistTimeout((Integer) proxyPortJSpinner.getValue());
+            proxyConfig.setBlacklistTimeout((Integer) proxyPortJSpinner.getValue());
         });
         proxyPortJSpinner.setToolTipText(HttpUtils.toHtml("If a proxy doesn't responds it is blacklisted"
                 + "<br> which means it will not be used again until the blacklist timeout (in minutes) happens."
@@ -347,7 +346,7 @@ public class AppFrame extends JFrame {
             btnStart.addActionListener(e -> {
                 startServer();
                 getBtnStop().requestFocus();
-                if (userConfig.getProxyType().isPac()) {
+                if (proxyConfig.isAutoConfig()) {
                     getBtnCancelBlacklist().setEnabled(true);
                 }
             });
@@ -363,7 +362,7 @@ public class AppFrame extends JFrame {
             btnStop.addActionListener(e -> {
                 stopServer();
                 focusOnStartButton();
-                if (userConfig.getProxyType().isPac()) {
+                if (proxyConfig.isAutoConfig()) {
                     getBtnCancelBlacklist().setEnabled(false);
                 }
             });
@@ -592,20 +591,20 @@ public class AppFrame extends JFrame {
 
     private boolean isValidInput() {
 
-        if ((userConfig.getProxyType().isSocks() || userConfig.getProxyType().isHttp())
-                && StringUtils.isBlank(userConfig.getProxyHost())) {
+        if ((proxyConfig.getProxyType().isSocks() || proxyConfig.getProxyType().isHttp())
+                && StringUtils.isBlank(proxyConfig.getProxyHost())) {
             SwingUtils.showErrorMessage(this, "Fill in the proxy host");
             return false;
         }
 
-        if ((userConfig.getProxyType().isSocks() || userConfig.getProxyType().isHttp())) {
-            if (userConfig.getProxyPort() == null || !HttpUtils.isValidPort(userConfig.getProxyPort())) {
+        if ((proxyConfig.getProxyType().isSocks() || proxyConfig.getProxyType().isHttp())) {
+            if (proxyConfig.getProxyPort() == null || !HttpUtils.isValidPort(proxyConfig.getProxyPort())) {
                 SwingUtils.showErrorMessage(this, "Fill in a valid proxy port, between 1 and 65535");
                 return false;
             }
         }
 
-        if (userConfig.getProxyType().isPac() && StringUtils.isBlank(userConfig.getProxyPacFileLocation())) {
+        if (proxyConfig.isAutoConfig() && StringUtils.isBlank(proxyConfig.getProxyPacFileLocation())) {
             SwingUtils.showErrorMessage(this, "Fill in a valid Pac file location");
             return false;
         }
@@ -642,9 +641,9 @@ public class AppFrame extends JFrame {
     }
 
     private void startServer() {
-        if (userConfig.getProxyType().isSocks5()) {
-            if (StringUtils.isNotEmpty(userConfig.getProxyUsername())
-                    && StringUtils.isEmpty(userConfig.getProxyPassword())) {
+        if (proxyConfig.getProxyType().isSocks5()) {
+            if (StringUtils.isNotEmpty(proxyConfig.getProxyUsername())
+                    && StringUtils.isEmpty(proxyConfig.getProxyPassword())) {
                 int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide any password." +
                         "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
                 if (option != JOptionPane.OK_OPTION) {

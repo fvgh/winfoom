@@ -1,7 +1,10 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.*;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -18,8 +21,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.TestConstants;
-import org.kpax.winfoom.config.UserConfig;
-import org.kpax.winfoom.proxy.connection.ConnectionPoolingManager;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.mockserver.integration.ClientAndServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +54,7 @@ public class SocksProxyClientConnectionTests {
     private final int socketTimeout = 3; // seconds
 
     @MockBean
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -68,8 +70,8 @@ public class SocksProxyClientConnectionTests {
 
     @BeforeEach
     void beforeEach() {
-        when(userConfig.getProxyHost()).thenReturn("localhost");
-        when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+        when(proxyConfig.getProxyHost()).thenReturn("localhost");
+        when(proxyConfig.getProxyPort()).thenReturn(PROXY_PORT);
     }
 
     @BeforeAll
@@ -119,7 +121,7 @@ public class SocksProxyClientConnectionTests {
     @Test
     @Order(0)
     void socks4Proxy_NonConnect_CorrectResponse() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.SOCKS4);
+        when(proxyConfig.getProxyType()).thenReturn(ProxyConfig.Type.SOCKS4);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             RequestConfig config = RequestConfig.custom()
@@ -140,7 +142,7 @@ public class SocksProxyClientConnectionTests {
     @Test
     @Order(1)
     void socks5Proxy_NonConnect_CorrectResponse() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.SOCKS5);
+        when(proxyConfig.getProxyType()).thenReturn(ProxyConfig.Type.SOCKS5);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             RequestConfig config = RequestConfig.custom()
@@ -161,7 +163,7 @@ public class SocksProxyClientConnectionTests {
     @Test
     @Order(2)
     void socks5Proxy_Connect_200OK() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.SOCKS5);
+        when(proxyConfig.getProxyType()).thenReturn(ProxyConfig.Type.SOCKS5);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setProxy(localProxy).build()) {
@@ -176,7 +178,7 @@ public class SocksProxyClientConnectionTests {
     @Test
     @Order(3)
     void socks4Proxy_Connect_200OK() throws IOException {
-        when(userConfig.getProxyType()).thenReturn(ProxyType.SOCKS4);
+        when(proxyConfig.getProxyType()).thenReturn(ProxyConfig.Type.SOCKS4);
         HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
         try (CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setProxy(localProxy).build()) {

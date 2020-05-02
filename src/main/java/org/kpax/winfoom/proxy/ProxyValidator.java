@@ -29,13 +29,10 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.config.UserConfig;
 import org.kpax.winfoom.exception.InvalidPacFileException;
-import org.kpax.winfoom.proxy.connection.Socks4ConnectionSocketFactory;
-import org.kpax.winfoom.proxy.connection.SocksConnectionSocketFactory;
 import org.kpax.winfoom.util.HttpUtils;
-import org.netbeans.core.network.proxy.pac.PacValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +50,7 @@ public class ProxyValidator {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
 
     @Autowired
@@ -64,26 +61,22 @@ public class ProxyValidator {
 
     public void testProxyConfig()
             throws IOException, CredentialException, InvalidPacFileException, URISyntaxException {
-        logger.info("Test proxy config {}", userConfig);
+        logger.info("Test proxy config {}", proxyConfig);
 
-        ProxyType proxyType = userConfig.getProxyType();
-        if (proxyType.isPac()) {
+        ProxyType proxyType = proxyConfig.getProxyType();
+        if (proxyConfig.isAutoConfig()) {
             proxyAutoconfig.loadScript();
-            HttpHost httpHost = HttpHost.create(userConfig.getProxyTestUrl());
+            HttpHost httpHost = HttpHost.create(proxyConfig.getProxyTestUrl());
             List<ProxyInfo> proxyInfos = proxyAutoconfig.findProxyForURL(new URI(httpHost.toURI()));
             for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
                 ProxyInfo proxyInfo = itr.next();
                 logger.info("Validate {}", proxyInfo);
-                ProxyInfo.Type type = proxyInfo.getType();
+                ProxyType type = proxyInfo.getType();
                 try {
                     HttpHost host = proxyInfo.getProxyHost();
-                    testProxyConfig(true,
-                            type.isSocks5(),
-                            type.isSocks4(),
-                            type.isHttp(),
+                    testProxyConfig(type,
                             host != null ? host.getHostName() : null,
-                            host != null ? host.getPort() : -1,
-                            null, null);
+                            host != null ? host.getPort() : -1);
                     break;
                 } catch (HttpHostConnectException e) {
                     if (itr.hasNext()) {
@@ -94,51 +87,38 @@ public class ProxyValidator {
                 }
             }
         } else {
-            testProxyConfig(false,
-                    proxyType.isSocks5(),
-                    proxyType.isSocks4(),
-                    proxyType.isHttp(),
-                    userConfig.getProxyHost(),
-                    userConfig.getProxyPort(),
-                    userConfig.getProxyUsername(),
-                    userConfig.getProxyPassword());
+            testProxyConfig(
+                    proxyType,
+                    proxyConfig.getProxyHost(),
+                    proxyConfig.getProxyPort());
         }
 
     }
 
-    private void testProxyConfig(boolean isPac,
-                                 boolean isSocks5,
-                                 boolean isSocks4,
-                                 boolean isHttp,
+    private void testProxyConfig(ProxyType proxyType,
                                  String proxyHost,
-                                 int proxyPort,
-                                 String proxyUsername,
-                                 String proxyPassword)
+                                 int proxyPort)
             throws IOException, CredentialException {
 
-        logger.info("Test proxy with isPac={}, isSocks5={}, isSocks4={}, isHttp={}, proxyHost={}, proxyPort={}, proxyUsername={}, proxyPassword={}",
-                isPac,
-                isSocks5,
-                isSocks4,
-                isHttp,
+        logger.info("Test proxy with proxyType={}, proxyHost={}, proxyPort={}",
+                proxyType,
                 proxyHost,
-                proxyPort,
-                proxyUsername,
-                proxyPassword);
+                proxyPort);
 
         HttpClientBuilder httpClientBuilder;
-        if (isSocks4 || isSocks5) {
-            if (!isPac
-                    && isSocks5
-                    && StringUtils.isNotEmpty(proxyUsername)) {
+        if (proxyType.isSocks()) {
+            if (!proxyConfig.isAutoConfig()
+                    && proxyType.isSocks5()
+                    && StringUtils.isNotEmpty(proxyConfig.getProxyUsername())) {
                 Authenticator.setDefault(new Authenticator() {
                     public PasswordAuthentication getPasswordAuthentication() {
-                        return (new PasswordAuthentication(proxyUsername,
+                        String proxyPassword = proxyConfig.getProxyPassword();
+                        return (new PasswordAuthentication(proxyConfig.getProxyUsername(),
                                 proxyPassword != null ? proxyPassword.toCharArray() : new char[0]));
                     }
                 });
             }
-            ConnectionSocketFactory connectionSocketFactory = isSocks4
+            ConnectionSocketFactory connectionSocketFactory = proxyType.isSocks4()
                     ? new Socks4ConnectionSocketFactory() : new SocksConnectionSocketFactory();
             Registry<ConnectionSocketFactory> factoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                     .register("http", connectionSocketFactory)
@@ -151,9 +131,9 @@ public class ProxyValidator {
         }
 
         try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
-            HttpHost target = HttpHost.create(userConfig.getProxyTestUrl());
+            HttpHost target = HttpHost.create(proxyConfig.getProxyTestUrl());
             HttpGet request = new HttpGet("/");
-            if (isHttp) {
+            if (proxyType.isHttp()) {
                 HttpHost proxy = new HttpHost(proxyHost, proxyPort);
                 RequestConfig config = systemConfig.applyConfig(RequestConfig.custom())
                         .setProxy(proxy)
@@ -161,7 +141,7 @@ public class ProxyValidator {
                 request.setConfig(config);
             }
             HttpClientContext context = HttpClientContext.create();
-            if (isSocks4 || isSocks5) {
+            if (proxyType.isSocks()) {
                 context.setAttribute(HttpUtils.SOCKS_ADDRESS, new InetSocketAddress(proxyHost, proxyPort));
             }
             logger.info("Executing request {} to {}", request.getRequestLine(), target);

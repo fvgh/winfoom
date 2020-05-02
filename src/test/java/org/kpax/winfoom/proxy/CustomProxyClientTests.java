@@ -21,7 +21,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
-import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.ProxyAuthenticator;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
 class CustomProxyClientTests {
 
     @MockBean
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -65,8 +65,8 @@ class CustomProxyClientTests {
 
     @BeforeEach
     void beforeEach() {
-        when(userConfig.getProxyHost()).thenReturn("localhost");
-        when(userConfig.getProxyPort()).thenReturn(PROXY_PORT);
+        when(proxyConfig.getProxyHost()).thenReturn("localhost");
+        when(proxyConfig.getProxyPort()).thenReturn(PROXY_PORT);
     }
 
     @BeforeAll
@@ -91,7 +91,7 @@ class CustomProxyClientTests {
     void tunnel_rightProxyAndCredentials_NoError()
             throws IOException, HttpException {
         HttpHost target = HttpHost.create("https://example.com");
-        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
+        HttpHost proxy = new HttpHost(proxyConfig.getProxyHost(), proxyConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
         ClientConnection socketChannelWrapper = Mockito.mock(ClientConnection.class);
@@ -104,7 +104,7 @@ class CustomProxyClientTests {
     @Test
     void tunnel_rightProxyWrongCredentials_TunnelRefusedException() {
         HttpHost target = HttpHost.create("https://example.com");
-        HttpHost proxy = new HttpHost(userConfig.getProxyHost(), userConfig.getProxyPort(), "http");
+        HttpHost proxy = new HttpHost(proxyConfig.getProxyHost(), proxyConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, "wrong_pass"));
         ClientConnection socketChannelWrapper = Mockito.mock(ClientConnection.class);
@@ -119,7 +119,7 @@ class CustomProxyClientTests {
     @Test
     void tunnel_wrongProxyRightCredentials_UnknownHostException() {
         HttpHost target = HttpHost.create("https://example.com");
-        HttpHost proxy = new HttpHost("wronghost", userConfig.getProxyPort(), "http");
+        HttpHost proxy = new HttpHost("wronghost", proxyConfig.getProxyPort(), "http");
         credentialsProvider.clear();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
         ClientConnection socketChannelWrapper = Mockito.mock(ClientConnection.class);

@@ -13,7 +13,7 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.http.RequestLine;
-import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.util.HttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 class ClientProcessorSelector {
 
     @Autowired
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @Autowired
     private HttpConnectClientConnectionProcessor httpConnectClientConnectionProcessor;

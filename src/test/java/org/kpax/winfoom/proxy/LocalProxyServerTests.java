@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
-import org.kpax.winfoom.config.UserConfig;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -40,16 +40,16 @@ import static org.mockito.Mockito.when;
 class LocalProxyServerTests {
 
     @MockBean
-    private UserConfig userConfig;
+    private ProxyConfig proxyConfig;
 
     @SpyBean
     private LocalProxyServer localProxyServer;
 
     @BeforeEach
     void before() {
-        when(userConfig.getLocalPort()).thenReturn(LOCAL_PROXY_PORT);
-        when(userConfig.getProxyHost()).thenReturn("localhost");
-        when(userConfig.getProxyPort()).thenReturn(80);
+        when(proxyConfig.getLocalPort()).thenReturn(LOCAL_PROXY_PORT);
+        when(proxyConfig.getProxyHost()).thenReturn("localhost");
+        when(proxyConfig.getProxyPort()).thenReturn(80);
     }
 
     @Test

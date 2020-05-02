@@ -12,6 +12,8 @@
 
 package org.kpax.winfoom;
 
+import org.kpax.winfoom.config.ProxyConfig;
+import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.JarUtils;
 import org.kpax.winfoom.util.SwingUtils;
 import org.kpax.winfoom.view.AppFrame;
@@ -20,9 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -58,7 +58,7 @@ public class FoomApplication {
         } catch (Exception e) {
             logger.error("Failed to verify app version", e);
             SwingUtils.showErrorMessage(null, "Failed to verify application version." +
-                    "\nRemove the system.properties and user.properties files from <USERDIR>/.winfoom directory then try again.");
+                    "\nRemove the system.properties and proxy.properties files from <USERDIR>/.winfoom directory then try again.");
             return;
         }
 
@@ -87,8 +87,8 @@ public class FoomApplication {
      */
     private static void checkAppVersion() throws IOException {
 
-        Path appHomePath = Paths.get(System.getProperty("user.home"), ".winfoom");
-        Path systemPropertiesPath = appHomePath.resolve("system.properties");
+        Path appHomePath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);
+        Path systemPropertiesPath = appHomePath.resolve(SystemConfig.FILENAME);
 
         if (Files.exists(systemPropertiesPath)) {
             Properties systemProperties = PropertiesLoaderUtils.loadProperties(
@@ -109,11 +109,11 @@ public class FoomApplication {
                         String.format("The existent ones will be saved to %s directory", backupDirPath.toString()));
 
                 logger.info("Move the existent config files to: {} directory", backupDirPath);
-                Files.move(systemPropertiesPath, backupDirPath.resolve("system.properties"),
+                Files.move(systemPropertiesPath, backupDirPath.resolve(SystemConfig.FILENAME),
                         StandardCopyOption.REPLACE_EXISTING);
-                Path userPropertiesPath = appHomePath.resolve("user.properties");
+                Path userPropertiesPath = appHomePath.resolve(ProxyConfig.FILENAME);
                 if (Files.exists(userPropertiesPath)) {
-                    Files.move(userPropertiesPath, backupDirPath.resolve("user.properties"),
+                    Files.move(userPropertiesPath, backupDirPath.resolve(ProxyConfig.FILENAME),
                             StandardCopyOption.REPLACE_EXISTING);
                 }
             }
