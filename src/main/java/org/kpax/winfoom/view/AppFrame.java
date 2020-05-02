@@ -461,7 +461,7 @@ public class AppFrame extends JFrame {
         labelPanel.add(getTestUrlLabel());
 
         fieldPanel.add(getPacFileJTextField());
-        fieldPanel.add(wrapToPanel(getBlacklistTimeoutJSpinner()));
+        fieldPanel.add(wrapToPanel(getBlacklistTimeoutJSpinner(), new JLabel(" (min)")));
         fieldPanel.add(wrapToPanel(getLocalPortJSpinner()));
         fieldPanel.add(getTestUrlJTextField());
 
@@ -497,11 +497,15 @@ public class AppFrame extends JFrame {
     }
 
 
-    private JPanel wrapToPanel(java.awt.Component comp) {
+    private JPanel wrapToPanel(java.awt.Component... components) {
         FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 0, 0);
         JPanel panel = new JPanel(flowLayout);
-        panel.setPreferredSize(comp.getPreferredSize());
-        panel.add(comp);
+        if (components != null) {
+            for (java.awt.Component comp : components) {
+                panel.setPreferredSize(comp.getPreferredSize());
+                panel.add(comp);
+            }
+        }
         return panel;
     }
 

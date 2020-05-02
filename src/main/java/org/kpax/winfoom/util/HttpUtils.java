@@ -87,7 +87,6 @@ public final class HttpUtils {
         socket.setSendBufferSize(bufferSize);
     }
 
-
     public static BasicStatusLine toStatusLine(int httpCode) {
         return toStatusLine(HttpVersion.HTTP_1_1, httpCode, null);
     }

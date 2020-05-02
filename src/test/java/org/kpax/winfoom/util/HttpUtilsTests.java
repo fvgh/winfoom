@@ -126,7 +126,6 @@ class HttpUtilsTests {
         assertEquals(value, stripChunked);
     }
 
-
     @Test
     void stripChunked_Chunked_StripChunked() {
         String value = "bla, chunked";

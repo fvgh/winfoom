@@ -12,6 +12,7 @@
 
 package org.kpax.winfoom.proxy;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -47,6 +48,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -136,6 +138,10 @@ class HttpProxyClientConnectionTests {
                             logger.error("Error on handling connection", e);
                         }
                     }).start();
+                } catch (SocketException e) {
+                    if (!StringUtils.startsWithIgnoreCase(e.getMessage(), "Interrupted function call")) {
+                        logger.error("Socket error on getting connection", e);
+                    }
                 } catch (Exception e) {
                     logger.error("Error on getting connection", e);
                 }

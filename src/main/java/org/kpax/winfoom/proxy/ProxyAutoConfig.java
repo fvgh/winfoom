@@ -52,7 +52,6 @@ public class ProxyAutoConfig {
             try {
                 nbPacScriptEvaluator = new NbPacScriptEvaluator(content);
             } catch (Exception e) {
-                logger.error("Error on creating PAC file parser", e);
                 throw new InvalidPacFileException("The provided PAC file is not valid", e);
             }
         }

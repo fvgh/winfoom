@@ -4,7 +4,7 @@ echo off
 
 setlocal EnableDelayedExpansion
 
-set ARGS=-server
+set ARGS=-server -Dnashorn.args=--no-deprecation-warning
 
 FOR %%a IN (%*) DO (
 
