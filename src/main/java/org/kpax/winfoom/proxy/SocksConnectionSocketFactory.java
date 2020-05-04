@@ -48,7 +48,8 @@ public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
         } catch (SocketTimeoutException ex) {
             throw new ConnectTimeoutException(ex, host, remoteAddress.getAddress());
         } catch (SocketException ex) {
-            if (StringUtils.startsWithIgnoreCase(ex.getMessage(), "Connection refused")) {
+            if (StringUtils.startsWithIgnoreCase(ex.getMessage(), "Connection refused")
+                    || StringUtils.startsWithIgnoreCase(ex.getMessage(), "connect timed out")) {
                 throw new ConnectException(ex.getMessage());
             }
             throw ex;

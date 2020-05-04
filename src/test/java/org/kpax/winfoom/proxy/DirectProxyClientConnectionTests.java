@@ -87,9 +87,8 @@ public class DirectProxyClientConnectionTests {
 
         serverSocket = new ServerSocket(TestConstants.LOCAL_PROXY_PORT);
         connectionPoolingManager.start();
-        final ServerSocket server = serverSocket;
         new Thread(() -> {
-            while (!server.isClosed()) {
+            while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
                     socket.setSoTimeout(socketTimeout * 1000);

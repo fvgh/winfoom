@@ -98,6 +98,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
                             proxyConfig.getTempDirectory(),
                             request,
                             systemConfig.getInternalBufferLength());
+                    clientConnection.addAutoCloseable((RepeatableHttpEntity)entity);
                 }
 
                 Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);
@@ -143,7 +144,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
         try (CloseableHttpClient httpClient = clientBuilderFactory.createClientBuilder(proxyInfo).build()) {
 
             // Extract URI
-            URI uri = HttpUtils.parseUri(request.getRequestLine().getUri());
+            URI uri = HttpUtils.parseUri(clientConnection.getRequestLine().getUri());
             HttpHost target = new HttpHost(uri.getHost(),
                     uri.getPort(),
                     uri.getScheme());
@@ -162,15 +163,6 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
                     handleResponse(response, clientConnection);
                 } catch (Exception e) {
                     logger.debug("Error on handling non CONNECT response", e);
-                }
-            }
-        } finally {
-            if (clientConnection.isLastResort()) {
-                if (request instanceof HttpEntityEnclosingRequest) {
-                    HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-                    if (entity instanceof AutoCloseable) {
-                        InputOutputs.close((AutoCloseable) entity);
-                    }
                 }
             }
         }

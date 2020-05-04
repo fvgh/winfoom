@@ -40,16 +40,16 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Eugen Covaci
  */
-class ClientConnection {
+class ClientConnection implements AutoCloseable{
 
     private final Logger logger = LoggerFactory.getLogger(ClientConnection.class);
+
+    private final Set<AutoCloseable> autoCloseables = new HashSet<>();
 
     private final Socket socket;
 
@@ -234,6 +234,13 @@ class ClientConnection {
         return requestLine;
     }
 
+    boolean addAutoCloseable (AutoCloseable autoCloseable) {
+        return autoCloseables.add(autoCloseable);
+    }
 
 
+    @Override
+    public void close() throws Exception {
+        this.autoCloseables.stream().forEach(InputOutputs::close);
+    }
 }

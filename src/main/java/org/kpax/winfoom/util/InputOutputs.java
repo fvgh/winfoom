@@ -57,7 +57,7 @@ public final class InputOutputs {
 
 
     /**
-     * Close all <code>closeables</code>.
+     * Close an <code>AutoCloseable</code>, debug the possible error.
      *
      * @param closeable The {@link AutoCloseable} instance.
      */

@@ -85,7 +85,7 @@ class LocalProxyServer implements Closeable {
                             try {
                                 clientConnectionHandler.handleConnection(socket);
                             } catch (Exception e) {
-                                logger.error("Error on handling connection", e);
+                                logger.debug("Error on handling connection", e);
                             } finally {
                                 InputOutputs.close(socket);
                             }

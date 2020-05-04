@@ -23,6 +23,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 public class ProxyBlacklist {
@@ -83,5 +84,14 @@ public class ProxyBlacklist {
 
     public Map<ProxyInfo, Instant> getBlacklistMap() {
         return Collections.unmodifiableMap(blacklistMap);
+    }
+
+
+    public Map<ProxyInfo, Instant> getActiveBlacklistMap() {
+        Instant now = Instant.now();
+        return Collections.unmodifiableMap(
+                blacklistMap.entrySet().stream().
+                        filter(e -> !e.getValue().isBefore(now)).
+                        collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 }

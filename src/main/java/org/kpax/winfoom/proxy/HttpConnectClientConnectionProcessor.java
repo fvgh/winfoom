@@ -46,7 +46,7 @@ class HttpConnectClientConnectionProcessor implements ClientConnectionProcessor 
     public void process(final ClientConnection clientConnection, ProxyInfo proxyInfo)
             throws IOException, HttpException {
         logger.debug("Handle HTTP connect request");
-        RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
+        RequestLine requestLine = clientConnection.getRequestLine();
         HttpHost target = HttpHost.create(requestLine.getUri());
         HttpHost proxy = new HttpHost(proxyInfo.getProxyHost().getHostName(), proxyInfo.getProxyHost().getPort());
 

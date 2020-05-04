@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -62,7 +61,7 @@ public class SocksProxyClientConnectionTests {
     @Autowired
     private ConnectionPoolingManager connectionPoolingManager;
 
-    private ClientAndServer remoteProxyServer;
+    private ClientAndServer socksRemoteProxyServer;
 
     private ServerSocket serverSocket;
 
@@ -76,7 +75,7 @@ public class SocksProxyClientConnectionTests {
 
     @BeforeAll
     void before() throws IOException {
-        remoteProxyServer = ClientAndServer.startClientAndServer(PROXY_PORT);
+        socksRemoteProxyServer = ClientAndServer.startClientAndServer(PROXY_PORT);
 
         remoteServer = ServerBootstrap.bootstrap().registerHandler("/get", new HttpRequestHandler() {
 
@@ -91,9 +90,8 @@ public class SocksProxyClientConnectionTests {
 
         serverSocket = new ServerSocket(TestConstants.LOCAL_PROXY_PORT);
         connectionPoolingManager.start();
-        final ServerSocket server = serverSocket;
         new Thread(() -> {
-            while (!server.isClosed()) {
+            while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
                     socket.setSoTimeout(socketTimeout * 1000);
@@ -197,7 +195,7 @@ public class SocksProxyClientConnectionTests {
         } catch (IOException e) {
             // Ignore
         }
-        remoteProxyServer.stop();
+        socksRemoteProxyServer.stop();
         remoteServer.stop();
     }
 }

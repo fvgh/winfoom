@@ -48,7 +48,7 @@ class SocketConnectClientConnectionProcessor implements ClientConnectionProcesso
     public void process(ClientConnection clientConnection, ProxyInfo proxyInfo)
             throws IOException {
         logger.debug("Handle socket connect request");
-        RequestLine requestLine = clientConnection.getHttpRequest().getRequestLine();
+        RequestLine requestLine = clientConnection.getRequestLine();
         HttpHost target = HttpHost.create(requestLine.getUri());
 
         Proxy proxy;

@@ -29,7 +29,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Iterator;
@@ -71,8 +70,7 @@ public class ClientConnectionHandler {
         try {
             List<ProxyInfo> proxyInfoList;
             if (proxyConfig.isAutoConfig()) {
-                HttpHost host = HttpHost.create(requestLine.getUri());
-                proxyInfoList = proxyAutoconfig.findProxyForURL(new URI(host.toURI()));
+                proxyInfoList = proxyAutoconfig.findProxyForURL(HttpUtils.parseUri(requestLine.getUri()));
             } else {
 
                 // Manual proxy case
@@ -105,41 +103,53 @@ public class ClientConnectionHandler {
 
                     // Success, break the iteration
                     break;
-                } catch (ConnectException e) {
-                    logger.debug("Connection error", e);
-                    if (itr.hasNext()) {
-                        logger.debug("Failed to process connection with proxy: {}, retry with the next one", proxyInfo);
-                        proxyBlacklist.blacklist(proxyInfo);
-                    } else {
-                        logger.debug("Failed to process connection with proxy: {}, send the error response", proxyInfo);
-
-                        // Cannot connect to the remote proxy
-                        clientConnection.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
-                    }
                 } catch (Exception e) {
 
-                    if (HttpUtils.isConnectionAborted(e)) {
-                        logger.debug("Client's connection aborted", e);
+                    if (e instanceof ConnectException || e.getCause() instanceof ConnectException ) {
+                        logger.debug("Connection error", e);
+
+                        if (itr.hasNext()) {
+                            logger.debug("Failed to process connection with proxy: {}, retry with the next one", proxyInfo);
+                            proxyBlacklist.blacklist(proxyInfo);
+                        } else {
+                            logger.debug("Failed to process connection with proxy: {}, send the error response", proxyInfo);
+
+                            // Cannot connect to the remote proxy
+                            clientConnection.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
+                        }
+
                     } else {
-                        logger.debug("Generic error, send the error response", e);
 
-                        // Any other error, including client errors
-                        clientConnection.writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+                        if (HttpUtils.isConnectionAborted(e)) {
+                            logger.debug("Client's connection aborted", e);
+                        } else {
+                            logger.debug("Generic error, send the error response", e);
+
+                            // Any other error, including client errors
+                            clientConnection.writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+                        }
+
+                        break;
                     }
-
-                    break;
                 }
             }
-        } catch (InvalidPacFileException e) {
-            clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                    "Invalid Proxy Auto Config file");
-            logger.debug("Invalid Proxy Auto Config file", e);
         } catch (URISyntaxException e) {
             clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
                     HttpStatus.SC_BAD_REQUEST,
                     "Invalid request URI");
             logger.debug("Invalid URI", e);
+        } catch (InvalidPacFileException e) {
+            clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                    "Invalid Proxy Auto Config file");
+            logger.debug("Invalid Proxy Auto Config file", e);
+        } catch (Exception e) {
+            clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                    e.getMessage());
+            logger.debug("Error on handling request", e);
+        } finally {
+            InputOutputs.close(clientConnection);
         }
         logger.debug("Done handling request: {}", requestLine);
 
