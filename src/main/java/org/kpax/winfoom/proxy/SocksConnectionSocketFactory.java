@@ -22,7 +22,7 @@ import org.kpax.winfoom.util.HttpUtils;
 import java.io.IOException;
 import java.net.*;
 
-public class SocksConnectionSocketFactory implements ConnectionSocketFactory {
+class SocksConnectionSocketFactory implements ConnectionSocketFactory {
 
     @Override
     public Socket createSocket(final HttpContext context) throws IOException {

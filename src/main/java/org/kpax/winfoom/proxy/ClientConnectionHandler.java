@@ -35,7 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 
 @Component
-public class ClientConnectionHandler {
+class ClientConnectionHandler {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 

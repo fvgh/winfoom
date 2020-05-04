@@ -30,7 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
-public class ProxyAutoConfig {
+class ProxyAutoConfig {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -39,7 +39,7 @@ public class ProxyAutoConfig {
 
     private NbPacScriptEvaluator nbPacScriptEvaluator;
 
-    public synchronized NbPacScriptEvaluator loadScript() throws IOException, InvalidPacFileException {
+    synchronized NbPacScriptEvaluator loadScript() throws IOException, InvalidPacFileException {
         URL url = proxyConfig.getProxyPacFileLocationAsURL();
         if (url == null) {
             throw new IllegalStateException("No proxy PAC file location found");
@@ -57,18 +57,18 @@ public class ProxyAutoConfig {
         return nbPacScriptEvaluator;
     }
 
-    public NbPacScriptEvaluator getPacScriptEvaluator() {
+    NbPacScriptEvaluator getPacScriptEvaluator() {
         if (nbPacScriptEvaluator == null) {
             throw new IllegalStateException("Proxy PAC file not loaded");
         }
         return nbPacScriptEvaluator;
     }
 
-    public boolean isLoaded() {
+    boolean isLoaded() {
         return nbPacScriptEvaluator != null;
     }
 
-    public List<ProxyInfo> findProxyForURL(URI uri) throws InvalidPacFileException {
+    List<ProxyInfo> findProxyForURL(URI uri) throws InvalidPacFileException {
         if (nbPacScriptEvaluator == null) {
             throw new IllegalStateException("Proxy PAC file not loaded");
         }

@@ -18,7 +18,7 @@ import org.kpax.winfoom.util.HttpUtils;
 import java.io.IOException;
 import java.net.Socket;
 
-public class Socks4ConnectionSocketFactory extends SocksConnectionSocketFactory {
+class Socks4ConnectionSocketFactory extends SocksConnectionSocketFactory {
 
     @Override
     public Socket createSocket(final HttpContext context) throws IOException {

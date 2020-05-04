@@ -18,7 +18,7 @@ package org.kpax.winfoom.proxy;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/13/2020
  */
-public interface ClientConnectionProcessor {
+interface ClientConnectionProcessor {
 
     /**
      * Process the client's connection. That is:<br>

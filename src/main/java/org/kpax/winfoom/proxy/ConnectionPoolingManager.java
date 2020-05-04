@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class ConnectionPoolingManager implements AutoCloseable {
+class ConnectionPoolingManager implements AutoCloseable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -44,7 +44,7 @@ public class ConnectionPoolingManager implements AutoCloseable {
 
     private volatile boolean started;
 
-    public PoolingHttpClientConnectionManager getHttpConnectionManager() {
+    PoolingHttpClientConnectionManager getHttpConnectionManager() {
         if (httpConnectionManager == null) {
             synchronized (this) {
                 if (httpConnectionManager == null) {
@@ -56,13 +56,13 @@ public class ConnectionPoolingManager implements AutoCloseable {
 
     }
 
-    public synchronized void start() {
+    synchronized void start() {
         if (!started) {
             started = true;
         }
     }
 
-    public PoolingHttpClientConnectionManager getSocksConnectionManager() {
+    PoolingHttpClientConnectionManager getSocksConnectionManager() {
         if (socksConnectionManager == null) {
             synchronized (this) {
                 if (socksConnectionManager == null) {
@@ -73,7 +73,7 @@ public class ConnectionPoolingManager implements AutoCloseable {
         return socksConnectionManager;
     }
 
-    public PoolingHttpClientConnectionManager getSocks4ConnectionManager() {
+    PoolingHttpClientConnectionManager getSocks4ConnectionManager() {
         if (socks4ConnectionManager == null) {
             synchronized (this) {
                 if (socks4ConnectionManager == null) {
@@ -84,7 +84,7 @@ public class ConnectionPoolingManager implements AutoCloseable {
         return socks4ConnectionManager;
     }
 
-    public List<PoolingHttpClientConnectionManager> getAllActiveConnectionManagers() {
+    List<PoolingHttpClientConnectionManager> getAllActiveConnectionManagers() {
         List<PoolingHttpClientConnectionManager> activeConnectionManagers = new ArrayList<>();
         if (httpConnectionManager != null) {
             activeConnectionManagers.add(httpConnectionManager);
@@ -98,7 +98,7 @@ public class ConnectionPoolingManager implements AutoCloseable {
         return activeConnectionManagers;
     }
 
-    public boolean isStarted() {
+    boolean isStarted() {
         return started;
     }
 
@@ -150,7 +150,7 @@ public class ConnectionPoolingManager implements AutoCloseable {
         return createConnectionManager(socketFactoryRegistry);
     }
 
-    public synchronized boolean stop() {
+    synchronized boolean stop() {
         if (started) {
             started = false;
             InputOutputs.close(httpConnectionManager);
