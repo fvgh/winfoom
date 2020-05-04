@@ -151,10 +151,11 @@ public final class InputOutputs {
 
     public static boolean emptyDirectory(File directory) {
         Validate.isTrue(directory.isDirectory());
-        for (File file : Objects.requireNonNull(directory.listFiles())) {
+        File[] files = directory.listFiles();
+        for (File file : Objects.requireNonNull(files)) {
             deleteFile(file);
         }
-        return directory.listFiles().length == 0;
+        return files.length == 0;
     }
 
 }

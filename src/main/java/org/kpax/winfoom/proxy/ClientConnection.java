@@ -240,7 +240,7 @@ class ClientConnection implements AutoCloseable{
 
 
     @Override
-    public void close() throws Exception {
-        this.autoCloseables.stream().forEach(InputOutputs::close);
+    public void close() {
+        this.autoCloseables.forEach(InputOutputs::close);
     }
 }
