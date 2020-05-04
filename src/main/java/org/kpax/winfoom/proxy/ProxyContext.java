@@ -26,7 +26,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * It provides a thread pool, a HTTP connection manager etc.<br/>
+ * It provides a thread pool etc.<br/>
  * We rely on the Spring context to close this instance!
  *
  * @author Eugen Covaci

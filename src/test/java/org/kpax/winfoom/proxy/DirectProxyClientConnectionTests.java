@@ -56,7 +56,7 @@ public class DirectProxyClientConnectionTests {
     private ProxyConfig proxyConfig;
 
     @Autowired
-    private ApplicationContext applicationContext;
+    private ClientConnectionHandler clientConnectionHandler;
 
     @Autowired
     private ConnectionPoolingManager connectionPoolingManager;
@@ -97,7 +97,7 @@ public class DirectProxyClientConnectionTests {
 
                         // Handle this connection.
                         try {
-                            applicationContext.getBean(ClientConnection.class, socket).handleRequest();
+                            clientConnectionHandler.handleConnection(socket);
                         } catch (Exception e) {
                             logger.error("Error on handling connection", e);
                         }

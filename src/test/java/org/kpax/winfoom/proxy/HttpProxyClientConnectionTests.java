@@ -77,7 +77,7 @@ class HttpProxyClientConnectionTests {
     private ProxyConfig proxyConfig;
 
     @Autowired
-    private ApplicationContext applicationContext;
+    private ClientConnectionHandler clientConnectionHandler;
 
     @Autowired
     private ConnectionPoolingManager connectionPoolingManager;
@@ -135,7 +135,7 @@ class HttpProxyClientConnectionTests {
 
                         // Handle this connection.
                         try {
-                            applicationContext.getBean(ClientConnection.class, socket).handleRequest();
+                            clientConnectionHandler.handleConnection(socket);
                         } catch (Exception e) {
                             logger.error("Error on handling connection", e);
                         }

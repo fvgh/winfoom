@@ -47,9 +47,7 @@ import java.util.List;
 /**
  * @author Eugen Covaci
  */
-@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-@Component
-public class ClientConnection implements Closeable {
+class ClientConnection implements Closeable {
 
     private final Logger logger = LoggerFactory.getLogger(ClientConnection.class);
 
@@ -64,18 +62,6 @@ public class ClientConnection implements Closeable {
     private final HttpRequest httpRequest;
 
     private final RequestLine requestLine;
-
-    @Autowired
-    private ProxyConfig proxyConfig;
-
-    @Autowired
-    private ProxyAutoConfig proxyAutoconfig;
-
-    @Autowired
-    private ProxyBlacklist proxyBlacklist;
-
-    @Autowired
-    private ClientProcessorSelector clientProcessorSelector;
 
     private boolean requestPrepared;
 
@@ -224,6 +210,10 @@ public class ClientConnection implements Closeable {
         this.requestPrepared = true;
     }
 
+    void lastResort() {
+        this.lastResort = true;
+    }
+
     /**
      * Whether there are no more tries.
      *
@@ -249,92 +239,6 @@ public class ClientConnection implements Closeable {
         return requestLine;
     }
 
-    /**
-     * Process the client connection with each available proxy.<br>
-     * Un un-responding proxy is blacklisted only if it is not the last
-     * one available.
-     */
-    void handleRequest() {
-        logger.debug("Handle request: {}", requestLine);
 
-        try {
-            List<ProxyInfo> proxyInfoList;
-            if (proxyConfig.isAutoConfig()) {
-                HttpHost host = HttpHost.create(requestLine.getUri());
-                proxyInfoList = proxyAutoconfig.findProxyForURL(new URI(host.toURI()));
-            } else {
-
-                // Manual proxy case
-                HttpHost proxyHost = proxyConfig.getProxyType().isDirect() ? null :
-                        new HttpHost(proxyConfig.getProxyHost(), proxyConfig.getProxyPort());
-
-                proxyInfoList = Collections.singletonList(new ProxyInfo(proxyConfig.getProxyType(), proxyHost));
-            }
-
-            logger.debug("proxyInfoList {}", proxyInfoList);
-
-            ClientConnectionProcessor connectionProcessor;
-            for (Iterator<ProxyInfo> itr = proxyInfoList.iterator(); itr.hasNext(); ) {
-                ProxyInfo proxyInfo = itr.next();
-
-                if (itr.hasNext()) {
-                    if (proxyBlacklist.checkBlacklist(proxyInfo)) {
-                        logger.debug("Blacklisted proxy {} - skip it", proxyInfo);
-                        continue;
-                    }
-                } else {
-                    this.lastResort = true;
-                }
-
-                connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
-
-                try {
-                    logger.debug("Process connection with proxy: {}", proxyInfo);
-                    connectionProcessor.process(this, proxyInfo);
-
-                    // Success, break the iteration
-                    break;
-                } catch (ConnectException e) {
-                    logger.debug("Connection error", e);
-                    if (itr.hasNext()) {
-                        logger.debug("Failed to process connection with proxy: {}, retry with the next one", proxyInfo);
-                        proxyBlacklist.blacklist(proxyInfo);
-                    } else {
-                        logger.debug("Failed to process connection with proxy: {}, send the error response", proxyInfo);
-
-                        // Cannot connect to the remote proxy
-                        writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
-                    }
-                } catch (Exception e) {
-
-                    if (HttpUtils.isConnectionAborted(e)) {
-                        logger.debug("Client's connection aborted", e);
-                    } else {
-                        logger.debug("Generic error, send the error response", e);
-
-                        // Any other error, including client errors
-                        writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
-                    }
-
-                    break;
-                }
-            }
-        } catch (InvalidPacFileException e) {
-            writeErrorResponse(requestLine.getProtocolVersion(),
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                    "Invalid Proxy Auto Config file");
-            logger.debug("Error on calling PAC function", e);
-        } catch (
-                URISyntaxException e) {
-            writeErrorResponse(requestLine.getProtocolVersion(),
-                    HttpStatus.SC_BAD_REQUEST,
-                    "Invalid request URI");
-            logger.debug("Error on calling PAC function", e);
-        } finally {
-            InputOutputs.close(socket);
-        }
-        logger.debug("Done handling request: {}", requestLine);
-
-    }
 
 }

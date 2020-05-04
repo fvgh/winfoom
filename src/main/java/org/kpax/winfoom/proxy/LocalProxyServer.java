@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.ConnectionClosedException;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanInstantiationException;
@@ -50,7 +51,7 @@ class LocalProxyServer implements Closeable {
     private ProxyContext proxyContext;
 
     @Autowired
-    private ApplicationContext applicationContext;
+    private ClientConnectionHandler clientConnectionHandler;
 
     private ServerSocket serverSocket;
 
@@ -82,21 +83,11 @@ class LocalProxyServer implements Closeable {
                         socket.setSoTimeout(systemConfig.getSocketSoTimeout() * 1000);
                         proxyContext.executorService().execute(() -> {
                             try {
-                                applicationContext.getBean(ClientConnection.class, socket)
-                                        .handleRequest();
-                            } catch (BeanCreationException e) {
-                                if (e.getCause() instanceof BeanInstantiationException) {
-                                    Throwable cause = e.getCause().getCause();
-                                    if (cause instanceof ConnectionClosedException) {
-                                        logger.debug("Client unexpectedly closed connection", cause);
-                                    } else {
-                                        logger.debug("Error on init connection", cause);
-                                    }
-                                } else {
-                                    logger.error("Error on instantiating ClientConnection", e);
-                                }
+                                clientConnectionHandler.handleConnection(socket);
                             } catch (Exception e) {
                                 logger.error("Error on handling connection", e);
+                            } finally {
+                                InputOutputs.close(socket);
                             }
                         });
                     } catch (SocketException e) {
