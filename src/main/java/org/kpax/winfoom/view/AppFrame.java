@@ -13,6 +13,7 @@
 package org.kpax.winfoom.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
@@ -637,8 +638,12 @@ public class AppFrame extends JFrame {
         } catch (HttpHostConnectException e) {
             SwingUtils.showErrorMessage(this, "Wrong proxy port!");
             return false;
+        } catch (ConnectTimeoutException e) {
+            SwingUtils.showErrorMessage(this, "Wrong proxy host/port!");
+            return false;
         } catch (Exception e) {
-            SwingUtils.showErrorMessage(this, e.getMessage());
+            SwingUtils.showErrorMessage(this, "Validation error: "
+                    + (e.getMessage() != null ? e.getMessage() : "See the log file for details!"));
             return false;
         }
 

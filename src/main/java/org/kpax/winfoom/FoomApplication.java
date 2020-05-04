@@ -54,15 +54,20 @@ public class FoomApplication {
 
         // Check version
         try {
-            checkAppVersion();
+            if (!checkAppVersion()) {
+                return;
+            }
         } catch (Exception e) {
             logger.error("Failed to verify app version", e);
             SwingUtils.showErrorMessage(null, "Failed to verify application version." +
                     "\nRemove the system.properties and proxy.properties files from <USERDIR>/.winfoom directory then try again.");
-            return;
+            System.exit(1);
         }
 
+        logger.info("Bootstrap Spring's application context");
         ApplicationContext applicationContext = SpringApplication.run(FoomApplication.class, args);
+
+        logger.info("Launch the GUI");
         final AppFrame frame = applicationContext.getBean(AppFrame.class);
         EventQueue.invokeLater(() -> {
             try {
@@ -83,10 +88,11 @@ public class FoomApplication {
      * the application version (extracted from the MANIFEST file) are the same.
      * If not, the existent *.properties file are moved into a backup location.
      *
+     * @return <code>true</code> iff the startup should proceed.
      * @throws IOException
      */
-    private static void checkAppVersion() throws IOException {
-
+    private static boolean checkAppVersion() throws IOException {
+        logger.info("Check the application's version");
         Path appHomePath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);
         Path systemPropertiesPath = appHomePath.resolve(SystemConfig.FILENAME);
 
@@ -101,12 +107,23 @@ public class FoomApplication {
             if (!actualVersion.equals(existingVersion)) {
                 logger.info("Different versions found: existent = {} , actual = {}", existingVersion, actualVersion);
                 Path backupDirPath = appHomePath.resolve(existingVersion + "-backup");
+
+
+                int selection = JOptionPane.showConfirmDialog(null,
+                        "The configuration files found are from a different application version!\n" +
+                                String.format("The existent ones will be saved to %s directory.\nIs this OK?", backupDirPath.toString()),
+                        "Warning",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+
+                if (selection != JOptionPane.YES_OPTION) {
+                    logger.info("User rejected the proposition");
+                    return false;
+                }
+
                 if (!Files.exists(backupDirPath)) {
                     Files.createDirectory(backupDirPath);
                 }
-
-                SwingUtils.showWarningMessage(null, "The configuration files found are from a different application version!\n" +
-                        String.format("The existent ones will be saved to %s directory", backupDirPath.toString()));
 
                 logger.info("Move the existent config files to: {} directory", backupDirPath);
                 Files.move(systemPropertiesPath, backupDirPath.resolve(SystemConfig.FILENAME),
@@ -119,6 +136,7 @@ public class FoomApplication {
             }
         }
 
+        return true;
     }
 
 }

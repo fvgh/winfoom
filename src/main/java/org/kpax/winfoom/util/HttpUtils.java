@@ -154,19 +154,19 @@ public final class HttpUtils {
     }
 
     public static List<ProxyInfo> parsePacProxyLine(String proxyLine) {
-        if (proxyLine == null) {
+        if (StringUtils.isBlank(proxyLine)) {
             return Collections.singletonList(new ProxyInfo(ProxyInfo.PacType.DIRECT));
         }
         List<ProxyInfo> proxyInfos = new ArrayList<>();
         for (String s : proxyLine.split(";")) {
-            String[] split = s.split("\\s+");
-            Validate.isTrue(split.length > 0);
-            ProxyInfo.PacType type = ProxyInfo.PacType.valueOf(split[0]);
+            String[] split = s.trim().split("\\s+");
+            Validate.isTrue(split.length > 0, "Invalid proxy line [%s]: empty", proxyLine);
+            ProxyInfo.PacType type = ProxyInfo.PacType.valueOf(split[0].trim());
             if (type == ProxyInfo.PacType.DIRECT) {
                 proxyInfos.add(new ProxyInfo(ProxyInfo.PacType.DIRECT));
             } else {
-                Validate.isTrue(split.length > 1);
-                proxyInfos.add(new ProxyInfo(type, HttpHost.create(split[1])));
+                Validate.isTrue(split.length > 1, "Invalid proxy line [%s]: proxy host:port required", proxyLine);
+                proxyInfos.add(new ProxyInfo(type, HttpHost.create(split[1].trim())));
             }
         }
         return Collections.unmodifiableList(proxyInfos);

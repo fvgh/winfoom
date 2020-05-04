@@ -22,6 +22,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -66,36 +67,41 @@ public class ProxyValidator {
         logger.info("Test proxy config {}", proxyConfig);
 
         ProxyType proxyType = proxyConfig.getProxyType();
-        if (proxyConfig.isAutoConfig()) {
-            proxyAutoconfig.loadScript();
-            HttpHost httpHost = HttpHost.create(proxyConfig.getProxyTestUrl());
-            List<ProxyInfo> proxyInfos = proxyAutoconfig.findProxyForURL(new URI(httpHost.toURI()));
-            for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
-                ProxyInfo proxyInfo = itr.next();
-                logger.info("Validate {}", proxyInfo);
-                ProxyType type = proxyInfo.getType();
-                try {
-                    HttpHost host = proxyInfo.getProxyHost();
-                    testProxyConfig(type,
-                            host != null ? host.getHostName() : null,
-                            host != null ? host.getPort() : -1);
-                    break;
-                } catch (HttpHostConnectException e) {
-                    if (itr.hasNext()) {
-                        proxyBlacklist.blacklist(proxyInfo);
-                        logger.warn("Error on validate this proxy, will try the next one");
-                    } else {
-                        throw e;
+
+        try {
+            if (proxyConfig.isAutoConfig()) {
+                proxyAutoconfig.loadScript();
+                HttpHost httpHost = HttpHost.create(proxyConfig.getProxyTestUrl());
+                List<ProxyInfo> proxyInfos = proxyAutoconfig.findProxyForURL(new URI(httpHost.toURI()));
+                for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
+                    ProxyInfo proxyInfo = itr.next();
+                    logger.info("Validate {}", proxyInfo);
+                    ProxyType type = proxyInfo.getType();
+                    try {
+                        HttpHost host = proxyInfo.getProxyHost();
+                        testProxyConfig(type,
+                                host != null ? host.getHostName() : null,
+                                host != null ? host.getPort() : -1);
+                        break;
+                    } catch (HttpHostConnectException | ConnectTimeoutException e) {
+                        if (itr.hasNext()) {
+                            proxyBlacklist.blacklist(proxyInfo);
+                            logger.warn("Error on validating this proxy, will try the next one", e);
+                        } else {
+                            throw e;
+                        }
                     }
                 }
+            } else {
+                testProxyConfig(
+                        proxyType,
+                        proxyConfig.getProxyHost(),
+                        proxyConfig.getProxyPort());
             }
-        } else {
-            testProxyConfig(
-                    proxyType,
-                    proxyConfig.getProxyHost(),
-                    proxyConfig.getProxyPort());
+        } catch (Exception e) {
+            logger.error("Error on validation proxy config", e);
+            throw e;
         }
-
     }
 
     private void testProxyConfig(ProxyType proxyType,
@@ -157,9 +163,6 @@ public class ProxyValidator {
                     throw new CredentialException(statusLine.getReasonPhrase());
                 }
             }
-        } catch (Exception e) {
-            logger.error("Error on testing http proxy config", e);
-            throw e;
         }
     }
 }

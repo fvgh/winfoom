@@ -73,6 +73,7 @@ public class ProxyAutoConfig {
             throw new IllegalStateException("Proxy PAC file not loaded");
         }
         String proxyLine = nbPacScriptEvaluator.callFindProxyForURL(uri);
+        logger.debug("proxyLine [{}]", proxyLine);
         return HttpUtils.parsePacProxyLine(proxyLine);
     }
 }
