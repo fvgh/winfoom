@@ -27,14 +27,6 @@ public final class ObjectFormat {
     }
 
     /**
-     * @see #toCrlf(Object, Charset)
-     */
-    public static byte[] toCrlf(Object input) {
-        Validate.notNull(input, "input cannot be null");
-        return (input + CRLF).getBytes();
-    }
-
-    /**
      * Calls the <code>input.toString()</code> and appends CRLF.
      *
      * @param input   The object to be formatted (not null).

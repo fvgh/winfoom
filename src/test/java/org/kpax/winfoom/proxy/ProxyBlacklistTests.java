@@ -41,6 +41,7 @@ class ProxyBlacklistTests {
     @BeforeAll
     void beforeAll() {
         ReflectionTestUtils.setField(proxyBlacklist, "temporalUnit", ChronoUnit.SECONDS);
+        proxyBlacklist.clear();
     }
 
     @Order(0)
