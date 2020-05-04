@@ -15,8 +15,13 @@ package org.kpax.winfoom.util;
 import org.apache.http.HttpRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicHttpRequest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.proxy.ProxyInfo;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.net.Socket;
 import java.net.URI;
@@ -30,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 3/16/2020
  */
-
 class HttpUtilsTests {
 
     @Test
@@ -114,6 +118,24 @@ class HttpUtilsTests {
         assertEquals("localhost:1080", proxyInfos.get(0).getProxyHost().toHostString());
         assertEquals(ProxyInfo.PacType.DIRECT, proxyInfos.get(1).getType());
         assertNull(proxyInfos.get(1).getProxyHost());
+    }
+
+
+    @Test
+    void parsePacProxyLine_multiple_SpaceAgnostic() {
+        String proxyLine = " PROXY  localhost:1080 ; HTTP bla:80; DIRECT ";
+
+        List<ProxyInfo> proxyInfos = HttpUtils.parsePacProxyLine(proxyLine);
+        assertEquals(3, proxyInfos.size());
+
+        assertEquals(ProxyInfo.PacType.PROXY, proxyInfos.get(0).getType());
+        assertEquals("localhost:1080", proxyInfos.get(0).getProxyHost().toHostString());
+
+        assertEquals(ProxyInfo.PacType.HTTP, proxyInfos.get(1).getType());
+        assertEquals("bla:80", proxyInfos.get(1).getProxyHost().toHostString());
+
+        assertEquals(ProxyInfo.PacType.DIRECT, proxyInfos.get(2).getType());
+        assertNull(proxyInfos.get(2).getProxyHost());
     }
 
     @Test

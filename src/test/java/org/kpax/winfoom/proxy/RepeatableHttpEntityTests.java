@@ -75,9 +75,6 @@ class RepeatableHttpEntityTests {
 
     private Path tempDirectory;
 
-    @Autowired
-    private ApplicationContext applicationContext;
-
     @BeforeAll
     void before() throws IOException {
         tempDirectory = Paths.get(System.getProperty("user.dir"), "target", "temp");
@@ -95,7 +92,8 @@ class RepeatableHttpEntityTests {
                     new Thread(() -> {
 
                         // Handle this connection.
-                        try (ClientConnection clientConnection = applicationContext.getBean(ClientConnection.class, socket)) {
+                        try  {
+                            ClientConnection clientConnection = new ClientConnection(socket);
                             RepeatableHttpEntity requestEntity;
                             HttpRequest request = clientConnection.getHttpRequest();
                             try {
@@ -142,7 +140,9 @@ class RepeatableHttpEntityTests {
                             }
 
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.error("Error on handling connection", e);
+                        } finally {
+                            InputOutputs.close(socket);
                         }
                     }).start();
                 } catch (SocketException e) {
@@ -154,8 +154,6 @@ class RepeatableHttpEntityTests {
                 }
             }
         }).start();
-
-
     }
 
     @Test

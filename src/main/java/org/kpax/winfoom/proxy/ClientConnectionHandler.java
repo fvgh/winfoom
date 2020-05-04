@@ -134,13 +134,12 @@ public class ClientConnectionHandler {
             clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
                     HttpStatus.SC_INTERNAL_SERVER_ERROR,
                     "Invalid Proxy Auto Config file");
-            logger.debug("Error on calling PAC function", e);
-        } catch (
-                URISyntaxException e) {
+            logger.debug("Invalid Proxy Auto Config file", e);
+        } catch (URISyntaxException e) {
             clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
                     HttpStatus.SC_BAD_REQUEST,
                     "Invalid request URI");
-            logger.debug("Error on calling PAC function", e);
+            logger.debug("Invalid URI", e);
         }
         logger.debug("Done handling request: {}", requestLine);
 
