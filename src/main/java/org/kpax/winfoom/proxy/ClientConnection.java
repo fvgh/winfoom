@@ -47,7 +47,7 @@ import java.util.List;
 /**
  * @author Eugen Covaci
  */
-class ClientConnection implements Closeable {
+class ClientConnection {
 
     private final Logger logger = LoggerFactory.getLogger(ClientConnection.class);
 
@@ -225,11 +225,6 @@ class ClientConnection implements Closeable {
 
     boolean isClosed() {
         return socket.isClosed();
-    }
-
-    @Override
-    public void close() {
-        InputOutputs.close(socket);
     }
 
     /**

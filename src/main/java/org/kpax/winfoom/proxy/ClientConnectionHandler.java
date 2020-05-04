@@ -141,8 +141,6 @@ public class ClientConnectionHandler {
                     HttpStatus.SC_BAD_REQUEST,
                     "Invalid request URI");
             logger.debug("Error on calling PAC function", e);
-        } finally {
-            InputOutputs.close(socket);
         }
         logger.debug("Done handling request: {}", requestLine);
 
