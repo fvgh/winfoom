@@ -22,6 +22,9 @@ import org.kpax.winfoom.util.HttpUtils;
 import java.io.IOException;
 import java.net.*;
 
+/**
+ * A {@link ConnectionSocketFactory} implementation for SOCKS proxy.
+ */
 class SocksConnectionSocketFactory implements ConnectionSocketFactory {
 
     @Override
@@ -48,6 +51,9 @@ class SocksConnectionSocketFactory implements ConnectionSocketFactory {
         } catch (SocketTimeoutException ex) {
             throw new ConnectTimeoutException(ex, host, remoteAddress.getAddress());
         } catch (SocketException ex) {
+
+            // Remap some exception to
+            // single out the connection failed case.
             if (StringUtils.startsWithIgnoreCase(ex.getMessage(), "Connection refused")
                     || StringUtils.startsWithIgnoreCase(ex.getMessage(), "connect timed out")) {
                 throw new ConnectException(ex.getMessage());

@@ -37,6 +37,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * Various utility methods, HTTP related.
+ *
  * @author Eugen Covaci
  */
 public final class HttpUtils {
@@ -48,6 +50,13 @@ public final class HttpUtils {
     private HttpUtils() {
     }
 
+    /**
+     * Parse a {@link String} value into an {@link URI} instance.
+     *
+     * @param url the input value.
+     * @return the {@link URI} instance.
+     * @throws URISyntaxException
+     */
     public static URI parseUri(String url) throws URISyntaxException {
         int index = url.indexOf("?");
         if (index > -1) {
@@ -59,12 +68,25 @@ public final class HttpUtils {
         return new URIBuilder(url).build();
     }
 
+    /**
+     * Remove the {@code chunked} word from a comma separated sequence of words.
+     *
+     * @param value a comma separated sequence of words.
+     * @return a comma separated sequence of words with the {@code chunked} word removed.
+     */
     public static String stripChunked(String value) {
         return Arrays.stream(value.split(",")).map(String::trim)
                 .filter((item) -> !HTTP.CHUNK_CODING.equalsIgnoreCase(item))
                 .collect(Collectors.joining(","));
     }
 
+    /**
+     * Wrap the first header into an {@link Optional}.
+     *
+     * @param request the request
+     * @param name    the header's name
+     * @return an {@link Optional} containing the header.
+     */
     public static Optional<Header> getFirstHeader(HttpRequest request, String name) {
         return Optional.ofNullable(request.getFirstHeader(name));
     }
@@ -73,10 +95,23 @@ public final class HttpUtils {
         return getFirstHeader(request, name).map(NameValuePair::getValue);
     }
 
+    /**
+     * Get the request Content-length header's value.
+     *
+     * @param request the HTTP request.
+     * @return the request's Content-length header's value or {@code -1} when missing.
+     */
     public static long getContentLength(HttpRequest request) {
         return getFirstHeaderValue(request, HttpHeaders.CONTENT_LENGTH).map(Long::parseLong).orElse(-1L);
     }
 
+    /**
+     * Create a {@link Header} instance.
+     *
+     * @param name  the header's name.
+     * @param value the header's value.
+     * @return a new {@link Header} instance.
+     */
     public static Header createHttpHeader(String name, String value) {
         return new BasicHeader(name, value);
     }
@@ -87,18 +122,41 @@ public final class HttpUtils {
         socket.setSendBufferSize(bufferSize);
     }
 
+    /**
+     * Create a {@link BasicStatusLine} instance with HTTP/1.1 version and no reason code.
+     *
+     * @see #toStatusLine(ProtocolVersion, int, String)
+     */
     public static BasicStatusLine toStatusLine(int httpCode) {
         return toStatusLine(HttpVersion.HTTP_1_1, httpCode, null);
     }
 
+    /**
+     * Create a {@link BasicStatusLine} instance with no reason code
+     *
+     * @see #toStatusLine(ProtocolVersion, int, String)
+     */
     public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode) {
         return toStatusLine(protocolVersion, httpCode, null);
     }
 
+    /**
+     * Create a {@link BasicStatusLine} instance with HTTP/1.1 version.
+     *
+     * @see #toStatusLine(ProtocolVersion, int, String)
+     */
     public static BasicStatusLine toStatusLine(int httpCode, String reasonPhrase) {
         return toStatusLine(HttpVersion.HTTP_1_1, httpCode, reasonPhrase);
     }
 
+    /**
+     * Create a {@link BasicStatusLine} instance.
+     *
+     * @param protocolVersion the HTTP version
+     * @param httpCode        the HTTP code
+     * @param reasonPhrase    the HTTP reason phrase
+     * @return a new {@link BasicStatusLine} instance.
+     */
     public static BasicStatusLine toStatusLine(ProtocolVersion protocolVersion, int httpCode, String reasonPhrase) {
         Validate.notNull(protocolVersion, "protocolVersion cannot be null");
         return new BasicStatusLine(protocolVersion, httpCode,
@@ -106,10 +164,22 @@ public final class HttpUtils {
                         EnglishReasonPhraseCatalog.INSTANCE.getReason(httpCode, Locale.ENGLISH) : reasonPhrase);
     }
 
+    /**
+     * Validate a port value.
+     *
+     * @param port the port value.
+     * @return {@code true} iff the port value is between 1-65535.
+     */
     public static boolean isValidPort(int port) {
         return port > 0 && port < 65536;
     }
 
+    /**
+     * Parse the HTTP request's  to extract a {@link ContentType} instance from Content-Type header.
+     *
+     * @param request the HTTP request.
+     * @return the {@link ContentType} instance.
+     */
     public static ContentType getContentType(HttpRequest request) {
         Header contentTypeHeader = request.getFirstHeader(HttpHeaders.CONTENT_TYPE);
         Validate.isTrue(contentTypeHeader != null, "No Content-Type header found");
@@ -128,6 +198,12 @@ public final class HttpUtils {
         return ContentType.create(contentType, charset);
     }
 
+    /**
+     * Write all the entity content into a dummy output stream.
+     *
+     * @param httpEntity the entity to be consumed.
+     * @throws IOException
+     */
     public static void consumeEntity(HttpEntity httpEntity) throws IOException {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpEntity.writeTo(outStream);
@@ -135,10 +211,23 @@ public final class HttpUtils {
     }
 
 
+    /**
+     * Wrap the text inside <html></html>.
+     *
+     * @param text the text to wrap.
+     * @return the wrapped text.
+     */
     public static String toHtml(String text) {
         return new StringBuilder("<html>").append(text).append("</html>").toString();
     }
 
+    /**
+     * Quite a dirty hack.<br>
+     * Using Java Reflection, it calls the {@code java.net.SocksSocketImpl#setV4()} method.
+     *
+     * @param socket the SOCKS socket to be marked as version 4.
+     * @throws UnsupportedOperationException
+     */
     public static void setSocks4(final Socket socket) throws UnsupportedOperationException {
         try {
             Field implField = Socket.class.getDeclaredField("impl");
@@ -153,6 +242,12 @@ public final class HttpUtils {
         }
     }
 
+    /**
+     * Parse the proxy line returned by PAC proxy script.
+     *
+     * @param proxyLine the proxy line.
+     * @return the list of {@link ProxyInfo}s.
+     */
     public static List<ProxyInfo> parsePacProxyLine(String proxyLine) {
         if (StringUtils.isBlank(proxyLine)) {
             return Collections.singletonList(new ProxyInfo(ProxyInfo.PacType.DIRECT));

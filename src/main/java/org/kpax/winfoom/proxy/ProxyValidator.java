@@ -45,6 +45,9 @@ import java.net.*;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Responsible with proxy config validation.
+ */
 @Component
 public class ProxyValidator {
 
@@ -62,6 +65,15 @@ public class ProxyValidator {
     @Autowired
     private ProxyBlacklist proxyBlacklist;
 
+    /**
+     * Tests the proxy settings.<br>
+     * The errors it throws must be interpretable by the GUI into meaningful messages.
+     *
+     * @throws IOException
+     * @throws CredentialException the provided credentials are wrong
+     * @throws InvalidPacFileException the PAC script file is invalid
+     * @throws URISyntaxException there is something wrong with the test URL.
+     */
     public void testProxyConfig()
             throws IOException, CredentialException, InvalidPacFileException, URISyntaxException {
         logger.info("Test proxy config {}", proxyConfig);

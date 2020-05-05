@@ -17,6 +17,9 @@ import org.apache.http.HttpHost;
 
 import java.util.Objects;
 
+/**
+ * Encapsulates the proxy information: type, host an port
+ */
 public final class ProxyInfo {
 
     private final ProxyType type;
@@ -64,6 +67,9 @@ public final class ProxyInfo {
         return Objects.hash(type, proxyHost != null ? proxyHost.toHostString() : null);
     }
 
+    /**
+     * The proxy types as they are present in a PAC script file.
+     */
     public enum PacType implements ProxyType {
         PROXY, HTTP, HTTPS, SOCKS, SOCKS4, SOCKS5, DIRECT;
 

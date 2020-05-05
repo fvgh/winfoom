@@ -13,16 +13,12 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.ConnectionClosedException;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanInstantiationException;
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.Closeable;
@@ -31,7 +27,7 @@ import java.net.Socket;
 import java.net.SocketException;
 
 /**
- * The local proxy server.
+ * The local proxy server.<br>
  * We rely on the Spring context to close this instance!
  *
  * @author Eugen Covaci
@@ -58,9 +54,15 @@ class LocalProxyServer implements Closeable {
     private volatile boolean started;
 
     /**
-     * Starts the local proxy server.
-     * If the server had been started, an {@link IllegalStateException} would be thrown.
+     * Starts the local proxy server.<br>
+     * This means:
+     * <ul>
+     * <li>Opens a {@link ServerSocket} on a local port, then listen for connections</li>
+     * <li>When a connection arrives, it delegates the handling to the {@link ClientConnectionHandler}, on a new thread.</li>
+     * </ul>
+     * The proxy settings are saved after the local proxy server successfully starts.<br>
      *
+     * @throws IllegalStateException if the server had been started.
      * @throws Exception
      */
     synchronized void start()
@@ -134,6 +136,11 @@ class LocalProxyServer implements Closeable {
         }
     }
 
+    /**
+     * Getter.
+     *
+     * @return {@code true} iff the local server is started.
+     */
     synchronized boolean isStarted() {
         return started;
     }

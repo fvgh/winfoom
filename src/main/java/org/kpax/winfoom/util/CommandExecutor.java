@@ -47,7 +47,11 @@ public class CommandExecutor {
         }
     }
 
-
+    /**
+     * Retrieves the system proxy line by querying the Windows Registry.
+     * @return the system proxy line
+     * @throws CommandExecutionException
+     */
     public static Optional<String> getSystemProxy() throws CommandExecutionException {
         String[] command = new String[]{"cmd.exe", "/c",
                 "reg query \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\" | findstr \"ProxyServer AutoConfigURL\""};

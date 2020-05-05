@@ -37,7 +37,8 @@ class ClientProcessorSelector {
     private NonConnectClientConnectionProcessor nonConnectClientConnectionProcessor;
 
     /**
-     * Select the appropriate {@link ClientConnectionProcessor} implementation to process the client's connection based on the request info and the proxy type.
+     * Select the appropriate {@link ClientConnectionProcessor} implementation to process the client's connection
+     * based on the request info and the proxy type.
      *
      * @param requestLine the HTTP request's first line.
      * @param proxyInfo   the proxy info used to make the remote HTTP request.

@@ -28,6 +28,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 /**
+ * A special type of repeatable {@link AbstractHttpEntity}.<br>
+ * The data is cached either internally or externally into a temporary file.
+ *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/6/2020
  */
@@ -35,6 +38,9 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
 
     private final SessionInputBufferImpl inputBuffer;
 
+    /**
+     * The directory path containing the temporary files.
+     */
     private final Path tempDirectory;
 
     /**
@@ -47,9 +53,15 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
      */
     private byte[] bufferedBytes;
 
+    /**
+     * The temporary file containing the cached data.
+     */
     private Path tempFilepath;
 
-    private boolean firstTry = true;
+    /**
+     * Whether it reads from {@link SessionInputBufferImpl} or from the temp cache file.
+     */
+    private boolean streaming = true;
 
     public RepeatableHttpEntity(final SessionInputBufferImpl inputBuffer,
                                 final Path tempDirectory,
@@ -66,6 +78,12 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
         }
     }
 
+    /**
+     * Read from the {@link SessionInputBufferImpl} into an internal buffer,
+     * no more than {@link #contentLength} bytes.
+     *
+     * @throws IOException
+     */
     private void writeToBuffer() throws IOException {
         int length;
         byte[] buffer = new byte[OUTPUT_BUFFER_SIZE];
@@ -100,7 +118,7 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
         } else if (contentLength == 0) {
             return new ByteArrayInputStream(new byte[0]);
         } else {
-            if (firstTry) {
+            if (streaming) {
                 return new InputStream() {
                     @Override
                     public int read() {
@@ -124,7 +142,7 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
             outStream.write(bufferedBytes);
             outStream.flush();
         } else if (contentLength != 0) {
-            if (firstTry) {
+            if (streaming) {
                 tempFilepath = tempDirectory.resolve(InputOutputs.generateCacheFilename());
                 try (AsynchronousFileChannel tempFileChannel
                              = AsynchronousFileChannel.open(tempFilepath,
@@ -185,7 +203,7 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
                         }
                     }
                 }
-                firstTry = false;
+                streaming = false;
             } else {
 
                 //read from file
@@ -199,7 +217,7 @@ class RepeatableHttpEntity extends AbstractHttpEntity implements Closeable {
 
     @Override
     public boolean isStreaming() {
-        return bufferedBytes == null && firstTry;
+        return bufferedBytes == null && streaming;
     }
 
     @Override

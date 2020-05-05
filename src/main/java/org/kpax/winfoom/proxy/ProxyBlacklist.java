@@ -25,6 +25,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ * It implements the proxy blacklisting mechanism.<br>
+ * If a proxy doesn't respond to a connect attempt, it can be blacklisted
+ * which means it will not be used again until the blacklist timeout happens.
+ */
 @Component
 public class ProxyBlacklist {
 
@@ -41,8 +46,19 @@ public class ProxyBlacklist {
     @Autowired
     private ProxyConfig proxyConfig;
 
+    /**
+     * Attempts to blacklist proxy. Does nothing if the blacklisting is disabled.<br>
+     * If the proxy is already blacklisted, it keeps the existent timeout.
+     *
+     * @param proxyInfo the proxy to be blacklisted.
+     * @return the blacklist timeout {@link Instant} iff the blacklisting is enabled, {@code null} otherwise.
+     */
     Instant blacklist(ProxyInfo proxyInfo) {
         logger.debug("Attempt to blacklist proxy {}", proxyInfo);
+        if (proxyConfig.getBlacklistTimeout() < 1) {
+            logger.debug("Blacklisting is disabled, nothing to do");
+            return null;
+        }
         return blacklistMap.compute(proxyInfo, (key, value) -> {
             Instant now = Instant.now();
             if (value == null || value.isBefore(now)) {
@@ -62,15 +78,23 @@ public class ProxyBlacklist {
      * If the proxy is in the blacklist map but expired, will be removed.
      *
      * @param proxyInfo the proxy to be checked
-     * @return <code>true</code> iff the proxy is blacklisted
+     * @return {@code true} iff the proxy is blacklisted
      */
     boolean checkBlacklist(ProxyInfo proxyInfo) {
+        if (proxyConfig.getBlacklistTimeout() < 1) {
+            return false;
+        }
         Instant timeoutInstant = blacklistMap.computeIfPresent(proxyInfo, (key, value) -> {
             return value.isBefore(Instant.now()) ? null : value;
         });
         return timeoutInstant != null;
     }
 
+    /**
+     * It clears the blacklist map.
+     *
+     * @return the number of currently active blacklisted proxies.
+     */
     public int clear() {
         long count = blacklistMap.keySet().stream()
                 .filter(this::checkBlacklist).count();
@@ -78,7 +102,12 @@ public class ProxyBlacklist {
         return (int) count;
     }
 
-    public ChronoUnit getTemporalUnit () {
+    /**
+     * Getter
+     *
+     * @return the temporal unit of the blacklisting mechanism.
+     */
+    public ChronoUnit getTemporalUnit() {
         return temporalUnit;
     }
 
@@ -86,7 +115,13 @@ public class ProxyBlacklist {
         return Collections.unmodifiableMap(blacklistMap);
     }
 
+    public boolean isBlacklistingEnabled() {
+        return proxyConfig.getBlacklistTimeout() > 0;
+    }
 
+    /**
+     * @return a map containing the currently active blacklisted proxies.
+     */
     public Map<ProxyInfo, Instant> getActiveBlacklistMap() {
         Instant now = Instant.now();
         return Collections.unmodifiableMap(

@@ -21,6 +21,13 @@ public class JarUtils {
     private JarUtils() {
     }
 
+    /**
+     * Gets the {@code Implementation-Version}  attribute from jar's MANIFEST.MF file.
+     *
+     * @param cls the class
+     * @return the application's version as it appears in the pom.xml file.
+     * @throws IOException
+     */
     public static String getVersion(Class<?> cls) throws IOException {
         Object version = new Manifest(cls.getResourceAsStream("/META-INF/MANIFEST.MF"))
                 .getMainAttributes()

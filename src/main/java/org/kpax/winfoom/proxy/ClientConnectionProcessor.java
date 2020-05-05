@@ -13,7 +13,7 @@
 package org.kpax.winfoom.proxy;
 
 /**
- * Process the client's connection request.
+ * Process a {@link ClientConnection} with a certain {@link ProxyInfo}.
  *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/13/2020
@@ -28,8 +28,8 @@ interface ClientConnectionProcessor {
      * <li>Give back to the client the resulted response or an error response when no response is available.</li>
      * </ul>
      *
-     * @param clientConnection the client connection instance.
-     * @param proxyInfo        The proxy info used to make the remote HTTP request.
+     * @param clientConnection the {@link ClientConnection} instance.
+     * @param proxyInfo        The {@link ProxyInfo} used to make the remote HTTP request.
      * @throws Exception
      */
     void process(ClientConnection clientConnection, ProxyInfo proxyInfo)

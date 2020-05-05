@@ -24,7 +24,6 @@ import org.apache.http.util.EntityUtils;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.util.HttpUtils;
-import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +97,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
                             proxyConfig.getTempDirectory(),
                             request,
                             systemConfig.getInternalBufferLength());
-                    clientConnection.addAutoCloseable((RepeatableHttpEntity)entity);
+                    clientConnection.registerAutoCloseable((RepeatableHttpEntity) entity);
                 }
 
                 Header transferEncoding = request.getFirstHeader(HTTP.TRANSFER_ENCODING);

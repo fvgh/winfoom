@@ -12,15 +12,12 @@
 
 package org.kpax.winfoom.config;
 
-//import org.apache.commons.configuration2.Configuration;
-
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
-import org.kpax.winfoom.proxy.ProxyInfo;
 import org.kpax.winfoom.proxy.ProxyType;
 import org.kpax.winfoom.util.CommandExecutor;
 import org.slf4j.Logger;
@@ -41,6 +38,8 @@ import java.nio.file.Paths;
 import java.util.Base64;
 
 /**
+ * The proxy facade configuration.
+ *
  * @author Eugen Covaci
  */
 @Component
@@ -236,6 +235,12 @@ public class ProxyConfig {
         tempDirectory = Paths.get(userHome, SystemConfig.APP_HOME_DIR_NAME, "temp");
     }
 
+    /**
+     * It saves the current settings to the home application directory, overwriting the existing values.
+     *
+     * @throws IOException
+     * @throws ConfigurationException
+     */
     public void save() throws IOException, ConfigurationException {
         File userProperties = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME,
                 ProxyConfig.FILENAME).toFile();

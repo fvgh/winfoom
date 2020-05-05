@@ -24,6 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
+ * A factory for {@link HttpClientBuilder} for different proxy types.<br>
+ * <b>Note:</b> The {@link HttpClientBuilder} class is not thread safe.
+ *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 4/10/2020
  */
@@ -39,6 +42,12 @@ class HttpClientBuilderFactory {
     @Autowired
     private ConnectionPoolingManager connectionPoolingManager;
 
+    /**
+     * It creates a new instance of {@link HttpClientBuilder} according to the requested proxy.
+     *
+     * @param proxyInfo the proxy.
+     * @return a pre-configured {@link HttpClientBuilder} instance for the requested proxy.
+     */
     HttpClientBuilder createClientBuilder(ProxyInfo proxyInfo) {
         if (proxyInfo.getType().isSocks()) {
             return createSocksClientBuilder(proxyInfo.getType().isSocks4());
@@ -49,6 +58,12 @@ class HttpClientBuilderFactory {
         }
     }
 
+    /**
+     * For HTTP proxies.
+     *
+     * @param proxyInfo the proxy.
+     * @return a pre-configured {@link HttpClientBuilder} instance for HTTP proxies.
+     */
     private HttpClientBuilder createHttpClientBuilder(ProxyInfo proxyInfo) {
         RequestConfig requestConfig = systemConfig.applyConfig(RequestConfig.custom())
                 .setProxy(new HttpHost(proxyInfo.getProxyHost().getHostName(), proxyInfo.getProxyHost().getPort()))
@@ -69,6 +84,11 @@ class HttpClientBuilderFactory {
         return builder;
     }
 
+    /**
+     * For no proxy case.
+     *
+     * @return a pre-configured {@link HttpClientBuilder} instance for direct connections (no proxy).
+     */
     private HttpClientBuilder createDirectClientBuilder() {
         HttpClientBuilder builder = HttpClients.custom()
                 .setConnectionManager(connectionPoolingManager.getHttpConnectionManager())
@@ -86,10 +106,17 @@ class HttpClientBuilderFactory {
         return builder;
     }
 
+    /**
+     * For SOCKS proxies.
+     *
+     * @param isSocks4 whether the SOCKS version is {@code 4} or not.
+     * @return a pre-configured {@link HttpClientBuilder} instance for SOCKS proxies.
+     */
     private HttpClientBuilder createSocksClientBuilder(boolean isSocks4) {
         HttpClientBuilder builder = HttpClients.custom()
-                .setConnectionManager(isSocks4
-                        ? connectionPoolingManager.getSocks4ConnectionManager() : connectionPoolingManager.getSocksConnectionManager())
+                .setConnectionManager(isSocks4 ?
+                        connectionPoolingManager.getSocks4ConnectionManager() :
+                        connectionPoolingManager.getSocksConnectionManager())
                 .setDefaultRequestConfig(systemConfig.applyConfig(RequestConfig.custom())
                         .setCircularRedirectsAllowed(true)
                         .build())

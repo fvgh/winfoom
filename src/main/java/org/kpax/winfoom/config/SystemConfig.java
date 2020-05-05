@@ -36,6 +36,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
+ * The proxy facade system configuration.<br>
+ * This settings cannot change once the application is started.
+ *
  * @author Eugen Covaci
  */
 @Component
@@ -78,7 +81,7 @@ public class SystemConfig {
 
     /**
      * The connections idle timeout,
-     * to be purged be a scheduled task (seconds).
+     * to be purged by a scheduled task (seconds).
      */
     @Value("${connectionManager.idleTimeout:30}")
     private Integer connectionManagerIdleTimeout;
@@ -167,6 +170,13 @@ public class SystemConfig {
                 .setSocketTimeout(socketSoTimeout * 1000);
     }
 
+    /**
+     * It automatically saves the current settings to the home application directory, if it isn't already saved.
+     *
+     * @throws ConfigurationException
+     * @throws IOException
+     * @throws IllegalAccessException
+     */
     @PostConstruct
     public void save() throws ConfigurationException, IOException, IllegalAccessException {
         Path appPath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);

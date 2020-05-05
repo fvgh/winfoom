@@ -24,10 +24,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
+ * Encapsulates the response of a {@link TunnelConnection}.
+ *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 3/31/2020
  */
-public class Tunnel implements Closeable {
+public final class Tunnel implements Closeable {
 
     private final ManagedHttpClientConnection connection;
     private final HttpResponse response;

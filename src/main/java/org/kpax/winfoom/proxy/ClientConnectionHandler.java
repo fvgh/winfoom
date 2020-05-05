@@ -34,6 +34,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Responsible for handling client's connection.
+ */
 @Component
 class ClientConnectionHandler {
 
@@ -53,8 +56,10 @@ class ClientConnectionHandler {
 
     /**
      * Process the client connection with each available proxy.<br>
-     * Un un-responding proxy is blacklisted only if it is not the last
-     * one available.
+     * Un un-responding to connect proxy is blacklisted only if it is not the last
+     * one available.<br>
+     * <b>Note:</b> If the {@link ClientConnection} is successfully created,
+     * a proper response <i>must</i> be sent to the client.
      *
      * @param socket the client's socket
      * @throws IOException
@@ -105,7 +110,7 @@ class ClientConnectionHandler {
                     break;
                 } catch (Exception e) {
 
-                    if (e instanceof ConnectException || e.getCause() instanceof ConnectException ) {
+                    if (e instanceof ConnectException || e.getCause() instanceof ConnectException) {
                         logger.debug("Connection error", e);
 
                         if (itr.hasNext()) {

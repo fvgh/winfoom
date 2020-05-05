@@ -19,54 +19,86 @@ import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.apache.http.util.EntityUtils;
-import org.kpax.winfoom.config.ProxyConfig;
-import org.kpax.winfoom.exception.InvalidPacFileException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
 import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ConnectException;
 import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
+ * It encapsulates a client's connection.<br>
+ * It provides various methods for exchanging data with the client,
+ * also some information about the state of the request's processing.<br>
+ * <b>Note:</b> This class doesn't have the responsibility to close the underlying socket.
+ *
  * @author Eugen Covaci
  */
-class ClientConnection implements AutoCloseable{
+final class ClientConnection implements AutoCloseable {
 
     private final Logger logger = LoggerFactory.getLogger(ClientConnection.class);
 
+    /**
+     * The list of {@link AutoCloseable}s to be closed when this instance's {@link #close()} method is called.
+     */
     private final Set<AutoCloseable> autoCloseables = new HashSet<>();
 
+    /**
+     * The underlying socket.
+     */
     private final Socket socket;
 
+    /**
+     * The socket's input stream.
+     */
     private final InputStream inputStream;
 
+    /**
+     * The socket's output stream.
+     */
     private final OutputStream outputStream;
 
+    /**
+     * Used for request parsing also by the {@link org.kpax.winfoom.proxy.RepeatableHttpEntity} class.
+     */
     private final SessionInputBufferImpl sessionInputBuffer;
 
+    /**
+     * The parsed {@link HttpRequest}.
+     */
     private final HttpRequest httpRequest;
 
+    /**
+     * The request line. We keep a reference here to avoid multiple calling to {@link HttpRequest#getRequestLine()}
+     */
     private final RequestLine requestLine;
 
+    /**
+     * Whether the request is prepared (it means the request headers are set, also the request entity - if any)<br>
+     * Only makes sense for non-CONNECT HTTP requests.
+     */
     private boolean requestPrepared;
 
+    /**
+     * When multiple proxies are involved (Proxy Auto Config case only), this instance can be processed multiple times.
+     * This flag signals whether the current proxy used for processing is the last one.
+     */
     private boolean lastResort;
 
+    /**
+     * Constructor.
+     *
+     * @param socket the underlying socket.
+     * @throws IOException
+     * @throws HttpException
+     */
     ClientConnection(Socket socket) throws IOException, HttpException {
         this.socket = socket;
         this.inputStream = socket.getInputStream();
@@ -223,6 +255,9 @@ class ClientConnection implements AutoCloseable{
         return this.lastResort;
     }
 
+    /**
+     * @return {@code true} iff the underlying socket is closed.
+     */
     boolean isClosed() {
         return socket.isClosed();
     }
@@ -234,8 +269,14 @@ class ClientConnection implements AutoCloseable{
         return requestLine;
     }
 
-    boolean addAutoCloseable (AutoCloseable autoCloseable) {
-        return autoCloseables.add(autoCloseable);
+    /**
+     * Register an {@link AutoCloseable}
+     *
+     * @param autoCloseable the {@link AutoCloseable} to be closed.
+     * @return {@code true} if the specified element isn't already registered
+     */
+    boolean registerAutoCloseable(AutoCloseable autoCloseable) {
+        return this.autoCloseables.add(autoCloseable);
     }
 
 

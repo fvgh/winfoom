@@ -29,6 +29,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * Responsible for loading the PAC script file and executing the {@code findProxyForURL} method.
+ */
 @Component
 class ProxyAutoConfig {
 
@@ -37,8 +40,18 @@ class ProxyAutoConfig {
     @Autowired
     private ProxyConfig proxyConfig;
 
+    /**
+     * The NetBeans implementation of a PAC script evaluator.
+     */
     private NbPacScriptEvaluator nbPacScriptEvaluator;
 
+    /**
+     * It loads and parse the PAC script file.
+     *
+     * @return the {@link NbPacScriptEvaluator} instance.
+     * @throws IOException
+     * @throws InvalidPacFileException
+     */
     synchronized NbPacScriptEvaluator loadScript() throws IOException, InvalidPacFileException {
         URL url = proxyConfig.getProxyPacFileLocationAsURL();
         if (url == null) {
@@ -47,7 +60,7 @@ class ProxyAutoConfig {
         logger.info("Get PAC file from: {}", url);
         try (InputStream inputStream = url.openStream()) {
             String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-            logger.debug("PAC content: {}", content);
+            logger.info("PAC content: {}", content);
             try {
                 nbPacScriptEvaluator = new NbPacScriptEvaluator(content);
             } catch (Exception e) {
@@ -57,7 +70,7 @@ class ProxyAutoConfig {
         return nbPacScriptEvaluator;
     }
 
-    NbPacScriptEvaluator getPacScriptEvaluator() {
+    private NbPacScriptEvaluator getPacScriptEvaluator() {
         if (nbPacScriptEvaluator == null) {
             throw new IllegalStateException("Proxy PAC file not loaded");
         }
@@ -68,11 +81,14 @@ class ProxyAutoConfig {
         return nbPacScriptEvaluator != null;
     }
 
+    /**
+     * Calls the {@code findProxyForURL} method within the PAC script file
+     * @param uri the request URI.
+     * @return the list of {@link ProxyInfo}.
+     * @throws InvalidPacFileException
+     */
     List<ProxyInfo> findProxyForURL(URI uri) throws InvalidPacFileException {
-        if (nbPacScriptEvaluator == null) {
-            throw new IllegalStateException("Proxy PAC file not loaded");
-        }
-        String proxyLine = nbPacScriptEvaluator.callFindProxyForURL(uri);
+        String proxyLine = getPacScriptEvaluator().callFindProxyForURL(uri);
         logger.debug("proxyLine [{}]", proxyLine);
         return HttpUtils.parsePacProxyLine(proxyLine);
     }

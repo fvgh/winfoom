@@ -18,19 +18,25 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+/**
+ * An utility class to generate HTTP {@code Date} header.
+ */
 public class HeaderDateGenerator {
 
     /**
      * Date format pattern used to generate the header in RFC 1123 format.
      */
-    public static final
-    String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
+    public static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
 
     /**
      * The time zone to use in the date header.
      */
     public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 
+    /**
+     *
+     * @return the current date in RFC 1123 format.
+     */
     public String getCurrentDate() {
         DateFormat dateformat = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
         dateformat.setTimeZone(GMT);

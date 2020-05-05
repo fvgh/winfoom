@@ -245,6 +245,7 @@ public class AppFrame extends JFrame {
 
     private JTextField getProxyHostJTextField() {
         JTextField proxyHostJTextField = createTextField(proxyConfig.getProxyHost());
+        proxyHostJTextField.setToolTipText("The ip or domain name of the remote proxy");
         proxyHostJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
             proxyConfig.setProxyHost(proxyHostJTextField.getText());
         });
@@ -263,6 +264,7 @@ public class AppFrame extends JFrame {
 
     private JSpinner getProxyPortJSpinner() {
         JSpinner proxyPortJSpinner = createJSpinner(proxyConfig.getProxyPort());
+        proxyPortJSpinner.setToolTipText("The remote proxy port, between 1 and 65535");
         proxyPortJSpinner.addChangeListener(e -> {
             proxyConfig.setProxyPort((Integer) proxyPortJSpinner.getValue());
         });
@@ -272,6 +274,7 @@ public class AppFrame extends JFrame {
     private JSpinner getLocalPortJSpinner() {
         if (localPortJSpinner == null) {
             localPortJSpinner = createJSpinner(proxyConfig.getLocalPort());
+            localPortJSpinner.setToolTipText("The port Winfoom will listen on, between 1 and 65535");
             localPortJSpinner.addChangeListener(e -> {
                 proxyConfig.setLocalPort((Integer) localPortJSpinner.getValue());
             });
@@ -282,6 +285,7 @@ public class AppFrame extends JFrame {
     private JTextField getTestUrlJTextField() {
         if (testUrlJTextField == null) {
             testUrlJTextField = createTextField(proxyConfig.getProxyTestUrl());
+            testUrlJTextField.setToolTipText("The URL used to test the current settings");
             testUrlJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
                 proxyConfig.setProxyTestUrl(testUrlJTextField.getText());
             });
@@ -291,6 +295,7 @@ public class AppFrame extends JFrame {
 
     private JTextField getUsernameJTextField() {
         JTextField usernameJTextField = createTextField(proxyConfig.getProxyUsername());
+        usernameJTextField.setToolTipText("The optional username if the SOCKS5 proxy requires authentication.");
         usernameJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
             proxyConfig.setProxyUsername(usernameJTextField.getText());
         });
@@ -300,6 +305,7 @@ public class AppFrame extends JFrame {
 
     private JPasswordField getPasswordField() {
         JPasswordField passwordField = new JPasswordField(proxyConfig.getProxyPassword());
+        passwordField.setToolTipText("The optional password if the SOCKS5 proxy requires authentication.");
         passwordField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
             proxyConfig.setProxyPassword(new String(passwordField.getPassword()));
         });
@@ -309,6 +315,8 @@ public class AppFrame extends JFrame {
     private JCheckBox getStorePasswordJCheckBox() {
         JCheckBox storePasswordJCheckBox = new JCheckBox();
         storePasswordJCheckBox.setSelected(proxyConfig.isProxyStorePassword());
+        storePasswordJCheckBox.setToolTipText("Whether to store the password or not." +
+                "\nThe password is stored in a text file, encoded but not encrypted.");
         storePasswordJCheckBox.addActionListener((e -> {
             if (storePasswordJCheckBox.isSelected()) {
                 int option = JOptionPane.showConfirmDialog(AppFrame.this,
