@@ -12,8 +12,10 @@
 
 package org.kpax.winfoom;
 
+import org.apache.commons.io.IOUtils;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.util.InputOutputs;
 import org.kpax.winfoom.util.JarUtils;
 import org.kpax.winfoom.util.SwingUtils;
 import org.kpax.winfoom.view.AppFrame;
@@ -54,9 +56,7 @@ public class FoomApplication {
 
         // Check version
         try {
-            if (!checkAppVersion()) {
-                return;
-            }
+            checkAppVersion();
         } catch (Exception e) {
             logger.error("Failed to verify app version", e);
             SwingUtils.showErrorMessage(null, "Failed to verify application version." +
@@ -84,14 +84,13 @@ public class FoomApplication {
     }
 
     /**
-     * It verifies whether the existent system.properties file releaseVersion property and
+     * It verifies whether the existent system.properties file's releaseVersion property and
      * the application version (extracted from the MANIFEST file) are the same.
      * If not, the existent *.properties file are moved into a backup location.
      *
-     * @return <code>true</code> iff the startup should proceed.
      * @throws IOException
      */
-    private static boolean checkAppVersion() throws IOException {
+    private static void checkAppVersion() throws IOException {
         logger.info("Check the application's version");
         Path appHomePath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);
         Path systemPropertiesPath = appHomePath.resolve(SystemConfig.FILENAME);
@@ -106,37 +105,39 @@ public class FoomApplication {
 
             if (!actualVersion.equals(existingVersion)) {
                 logger.info("Different versions found: existent = {} , actual = {}", existingVersion, actualVersion);
-                Path backupDirPath = appHomePath.resolve(existingVersion + "-backup");
 
+                Path backupDirPath = appHomePath.resolve(existingVersion);
 
                 int selection = JOptionPane.showConfirmDialog(null,
                         "The configuration files found are from a different application version!\n" +
-                                String.format("The existent ones will be saved to %s directory.\nIs this OK?", backupDirPath.toString()),
+                                "The existent ones will be overwritten.\n" +
+                                String.format("Press 'OK' if you want to save them to %s backup directory.",
+                                        backupDirPath.toString()),
                         "Warning",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.WARNING_MESSAGE);
 
-                if (selection != JOptionPane.YES_OPTION) {
-                    logger.info("User rejected the proposition");
-                    return false;
-                }
+                if (selection == JOptionPane.YES_OPTION) {
+                    if (!Files.exists(backupDirPath)) {
+                        Files.createDirectory(backupDirPath);
+                    }
 
-                if (!Files.exists(backupDirPath)) {
-                    Files.createDirectory(backupDirPath);
-                }
-
-                logger.info("Move the existent config files to: {} directory", backupDirPath);
-                Files.move(systemPropertiesPath, backupDirPath.resolve(SystemConfig.FILENAME),
-                        StandardCopyOption.REPLACE_EXISTING);
-                Path userPropertiesPath = appHomePath.resolve(ProxyConfig.FILENAME);
-                if (Files.exists(userPropertiesPath)) {
-                    Files.move(userPropertiesPath, backupDirPath.resolve(ProxyConfig.FILENAME),
+                    logger.info("Move the existent config files to: {} directory", backupDirPath);
+                    Files.move(systemPropertiesPath, backupDirPath.resolve(SystemConfig.FILENAME),
                             StandardCopyOption.REPLACE_EXISTING);
+                    Path userPropertiesPath = appHomePath.resolve(ProxyConfig.FILENAME);
+                    if (Files.exists(userPropertiesPath)) {
+                        Files.move(userPropertiesPath, backupDirPath.resolve(ProxyConfig.FILENAME),
+                                StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } else {
+                    Files.delete(systemPropertiesPath);
+                    Files.deleteIfExists(appHomePath.resolve(ProxyConfig.FILENAME));
                 }
+
             }
         }
 
-        return true;
     }
 
 }
