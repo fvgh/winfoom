@@ -573,7 +573,7 @@ public class AppFrame extends JFrame {
             mntmAbout = new JMenuItem("About");
             mntmAbout.setIcon(new TunedImageIcon("dialog-information.png"));
             mntmAbout.addActionListener(e -> SwingUtils.showInfoMessage(this, "About", "Winfoom - Basic Proxy Facade" +
-                    "\nVersion: " + systemConfig.getReleaseVersion()
+                    "\nVersion: " + systemConfig.getAppVersion()
                     + "\nProject home page: https://github.com/ecovaci/winfoom"
                     + "\nLicense: Apache 2.0"));
         }
@@ -583,10 +583,9 @@ public class AppFrame extends JFrame {
     // ------- End Menu
 
     private JTextField createTextField(String text) {
-        JTextField textField = new JTextField();
+        JTextField textField = new JTextField(text);
         textField.setPreferredSize(new Dimension(220, 25));
         textField.setMinimumSize(new Dimension(6, 25));
-        textField.setText(text);
         return textField;
     }
 
@@ -598,6 +597,7 @@ public class AppFrame extends JFrame {
         jSpinner.setValue(value);
         return jSpinner;
     }
+
 
     private void disableAll() {
         SwingUtils.setEnabled(getContentPane(), false);

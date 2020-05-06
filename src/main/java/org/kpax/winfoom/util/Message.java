@@ -13,13 +13,21 @@
 package org.kpax.winfoom.util;
 
 /**
+ * It encapsulates a GUI message.
+ *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 2/28/2020
  */
 public final class Message {
 
+    /**
+     * The message type.
+     */
     private final MessageType type;
 
+    /**
+     * The message text.
+     */
     private final String text;
 
     private Message(MessageType type, String text) {

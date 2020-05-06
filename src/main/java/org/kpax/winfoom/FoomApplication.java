@@ -12,10 +12,8 @@
 
 package org.kpax.winfoom;
 
-import org.apache.commons.io.IOUtils;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.util.InputOutputs;
 import org.kpax.winfoom.util.JarUtils;
 import org.kpax.winfoom.util.SwingUtils;
 import org.kpax.winfoom.view.AppFrame;
@@ -98,12 +96,12 @@ public class FoomApplication {
         if (Files.exists(systemPropertiesPath)) {
             Properties systemProperties = PropertiesLoaderUtils.loadProperties(
                     new FileSystemResource(systemPropertiesPath.toFile()));
-            String existingVersion = systemProperties.getProperty("releaseVersion");
-            logger.debug("existingVersion [{}]", existingVersion);
-            String actualVersion = JarUtils.getVersion(FoomApplication.class);
-            logger.debug("actualVersion [{}]", actualVersion);
+            String existingVersion = systemProperties.getProperty("app.version");
+            logger.info("existingVersion [{}]", existingVersion);
+            String actualVersion = FoomApplication.class.getPackage().getImplementationVersion();
+            logger.info("actualVersion [{}]", actualVersion);
 
-            if (!actualVersion.equals(existingVersion)) {
+            if (actualVersion != null && !actualVersion.equals(existingVersion)) {
                 logger.info("Different versions found: existent = {} , actual = {}", existingVersion, actualVersion);
 
                 Path backupDirPath = appHomePath.resolve(existingVersion);

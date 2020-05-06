@@ -37,20 +37,12 @@ public class SwingUtils {
 
     private static final String DLG_WARN_TITLE = "Warning";
 
-    public static void setFont(final Component component, final Font font) {
-        component.setFont(font);
-        if (component instanceof JMenu) {
-            JMenu menu = (JMenu) component;
-            for (int i = 0; i < menu.getItemCount(); i++) {
-                setFont(menu.getItem(i), font);
-            }
-        } else if (component instanceof Container) {
-            for (Component child : ((Container) component).getComponents()) {
-                setFont(child, font);
-            }
-        }
-    }
-
+    /**
+     * Enable/disable a component and all it's sub-components.
+     *
+     * @param component the {@link Component} to be enabled/disabled.
+     * @param enabled   {@code true} or {@code false}.
+     */
     public static void setEnabled(final Component component, final boolean enabled) {
         component.setEnabled(enabled);
         if (component instanceof Container) {
@@ -60,6 +52,11 @@ public class SwingUtils {
         }
     }
 
+    /**
+     * Accepts an input value only if it is valid.
+     *
+     * @param spinner the {@link JSpinner} instance.
+     */
     public static void commitsOnValidEdit(final JSpinner spinner) {
         JComponent comp = spinner.getEditor();
         JFormattedTextField field = (JFormattedTextField) comp.getComponent(0);
@@ -94,6 +91,12 @@ public class SwingUtils {
         showMessage(parentComponent, title, message, JOptionPane.WARNING_MESSAGE);
     }
 
+    /**
+     * It executes a {@link Runnable}, showing a waiting cursor until the execution ends.
+     *
+     * @param runnable the {@link Runnable} instance (not null)
+     * @param frame    the current {@link JFrame}
+     */
     public static void executeRunnable(final Runnable runnable, final JFrame frame) {
         Validate.notNull(runnable, "runnable cannot be null");
         Validate.notNull(frame, "frame cannot be null");
@@ -110,6 +113,13 @@ public class SwingUtils {
         thread.start();
     }
 
+    /**
+     * It loads an image from a specified classpath location.
+     *
+     * @param cls used to localize the image URL.
+     * @param filename the image's filename.
+     * @return the loaded {@link Image}.
+     */
     public static Image loadImage(Class<?> cls, String filename) {
         try {
             URL resource = cls.getResource("/img/" + filename);

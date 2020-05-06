@@ -18,7 +18,6 @@ import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.http.client.config.RequestConfig;
-import org.kpax.winfoom.util.JarUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,18 +110,8 @@ public class SystemConfig {
     @Value("${useSystemProperties:false}")
     private boolean useSystemProperties;
 
-    @Value("${releaseVersion:Unknown}")
-    private String releaseVersion;
-
-    @PostConstruct
-    public void init() {
-        try {
-            logger.info("Get application version from manifest file");
-            releaseVersion = JarUtils.getVersion(getClass());
-        } catch (Exception e) {
-            logger.warn("Error on getting application version from MANIFEST file, using Unknown");
-        }
-    }
+    @Value("${app.version}")
+    private String appVersion;
 
     public Integer getMaxConnectionsPerRoute() {
         return maxConnectionsPerRoute;
@@ -132,8 +121,8 @@ public class SystemConfig {
         return maxConnections;
     }
 
-    public String getReleaseVersion() {
-        return releaseVersion;
+    public String getAppVersion() {
+        return appVersion;
     }
 
     public boolean isUseSystemProperties() {
@@ -193,8 +182,7 @@ public class SystemConfig {
             for (Field field : this.getClass().getDeclaredFields()) {
                 Value valueAnnotation = field.getAnnotation(Value.class);
                 if (valueAnnotation != null) {
-                    String value = valueAnnotation.value();
-                    String propName = value.replaceAll("[${}]", "").split(":")[0];
+                    String propName = valueAnnotation.value().replaceAll("[${}]", "").split(":")[0];
                     config.setProperty(propName, field.get(this));
                 }
             }

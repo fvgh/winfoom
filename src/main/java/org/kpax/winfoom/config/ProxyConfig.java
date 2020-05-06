@@ -257,7 +257,7 @@ public class ProxyConfig {
         config.setProperty("local.port", this.localPort);
         config.setProperty("proxy.test.url", this.proxyTestUrl);
         config.setProperty("proxy.username", proxyType.isSocks5() ? this.proxyUsername : null);
-        config.setProperty("proxy.storePassword", proxyType.isSocks5() ? this.proxyStorePassword : null);
+        config.setProperty("proxy.storePassword", proxyType.isSocks5() ? this.proxyStorePassword : false);
         config.setProperty("proxy.pac.fileLocation", proxyType.isPac() ? this.proxyPacFileLocation : null);
 
         if (proxyType.isPac()) {
@@ -276,6 +276,16 @@ public class ProxyConfig {
         }
 
         propertiesBuilder.save();
+
+        //
+        // Refresh config values
+        //
+        setProxyHost(config.getString("proxy.host"));
+        setProxyPort(config.getInt("proxy.port"));
+        setProxyUsername(config.getString("proxy.username"));
+        setProxyStorePassword(config.getBoolean("proxy.storePassword"));
+        setProxyPacFileLocation(config.getString("proxy.pac.fileLocation"));
+        this.proxyPassword = config.getString("proxy.password");
     }
 
     @Override
