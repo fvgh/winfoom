@@ -41,7 +41,7 @@ import java.nio.file.Paths;
  * @author Eugen Covaci
  */
 @Component
-@PropertySource(value = "file:${user.home}/.winfoom/" + SystemConfig.FILENAME, ignoreResourceNotFound = true)
+@PropertySource(value = "file:${user.home}/" + SystemConfig.APP_HOME_DIR_NAME + "/" + SystemConfig.FILENAME, ignoreResourceNotFound = true)
 public class SystemConfig {
 
     public static final String FILENAME = "system.properties";
