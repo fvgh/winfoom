@@ -359,9 +359,6 @@ public class AppFrame extends JFrame {
             btnStart.addActionListener(e -> {
                 startServer();
                 getBtnStop().requestFocus();
-                if (proxyConfig.isAutoConfig()) {
-                    getBtnCancelBlacklist().setEnabled(true);
-                }
             });
             btnStart.setToolTipText("Start the proxy facade");
         }
@@ -675,6 +672,9 @@ public class AppFrame extends JFrame {
                 try {
                     proxyContext.start();
                     getBtnStop().setEnabled(true);
+                    if (proxyConfig.isAutoConfig()) {
+                        getBtnCancelBlacklist().setEnabled(true);
+                    }
                 } catch (Exception e) {
                     logger.error("Error on starting proxy server", e);
                     enableInput();

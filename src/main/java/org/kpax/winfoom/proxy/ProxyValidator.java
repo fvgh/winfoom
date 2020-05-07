@@ -70,9 +70,9 @@ public class ProxyValidator {
      * The errors it throws must be interpretable by the GUI into meaningful messages.
      *
      * @throws IOException
-     * @throws CredentialException the provided credentials are wrong
+     * @throws CredentialException     the provided credentials are wrong
      * @throws InvalidPacFileException the PAC script file is invalid
-     * @throws URISyntaxException there is something wrong with the test URL.
+     * @throws URISyntaxException      there is something wrong with the test URL.
      */
     public void testProxyConfig()
             throws IOException, CredentialException, InvalidPacFileException, URISyntaxException {
@@ -154,18 +154,24 @@ public class ProxyValidator {
         try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
             HttpHost target = HttpHost.create(proxyConfig.getProxyTestUrl());
             HttpGet request = new HttpGet("/");
+
+            RequestConfig.Builder requestConfigBuilder = systemConfig.applyConfig(RequestConfig.custom());
+            HttpClientContext context = HttpClientContext.create();
+
             if (proxyType.isHttp()) {
                 HttpHost proxy = new HttpHost(proxyHost, proxyPort);
-                RequestConfig config = systemConfig.applyConfig(RequestConfig.custom())
+                request.setConfig(requestConfigBuilder
                         .setProxy(proxy)
-                        .build();
-                request.setConfig(config);
+                        .build());
+            } else {
+                if (proxyType.isSocks()) {
+                    context.setAttribute(HttpUtils.SOCKS_ADDRESS, new InetSocketAddress(proxyHost, proxyPort));
+                }
+                request.setConfig(requestConfigBuilder.build());
             }
-            HttpClientContext context = HttpClientContext.create();
-            if (proxyType.isSocks()) {
-                context.setAttribute(HttpUtils.SOCKS_ADDRESS, new InetSocketAddress(proxyHost, proxyPort));
-            }
+
             logger.info("Executing request {} to {}", request.getRequestLine(), target);
+
             try (CloseableHttpResponse response = httpClient.execute(target, request, context)) {
                 StatusLine statusLine = response.getStatusLine();
                 logger.info("Test response status {}", statusLine);
