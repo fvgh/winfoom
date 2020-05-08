@@ -34,7 +34,6 @@ public class HeaderDateGenerator {
     public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 
     /**
-     *
      * @return the current date in RFC 1123 format.
      */
     public String getCurrentDate() {

@@ -75,7 +75,7 @@ class ClientConnectionHandler {
         try {
             List<ProxyInfo> proxyInfoList;
             if (proxyConfig.isAutoConfig()) {
-                proxyInfoList = proxyAutoconfig.findProxyForURL(HttpUtils.parseUri(requestLine.getUri()));
+                proxyInfoList = proxyAutoconfig.findProxyForURL(HttpUtils.toStrippedUri(requestLine.getUri()));
             } else {
 
                 // Manual proxy case

@@ -18,37 +18,23 @@
  */
 package org.netbeans.core.network.proxy.pac.impl;
 
+import org.kpax.winfoom.exception.InvalidPacFileException;
+import org.netbeans.api.scripting.Scripting;
+import org.netbeans.core.network.proxy.pac.*;
+import org.netbeans.core.network.utils.SimpleObjCache;
+import org.openide.util.Exceptions;
+import org.openide.util.Lookup;
+import org.openide.util.NbBundle;
+
+import javax.script.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
-import org.kpax.winfoom.exception.InvalidPacFileException;
-import org.kpax.winfoom.proxy.ProxyInfo;
-import org.netbeans.api.scripting.Scripting;
-import org.netbeans.core.network.utils.SimpleObjCache;
-import org.netbeans.core.network.proxy.pac.PacHelperMethods;
-import org.netbeans.core.network.proxy.pac.PacJsEntryFunction;
-import org.netbeans.core.network.proxy.pac.PacValidationException;
-import org.netbeans.core.network.proxy.pac.PacParsingException;
-import org.openide.util.Exceptions;
-import org.netbeans.core.network.proxy.pac.PacScriptEvaluator;
-import org.netbeans.core.network.proxy.pac.PacUtils;
-import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
 
 /**
  * NetBeans implementation of a PAC script evaluator. This implementation
@@ -60,115 +46,115 @@ import org.openide.util.NbBundle;
  * (this class) is pitched against some of the major browsers.<br><br>
  *
  * <table summary="" style="table-layout: fixed; width:100%;" border="1" cellpadding="10" cellspacing="0">
- *   <tr><th class="tablersh">Behavior</th>
- *       <th>Apache<br>NetBeans</th>
- *       <th>Chrome<br>{@code 61.0.3163.100}</th>
- *       <th>Firefox<br>{@code 56.0.1}</th>
- *       <th>IE 11<br>{@code 11.608.15063.0}</th>
- *       <th>Edge<br>{@code 40.15063.0.0}</th>
- *   </tr>
- *   <tr>
- *       <td class="tablersh">Entry point functions supported:<br>{@code FindProxyForURL()} and {@code FindProxyForURLEx()}</td>
- *       <td>Both are supported. If both exist in the same PAC script then {@code FindProxyForURLEx()} is used.</td>
- *       <td>Only {@code FindProxyForURL()}</td>
- *       <td>Only {@code FindProxyForURL()}</td>
- *       <td>Both.<br>Only one of them may be present.</td>
- *       <td>Both.<br>Only one of them may be present.</td>
- *   </tr>
- *   <tr>
- *      <td class="tablersh">Security: Sandboxed execution of PAC script</td>
- *      <td>Yes</td>
- *      <td>???</td>
- *      <td>???</td>
- *      <td>Yes</td>
- *      <td>Yes</td>
- *   </tr>
- *   <tr>
- *       <td class="tablersh">Security: Stripped URL<br>(Value passed in {@code url} parameter)</td>
- *       <td>Yes<sup>1</sup></td>
- *       <td>Yes<sup>1</sup><br>(but strangely not for HTTP, only for HTTPS)</td>
- *       <td>Yes<sup>2</sup></td>
- *       <td>Yes</td>
- *       <td>Yes</td>
- *   </tr>
- *   <tr>
- *       <td class="tablersh">Extended return value support<br>Netscape spec only allowed:<ul><li>{@code DIRECT}</li><li>{@code PROXY host:port}</li><li>{@code SOCKS host:port}</li></ul></td>
- *       <td>In addition:<sup>3</sup><ul><li>{@code HTTP host:port}</li><li>{@code HTTPS host:port}</li><li>{@code SOCKS4 host:port}</li><li>{@code SOCKS5 host:port}</li></ul></td>
- *       <td>???</td>
- *       <td>In addition:<ul><li>{@code HTTP host:port}</li><li>{@code HTTPS host:port}</li><li>{@code SOCKS4 host:port}</li><li>{@code SOCKS5 host:port}</li></ul></td>
- *       <td>???</td>
- *       <td>???</td>
- *   </tr>
- *   <tr>
- *       <td class="tablersh">Uses result cache</td>
- *       <td>Yes<br>(based on {@code url} value)</td>
- *       <td>Yes</td>
- *       <td>???</td>
- *       <td>Yes<br>(based on {@code host} value)</td>
- *       <td>???</td>
- *   </tr>
- *   <tr>
- *       <td class="tablersh">Support for <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/gg308476(v=vs.85).aspx">getClientVersion()</a></td>
- *       <td>Yes<br>(returns "1.0")</td>
- *       <td>No</td>
- *       <td>No</td>
- *       <td>Yes<br>(returns "1.0")</td>
- *       <td>Yes<br>(returns "1.0")</td>
- *   </tr>
- *   <tr>
- *      <td class="tablersh">Use of result cache
- *           when script uses time sensitive functions:<br>
- *           {@code weekdayRange()}, {@code dateRange()} and {@code timeRange()}
- *       </td>
- *      <td>Result cache not used</td>
- *      <td>???</td>
- *      <td>???</td>
- *      <td>???</td>
- *      <td>???</td>
- *   </tr>
- *   <tr>
- *      <td class="tablersh">Name lookup timeout<sup>4</sup></td>
- *      <td>Explicit.<br>(see {@link NbPacHelperMethods#DNS_TIMEOUT_MS DNS_TIMEOUT_MS})</td>
- *      <td>???</td>
- *      <td>Yes</td>
- *      <td>???</td>
- *      <td>???</td>
- *   </tr>
- *   <tr>
- *      <td class="tablersh">Support for Date/Time functions with range crossing a boundary<sup>5</sup></td>
- *      <td>Yes</td>
- *      <td>???</td>
- *      <td>Yes<br>since v49</td>
- *      <td>???</td>
- *      <td>???</td>
- *   </tr>
- *   <tr>
- *      <td class="tablersh">myIpAddress()<sup>6</sup></td>
- *      <td>Pretty good. Uses JNI. (At least far better than text book Java approach which consistently yields incorrect result)</td>
- *      <td>Uses UDP to try to find IP address. Seems to be reliable.</td>
- *      <td>???</td>
- *      <td>???</td>
- *      <td>???</td>
- *   </tr>
+ * <tr><th class="tablersh">Behavior</th>
+ * <th>Apache<br>NetBeans</th>
+ * <th>Chrome<br>{@code 61.0.3163.100}</th>
+ * <th>Firefox<br>{@code 56.0.1}</th>
+ * <th>IE 11<br>{@code 11.608.15063.0}</th>
+ * <th>Edge<br>{@code 40.15063.0.0}</th>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Entry point functions supported:<br>{@code FindProxyForURL()} and {@code FindProxyForURLEx()}</td>
+ * <td>Both are supported. If both exist in the same PAC script then {@code FindProxyForURLEx()} is used.</td>
+ * <td>Only {@code FindProxyForURL()}</td>
+ * <td>Only {@code FindProxyForURL()}</td>
+ * <td>Both.<br>Only one of them may be present.</td>
+ * <td>Both.<br>Only one of them may be present.</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Security: Sandboxed execution of PAC script</td>
+ * <td>Yes</td>
+ * <td>???</td>
+ * <td>???</td>
+ * <td>Yes</td>
+ * <td>Yes</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Security: Stripped URL<br>(Value passed in {@code url} parameter)</td>
+ * <td>Yes<sup>1</sup></td>
+ * <td>Yes<sup>1</sup><br>(but strangely not for HTTP, only for HTTPS)</td>
+ * <td>Yes<sup>2</sup></td>
+ * <td>Yes</td>
+ * <td>Yes</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Extended return value support<br>Netscape spec only allowed:<ul><li>{@code DIRECT}</li><li>{@code PROXY host:port}</li><li>{@code SOCKS host:port}</li></ul></td>
+ * <td>In addition:<sup>3</sup><ul><li>{@code HTTP host:port}</li><li>{@code HTTPS host:port}</li><li>{@code SOCKS4 host:port}</li><li>{@code SOCKS5 host:port}</li></ul></td>
+ * <td>???</td>
+ * <td>In addition:<ul><li>{@code HTTP host:port}</li><li>{@code HTTPS host:port}</li><li>{@code SOCKS4 host:port}</li><li>{@code SOCKS5 host:port}</li></ul></td>
+ * <td>???</td>
+ * <td>???</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Uses result cache</td>
+ * <td>Yes<br>(based on {@code url} value)</td>
+ * <td>Yes</td>
+ * <td>???</td>
+ * <td>Yes<br>(based on {@code host} value)</td>
+ * <td>???</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Support for <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/gg308476(v=vs.85).aspx">getClientVersion()</a></td>
+ * <td>Yes<br>(returns "1.0")</td>
+ * <td>No</td>
+ * <td>No</td>
+ * <td>Yes<br>(returns "1.0")</td>
+ * <td>Yes<br>(returns "1.0")</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Use of result cache
+ * when script uses time sensitive functions:<br>
+ * {@code weekdayRange()}, {@code dateRange()} and {@code timeRange()}
+ * </td>
+ * <td>Result cache not used</td>
+ * <td>???</td>
+ * <td>???</td>
+ * <td>???</td>
+ * <td>???</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Name lookup timeout<sup>4</sup></td>
+ * <td>Explicit.<br>(see {@link NbPacHelperMethods#DNS_TIMEOUT_MS DNS_TIMEOUT_MS})</td>
+ * <td>???</td>
+ * <td>Yes</td>
+ * <td>???</td>
+ * <td>???</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">Support for Date/Time functions with range crossing a boundary<sup>5</sup></td>
+ * <td>Yes</td>
+ * <td>???</td>
+ * <td>Yes<br>since v49</td>
+ * <td>???</td>
+ * <td>???</td>
+ * </tr>
+ * <tr>
+ * <td class="tablersh">myIpAddress()<sup>6</sup></td>
+ * <td>Pretty good. Uses JNI. (At least far better than text book Java approach which consistently yields incorrect result)</td>
+ * <td>Uses UDP to try to find IP address. Seems to be reliable.</td>
+ * <td>???</td>
+ * <td>???</td>
+ * <td>???</td>
+ * </tr>
  * </table>
  * 1) The following is removed: <i>{@code user-info}</i> and everything after the
- *    host name, however the value passed to the script always ends with a '/'
- *    character.<br>
+ * host name, however the value passed to the script always ends with a '/'
+ * character.<br>
  * 2) Same as (1), except that <i>{@code user-info}</i> is not removed.<br>
  * 3) However, when converted to Java {@link java.net.Proxy} object, all return
- *    types must be mapped to Java Proxy types {@code DIRECT},
- *    {@code HTTP} and {@code SOCKS}, which means some finer grained information
- *    is lost. (but is irrelevant)<br>
+ * types must be mapped to Java Proxy types {@code DIRECT},
+ * {@code HTTP} and {@code SOCKS}, which means some finer grained information
+ * is lost. (but is irrelevant)<br>
  * 4) An implementation not using an explicit timeout will be at the mercy of
- *    the underlying OS or runtime environment. For example, for 2 name servers,
- *    the default timeout in JRE is 30 seconds.<br>
+ * the underlying OS or runtime environment. For example, for 2 name servers,
+ * the default timeout in JRE is 30 seconds.<br>
  * 5) If date/time functions ({@code weekdayRange()}, {@code dateRange()} and
- *    {@code timeRange()}) allow values that crosses a value boundary.
- *    For example {@code timeRange(22,3}) for the range from 10 pm to 3 am, or
- *    {@code dateRange("DEC","MAR"}) for the range from Dec 1st to March 31st.<br>
+ * {@code timeRange()}) allow values that crosses a value boundary.
+ * For example {@code timeRange(22,3}) for the range from 10 pm to 3 am, or
+ * {@code dateRange("DEC","MAR"}) for the range from Dec 1st to March 31st.<br>
  * 6) How good is the {@code myIpAddress()} (or {@code myIpAddressEx()}) function
- *    at finding the host's correct IP address, in particular on a multi-homed
- *    computer.
+ * at finding the host's correct IP address, in particular on a multi-homed
+ * computer.
  *
  * <h3>Customization</h3>
  * The implementation for
@@ -185,7 +171,7 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
 
     private final boolean canUseURLCaching;
     private final PacScriptEngine scriptEngine;
-    private final SimpleObjCache<URI,List<Proxy>> resultCache;
+    private final SimpleObjCache<URI, List<Proxy>> resultCache;
 
     private static final String PAC_PROXY = "PROXY";
     private static final String PAC_DIRECT = "DIRECT";
@@ -271,14 +257,13 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
     }
 
 
-
     private PacScriptEngine getScriptEngine(String pacSource) throws PacParsingException {
 
         try {
             StringBuilder err = new StringBuilder();
             ScriptEngine engine = newAllowedPacEngine(err);
             if (engine == null) {
-                throw new  PacParsingException(err.toString());
+                throw new PacParsingException(err.toString());
             }
 
             LOGGER.log(Level.FINE, "PAC script evaluator using:  {0}", getEngineInfo(engine));
@@ -291,18 +276,18 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
 
             String[] allowedGlobals =
                     ("Object,Function,Array,String,Date,Number,BigInt,"
-                    + "Boolean,RegExp,Math,JSON,NaN,Infinity,undefined,"
-                    + "isNaN,isFinite,parseFloat,parseInt,encodeURI,"
-                    + "encodeURIComponent,decodeURI,decodeURIComponent,eval,"
-                    + "escape,unescape,"
-                    + "Error,EvalError,RangeError,ReferenceError,SyntaxError,"
-                    + "TypeError,URIError,ArrayBuffer,Int8Array,Uint8Array,"
-                    + "Uint8ClampedArray,Int16Array,Uint16Array,Int32Array,"
-                    + "Uint32Array,Float32Array,Float64Array,BigInt64Array,"
-                    + "BigUint64Array,DataView,Map,Set,WeakMap,"
-                    + "WeakSet,Symbol,Reflect,Proxy,Promise,SharedArrayBuffer,"
-                    + "Atomics,console,performance,"
-                    + "arguments").split(",");
+                            + "Boolean,RegExp,Math,JSON,NaN,Infinity,undefined,"
+                            + "isNaN,isFinite,parseFloat,parseInt,encodeURI,"
+                            + "encodeURIComponent,decodeURI,decodeURIComponent,eval,"
+                            + "escape,unescape,"
+                            + "Error,EvalError,RangeError,ReferenceError,SyntaxError,"
+                            + "TypeError,URIError,ArrayBuffer,Int8Array,Uint8Array,"
+                            + "Uint8ClampedArray,Int16Array,Uint16Array,Int32Array,"
+                            + "Uint32Array,Float32Array,Float64Array,BigInt64Array,"
+                            + "BigUint64Array,DataView,Map,Set,WeakMap,"
+                            + "WeakSet,Symbol,Reflect,Proxy,Promise,SharedArrayBuffer,"
+                            + "Atomics,console,performance,"
+                            + "arguments").split(",");
 
             Object cleaner = engine.eval("(function(allowed) {\n"
                     + "   var names = Object.getOwnPropertyNames(this);\n"
@@ -317,7 +302,7 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
                     + "})");
 
             try {
-                ((Invocable)engine).invokeMethod(cleaner, "call", null, allowedGlobals);
+                ((Invocable) engine).invokeMethod(cleaner, "call", null, allowedGlobals);
             } catch (NoSuchMethodException ex) {
                 throw new ScriptException(ex);
             }
@@ -340,12 +325,12 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
 
             return new PacScriptEngine(engine, jsMainFunction);
         } catch (ScriptException ex) {
-            throw new  PacParsingException(ex);
+            throw new PacParsingException(ex);
         }
     }
 
     @NbBundle.Messages({
-        "ALLOWED_PAC_ENGINES=GraalVM:js,Graal.js,Nashorn"
+            "ALLOWED_PAC_ENGINES=GraalVM:js,Graal.js,Nashorn"
     })
     private static ScriptEngine newAllowedPacEngine(StringBuilder err) {
         return newAllowedPacEngine(null, err);
@@ -373,7 +358,8 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
 
     public String callFindProxyForURL(URI uri) throws InvalidPacFileException {
         try {
-            return scriptEngine.findProxyForURL(PacUtils.toStrippedURLStr(uri), uri.getHost()).toString();
+            Object proxyForURL = scriptEngine.findProxyForURL(PacUtils.toStrippedURLStr(uri), uri.getHost());
+            return proxyForURL != null ? proxyForURL.toString() : null;
         } catch (Exception ex) {  // for runtime exceptions
             if (ex.getCause() != null) {
                 if (ex.getCause() instanceof ClassNotFoundException) {
@@ -467,20 +453,19 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
 
     /**
      * Translates result from JavaScript into list of java proxy types.
-     *
+     * <p>
      * The string returned from the JavaScript function (input to this
      * method) can contain any number of the following building blocks,
      * separated by a semicolon:
-     *
-     *   DIRECT
-     *       Connections should be made directly, without any proxies.
-     *
-     *   PROXY host:port
-     *       The specified proxy should be used.
-     *
-     *   SOCKS host:port
-     *       The specified SOCKS server should be used.
-     *
+     * <p>
+     * DIRECT
+     * Connections should be made directly, without any proxies.
+     * <p>
+     * PROXY host:port
+     * The specified proxy should be used.
+     * <p>
+     * SOCKS host:port
+     * The specified SOCKS server should be used.
      *
      * @param uri
      * @param proxiesString
@@ -502,16 +487,16 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
     }
 
     private static Proxy getProxy(String proxySpec) throws PacValidationException {
-         if (proxySpec.equals(PAC_DIRECT)) {
-             return Proxy.NO_PROXY;
-         }
+        if (proxySpec.equals(PAC_DIRECT)) {
+            return Proxy.NO_PROXY;
+        }
 
         String[] ele = proxySpec.split(" +"); // NOI18N
         if (ele.length != 2) {
             throw new PacValidationException("The value \"" + proxySpec + "\" has incorrect format");
         }
         final Proxy.Type proxyType;
-        switch(ele[0]) {
+        switch (ele[0]) {
             case PAC_PROXY:
             case PAC_HTTP_FFEXT:
             case PAC_HTTPS_FFEXT:
@@ -533,11 +518,11 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
         }
 
         String host = hostAndPortNo.substring(0, i);
-        String portStr = hostAndPortNo.substring(i+1);
+        String portStr = hostAndPortNo.substring(i + 1);
 
         int portNo = -1;
         try {
-            portNo =  Integer.parseInt(portStr);
+            portNo = Integer.parseInt(portStr);
         } catch (NumberFormatException ex) {
             throw new PacValidationException("The portno value \"" + portStr + "\" cannot be converted to an integer");
         }
@@ -546,7 +531,7 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
     }
 
 
-    private static class PacScriptEngine  {
+    private static class PacScriptEngine {
         private final ScriptEngine scriptEngine;
         private final PacJsEntryFunction jsMainFunction;
         private final Invocable invocable;

@@ -53,19 +53,32 @@ public final class HttpUtils {
     /**
      * Parse a {@link String} value into an {@link URI} instance.
      *
-     * @param url the input value.
+     * @param uri the input value.
      * @return the {@link URI} instance.
      * @throws URISyntaxException
      */
-    public static URI parseUri(String url) throws URISyntaxException {
-        int index = url.indexOf("?");
+    public static URI toUri(String uri) throws URISyntaxException {
+        int index = uri.indexOf("?");
         if (index > -1) {
-            URIBuilder uriBuilder = new URIBuilder(url.substring(0, index));
-            List<NameValuePair> nameValuePairs = URLEncodedUtils.parse(url.substring(index + 1), StandardCharsets.UTF_8);
+            URIBuilder uriBuilder = new URIBuilder(uri.substring(0, index));
+            List<NameValuePair> nameValuePairs = URLEncodedUtils.parse(uri.substring(index + 1), StandardCharsets.UTF_8);
             uriBuilder.addParameters(nameValuePairs);
             return uriBuilder.build();
         }
-        return new URIBuilder(url).build();
+        return new URIBuilder(uri).build();
+    }
+
+    /**
+     * Parse a {@link String} value into an {@link URI} instance, ignoring the query string.
+     *
+     * @param uri the input value.
+     * @return the {@link URI} instance.
+     * @throws URISyntaxException
+     */
+    public static URI toStrippedUri(String uri) throws URISyntaxException {
+        int index = uri.indexOf("?");
+        String strippedUri = index > -1 ? uri.substring(0, index) : uri;
+        return new URIBuilder(strippedUri).build();
     }
 
     /**

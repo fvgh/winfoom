@@ -14,7 +14,6 @@ package org.kpax.winfoom;
 
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.util.JarUtils;
 import org.kpax.winfoom.util.SwingUtils;
 import org.kpax.winfoom.view.AppFrame;
 import org.slf4j.Logger;

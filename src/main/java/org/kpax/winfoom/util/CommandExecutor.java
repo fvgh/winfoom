@@ -49,6 +49,7 @@ public class CommandExecutor {
 
     /**
      * Retrieves the system proxy line by querying the Windows Registry.
+     *
      * @return the system proxy line
      * @throws CommandExecutionException
      */

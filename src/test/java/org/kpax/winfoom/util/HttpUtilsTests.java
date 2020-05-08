@@ -15,15 +15,9 @@ package org.kpax.winfoom.util;
 import org.apache.http.HttpRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicHttpRequest;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.kpax.winfoom.FoomApplicationTest;
+import org.junit.jupiter.api.Test;
 import org.kpax.winfoom.proxy.ProxyInfo;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -38,37 +32,61 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class HttpUtilsTests {
 
     @Test
-    void parseUri_noQueryParams_ParseOk() throws URISyntaxException {
+    void toUri_noQueryParams_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people";
-        URI result = HttpUtils.parseUri(uri);
+        URI result = HttpUtils.toUri(uri);
         assertEquals(uri, result.toString());
         assertEquals("/people", result.getPath());
     }
 
     @Test
-    void parseUri_oneQueryParam_ParseOk() throws URISyntaxException {
+    void toUri_oneQueryParam_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?meIncluded=not";
-        URI result = HttpUtils.parseUri(uri);
+        URI result = HttpUtils.toUri(uri);
         assertEquals(uri, result.toString());
         assertEquals("/people", result.getPath());
         assertEquals("meIncluded=not", result.getQuery());
     }
 
     @Test
-    void parseUri_multipleQueryParam_ParseOk() throws URISyntaxException {
+    void toUri_multipleQueryParam_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?meIncluded=not&youIncluded=maybe";
-        URI result = HttpUtils.parseUri(uri);
+        URI result = HttpUtils.toUri(uri);
         assertEquals(uri, result.toString());
         assertEquals("/people", result.getPath());
         assertEquals("meIncluded=not&youIncluded=maybe", result.getQuery());
     }
 
     @Test
-    void parseUri_noQueryParamQuestionMark_ParseOk() throws URISyntaxException {
+    void toUri_noQueryParamQuestionMark_ParseOk() throws URISyntaxException {
         String uri = "http://happy/people?";
-        URI result = HttpUtils.parseUri(uri);
+        URI result = HttpUtils.toUri(uri);
         assertEquals("http://happy/people", result.toString());
         assertNull(result.getQuery());
+    }
+
+    @Test
+    void toStrippedUri_noQueryParams_ParseOk() throws URISyntaxException {
+        String uri = "http://happy/people";
+        URI result = HttpUtils.toStrippedUri(uri);
+        assertEquals(uri, result.toString());
+        assertEquals("/people", result.getPath());
+    }
+
+    @Test
+    void toStrippedUri_withQueryParams_StripQueryParams() throws URISyntaxException {
+        String uri = "http://happy/people?x=y";
+        URI result = HttpUtils.toStrippedUri(uri);
+        assertEquals("http://happy/people", result.toString());
+        assertEquals("/people", result.getPath());
+    }
+
+    @Test
+    void toStrippedUri_noQueryParamQuestionMark_StripQueryParams() throws URISyntaxException {
+        String uri = "http://happy/people?";
+        URI result = HttpUtils.toStrippedUri(uri);
+        assertEquals("http://happy/people", result.toString());
+        assertEquals("/people", result.getPath());
     }
 
     @Test

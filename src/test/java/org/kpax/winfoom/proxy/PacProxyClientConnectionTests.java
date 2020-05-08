@@ -425,6 +425,41 @@ public class PacProxyClientConnectionTests {
         }
     }
 
+
+    @Order(8)
+    @Test
+    void nullProxyLine_DirectConnectAndNonConnect_NoProxyCorrectResponse() throws IOException, PacParsingException {
+        String content = String.format("function FindProxyForURL(url, host) {return null;}");
+        logger.debug("content {}", content);
+        NbPacScriptEvaluator nbPacScriptEvaluator = new NbPacScriptEvaluator(content);
+        ReflectionTestUtils.setField(proxyAutoConfig, "nbPacScriptEvaluator", nbPacScriptEvaluator);
+
+        HttpHost localProxy = new HttpHost("localhost", LOCAL_PROXY_PORT, "http");
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableAutomaticRetries().build()) {
+            RequestConfig config = RequestConfig.custom()
+                    .setProxy(localProxy)
+                    .build();
+            HttpHost target = HttpHost.create("http://localhost:" + remoteServer.getLocalPort());
+            HttpGet request = new HttpGet("/get");
+            request.setConfig(config);
+
+            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+                String responseBody = EntityUtils.toString(response.getEntity());
+                assertEquals("12345", responseBody);
+            }
+        }
+
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create()
+                .setProxy(localProxy).build()) {
+            HttpHost target = HttpHost.create("http://localhost:" + remoteServer.getLocalPort());
+            HttpRequest request = new BasicHttpRequest("CONNECT", "localhost:" + remoteServer.getLocalPort());
+            try (CloseableHttpResponse response = httpClient.execute(target, request)) {
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            }
+        }
+    }
+
     @AfterAll
     void after() {
         try {

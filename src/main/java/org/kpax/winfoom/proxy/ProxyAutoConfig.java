@@ -83,6 +83,7 @@ class ProxyAutoConfig {
 
     /**
      * Calls the {@code findProxyForURL} method within the PAC script file
+     *
      * @param uri the request URI.
      * @return the list of {@link ProxyInfo}.
      * @throws InvalidPacFileException
