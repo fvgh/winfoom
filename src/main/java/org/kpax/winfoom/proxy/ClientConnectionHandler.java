@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Iterator;
@@ -75,7 +76,16 @@ class ClientConnectionHandler {
         try {
             List<ProxyInfo> proxyInfoList;
             if (proxyConfig.isAutoConfig()) {
-                proxyInfoList = proxyAutoconfig.findProxyForURL(HttpUtils.toStrippedUri(requestLine.getUri()));
+
+                URI requestUri;
+                if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
+                    HttpHost requestHost = HttpHost.create(requestLine.getUri());
+                    requestUri = new URI(requestHost.toURI());
+                } else {
+                    requestUri = HttpUtils.toStrippedUri(requestLine.getUri());
+                }
+
+                proxyInfoList = proxyAutoconfig.findProxyForURL(requestUri);
             } else {
 
                 // Manual proxy case

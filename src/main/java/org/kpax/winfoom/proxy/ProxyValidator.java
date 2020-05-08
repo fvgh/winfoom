@@ -83,8 +83,8 @@ public class ProxyValidator {
         try {
             if (proxyConfig.isAutoConfig()) {
                 proxyAutoconfig.loadScript();
-                HttpHost httpHost = HttpHost.create(proxyConfig.getProxyTestUrl());
-                List<ProxyInfo> proxyInfos = proxyAutoconfig.findProxyForURL(new URI(httpHost.toURI()));
+                HttpHost testHost = HttpHost.create(proxyConfig.getProxyTestUrl());
+                List<ProxyInfo> proxyInfos = proxyAutoconfig.findProxyForURL(new URI(testHost.toURI()));
                 for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
                     ProxyInfo proxyInfo = itr.next();
                     logger.info("Validate {}", proxyInfo);
