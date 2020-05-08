@@ -122,8 +122,8 @@ class LocalProxyServer implements Closeable {
 
     @Override
     public synchronized void close() {
-        if (this.started) {
-            this.started = false;
+        if (started) {
+            started = false;
             logger.info("Now stop running the local proxy server");
             try {
                 logger.info("Close the server socket");

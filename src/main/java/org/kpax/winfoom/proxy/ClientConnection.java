@@ -232,7 +232,7 @@ final class ClientConnection implements AutoCloseable {
      * @return <code>true</code> iff the request has been marked as prepared.
      */
     boolean isRequestPrepared() {
-        return this.requestPrepared;
+        return requestPrepared;
     }
 
     /**
@@ -252,7 +252,7 @@ final class ClientConnection implements AutoCloseable {
      * @return <code>true</code> iff no more tries.
      */
     boolean isLastResort() {
-        return this.lastResort;
+        return lastResort;
     }
 
     /**
@@ -276,12 +276,12 @@ final class ClientConnection implements AutoCloseable {
      * @return {@code true} if the specified element isn't already registered
      */
     boolean registerAutoCloseable(AutoCloseable autoCloseable) {
-        return this.autoCloseables.add(autoCloseable);
+        return autoCloseables.add(autoCloseable);
     }
 
 
     @Override
     public void close() {
-        this.autoCloseables.forEach(InputOutputs::close);
+        autoCloseables.forEach(InputOutputs::close);
     }
 }

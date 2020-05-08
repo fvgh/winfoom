@@ -236,7 +236,7 @@ public class ProxyConfig {
     }
 
     /**
-     * It saves the current settings to the home application directory, overwriting the existing values.
+     * Save the current settings to the home application directory, overwriting the existing values.
      *
      * @throws IOException
      * @throws ConfigurationException
@@ -251,27 +251,27 @@ public class ProxyConfig {
         FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder = new Configurations()
                 .propertiesBuilder(userProperties);
         Configuration config = propertiesBuilder.getConfiguration();
-        config.setProperty("proxy.type", this.proxyType);
-        config.setProperty("proxy.host", proxyType.isHttp() || proxyType.isSocks() ? this.proxyHost : null);
-        config.setProperty("proxy.port", proxyType.isHttp() || proxyType.isSocks() ? this.proxyPort : 0);
-        config.setProperty("local.port", this.localPort);
-        config.setProperty("proxy.test.url", this.proxyTestUrl);
-        config.setProperty("proxy.username", proxyType.isSocks5() ? this.proxyUsername : null);
-        config.setProperty("proxy.storePassword", proxyType.isSocks5() ? this.proxyStorePassword : false);
-        config.setProperty("proxy.pac.fileLocation", proxyType.isPac() ? this.proxyPacFileLocation : null);
+        config.setProperty("proxy.type", proxyType);
+        config.setProperty("proxy.host", proxyType.isHttp() || proxyType.isSocks() ? proxyHost : null);
+        config.setProperty("proxy.port", proxyType.isHttp() || proxyType.isSocks() ? proxyPort : 0);
+        config.setProperty("local.port", localPort);
+        config.setProperty("proxy.test.url", proxyTestUrl);
+        config.setProperty("proxy.username", proxyType.isSocks5() ? proxyUsername : null);
+        config.setProperty("proxy.storePassword", proxyType.isSocks5() ? proxyStorePassword : false);
+        config.setProperty("proxy.pac.fileLocation", proxyType.isPac() ? proxyPacFileLocation : null);
 
         if (proxyType.isPac()) {
-            config.setProperty("blacklist.timeout", this.blacklistTimeout);
+            config.setProperty("blacklist.timeout", blacklistTimeout);
         }
 
-        if (proxyType.isSocks5() && this.proxyStorePassword) {
-            config.setProperty("proxy.password", this.proxyPassword);
+        if (proxyType.isSocks5() && proxyStorePassword) {
+            config.setProperty("proxy.password", proxyPassword);
         } else {
 
             // Clear the stored password
             if (StringUtils.isNotEmpty(proxyPassword)) {
                 config.setProperty("proxy.password", null);
-                this.proxyPassword = null;
+                proxyPassword = null;
             }
         }
 
@@ -285,7 +285,7 @@ public class ProxyConfig {
         setProxyUsername(config.getString("proxy.username"));
         setProxyStorePassword(config.getBoolean("proxy.storePassword"));
         setProxyPacFileLocation(config.getString("proxy.pac.fileLocation"));
-        this.proxyPassword = config.getString("proxy.password");
+        proxyPassword = config.getString("proxy.password");
     }
 
     @Override
