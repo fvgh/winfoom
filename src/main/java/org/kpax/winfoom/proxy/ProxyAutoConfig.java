@@ -46,7 +46,7 @@ class ProxyAutoConfig {
     private NbPacScriptEvaluator nbPacScriptEvaluator;
 
     /**
-     * It loads and parse the PAC script file.
+     * Load and parse the PAC script file.
      *
      * @return the {@link NbPacScriptEvaluator} instance.
      * @throws IOException
@@ -82,7 +82,7 @@ class ProxyAutoConfig {
     }
 
     /**
-     * Calls the {@code findProxyForURL} method within the PAC script file
+     * Call the {@code findProxyForURL} method within the PAC script file
      *
      * @param uri the request URI.
      * @return the list of {@link ProxyInfo}.

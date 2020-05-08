@@ -66,7 +66,7 @@ public class ProxyValidator {
     private ProxyBlacklist proxyBlacklist;
 
     /**
-     * Tests the proxy settings.<br>
+     * Test the proxy settings.<br>
      * The errors it throws must be interpretable by the GUI into meaningful messages.
      *
      * @throws IOException

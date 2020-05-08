@@ -57,7 +57,7 @@ import java.io.IOException;
 import java.net.Socket;
 
 /**
- * Establishes a tunnel via a HTTP proxy.<br>
+ * Establish a tunnel via a HTTP proxy.<br>
  * It is an adaptation of {@link org.apache.http.impl.client.ProxyClient}
  *
  * @author Eugen Covaci

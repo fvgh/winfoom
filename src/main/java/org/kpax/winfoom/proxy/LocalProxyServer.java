@@ -54,7 +54,7 @@ class LocalProxyServer implements Closeable {
     private volatile boolean started;
 
     /**
-     * Starts the local proxy server.<br>
+     * Start the local proxy server.<br>
      * This means:
      * <ul>
      * <li>Opens a {@link ServerSocket} on a local port, then listen for connections</li>

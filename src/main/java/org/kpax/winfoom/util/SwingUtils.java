@@ -53,7 +53,7 @@ public class SwingUtils {
     }
 
     /**
-     * Accepts an input value only if it is valid.
+     * Accept an input value only if it is valid.
      *
      * @param spinner the {@link JSpinner} instance.
      */
@@ -92,7 +92,7 @@ public class SwingUtils {
     }
 
     /**
-     * It executes a {@link Runnable}, showing a waiting cursor until the execution ends.
+     * Execute a {@link Runnable}, showing a waiting cursor until the execution ends.
      *
      * @param runnable the {@link Runnable} instance (not null)
      * @param frame    the current {@link JFrame}
@@ -114,7 +114,7 @@ public class SwingUtils {
     }
 
     /**
-     * It loads an image from a specified classpath location.
+     * Load an image from a specified classpath location.
      *
      * @param cls      used to localize the image URL.
      * @param filename the image's filename.

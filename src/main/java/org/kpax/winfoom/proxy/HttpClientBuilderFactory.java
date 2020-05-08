@@ -43,7 +43,7 @@ class HttpClientBuilderFactory {
     private ConnectionPoolingManager connectionPoolingManager;
 
     /**
-     * It creates a new instance of {@link HttpClientBuilder} according to the requested proxy.
+     * Create a new instance of {@link HttpClientBuilder} according to the requested proxy.
      *
      * @param proxyInfo the proxy.
      * @return a pre-configured {@link HttpClientBuilder} instance for the requested proxy.

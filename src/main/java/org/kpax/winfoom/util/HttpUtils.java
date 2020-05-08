@@ -236,7 +236,7 @@ public final class HttpUtils {
 
     /**
      * Quite a dirty hack.<br>
-     * Using Java Reflection, it calls the {@code java.net.SocksSocketImpl#setV4()} method.
+     * Using Java Reflection, call the {@code java.net.SocksSocketImpl#setV4()} method.
      *
      * @param socket the SOCKS socket to be marked as version 4.
      * @throws UnsupportedOperationException

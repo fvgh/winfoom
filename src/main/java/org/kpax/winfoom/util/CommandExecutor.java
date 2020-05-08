@@ -30,7 +30,7 @@ public class CommandExecutor {
     private static final Logger logger = LoggerFactory.getLogger(CommandExecutor.class);
 
     /**
-     * Executes a command with parameters.
+     * Execute a command with parameters.
      *
      * @param command The command's parameters.
      * @return The command's output.
@@ -48,7 +48,7 @@ public class CommandExecutor {
     }
 
     /**
-     * Retrieves the system proxy line by querying the Windows Registry.
+     * Retrieve the system proxy line by querying the Windows Registry.
      *
      * @return the system proxy line
      * @throws CommandExecutionException

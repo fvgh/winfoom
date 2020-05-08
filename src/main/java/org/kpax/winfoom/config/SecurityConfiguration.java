@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
 class SecurityConfiguration {
 
     /**
-     * It created the default system wide {@link CredentialsProvider}.<br>
+     * Create the default system wide {@link CredentialsProvider}.<br>
      * Only works with HTTP proxies.
      *
      * @return the system wide {@link CredentialsProvider}

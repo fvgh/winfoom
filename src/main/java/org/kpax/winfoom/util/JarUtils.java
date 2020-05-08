@@ -22,7 +22,7 @@ public class JarUtils {
     }
 
     /**
-     * Gets the {@code Implementation-Version}  attribute from jar's MANIFEST.MF file.
+     * Get the {@code Implementation-Version}  attribute from jar's MANIFEST.MF file.
      * Only accurate when the application is packaged as JAR file.
      *
      * @return the application's version as it appears in the pom.xml file.

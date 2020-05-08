@@ -26,7 +26,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * It provides a thread pool for async execution also allows start/stop {@link LocalProxyServer}.<br/>
+ * Provide a thread pool for async execution also allows start/stop {@link LocalProxyServer}.<br/>
  * We rely on the Spring context to close this instance!
  *
  * @author Eugen Covaci
@@ -66,7 +66,7 @@ public class ProxyContext implements AutoCloseable {
     }
 
     /**
-     * Starts the {@link  ConnectionPoolingManager} also the {@link LocalProxyServer}.
+     * Start the {@link  ConnectionPoolingManager} also the {@link LocalProxyServer}.
      *
      * @return {@code true} iff it is not aready started.
      * @throws Exception
@@ -81,7 +81,7 @@ public class ProxyContext implements AutoCloseable {
     }
 
     /**
-     * Stops the {@link  ConnectionPoolingManager} also the {@link LocalProxyServer}.<br>
+     * Stop the {@link  ConnectionPoolingManager} also the {@link LocalProxyServer}.<br>
      * Also, it removes the {@link Authenticator} - if any.
      *
      * @return {@code true} iff it is not aready stopped.

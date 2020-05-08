@@ -47,7 +47,7 @@ public class ProxyBlacklist {
     private ProxyConfig proxyConfig;
 
     /**
-     * Attempts to blacklist a proxy. Does nothing if the blacklisting is disabled.<br>
+     * Attempt to blacklist a proxy. Does nothing if the blacklisting is disabled.<br>
      * If the proxy is already blacklisted, it keeps the existent timeout.
      *
      * @param proxyInfo the proxy to be blacklisted.
@@ -74,7 +74,7 @@ public class ProxyBlacklist {
     }
 
     /**
-     * It verifies whether a proxy is blacklisted.<br>
+     * Verify whether a proxy is blacklisted.<br>
      * If the proxy is in the blacklist map but expired, will be removed.
      *
      * @param proxyInfo the proxy to be checked
@@ -91,7 +91,7 @@ public class ProxyBlacklist {
     }
 
     /**
-     * It clears the blacklist map.
+     * Clear the blacklist map.
      *
      * @return the number of currently active blacklisted proxies.
      */

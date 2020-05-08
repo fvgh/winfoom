@@ -18,7 +18,7 @@ import org.apache.http.HttpHost;
 import java.util.Objects;
 
 /**
- * Encapsulates the proxy information: type, host an port
+ * Encapsulate the proxy information: type, host an port
  */
 public final class ProxyInfo {
 

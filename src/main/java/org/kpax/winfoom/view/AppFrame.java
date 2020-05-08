@@ -75,7 +75,6 @@ public class AppFrame extends JFrame {
     private JLabel proxyTypeLabel;
     private JComboBox<ProxyConfig.Type> proxyTypeCombo;
 
-    private JLabel localPortLabel;
     private JSpinner localPortJSpinner;
 
     private JLabel testUrlLabel;

@@ -42,7 +42,7 @@ public final class InputOutputs {
     }
 
     /**
-     * It checks for available data.
+     * Check for available data.
      *
      * @param inputBuffer The input buffer.
      * @return <code>false</code> iff EOF has been reached.
@@ -82,7 +82,7 @@ public final class InputOutputs {
 
 
     /**
-     * Transfers bytes between two sources.
+     * Transfer bytes between two sources.
      *
      * @param executorService    The executor service for async support.
      * @param firstInputSource   The input of the first source.

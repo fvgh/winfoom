@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Encapsulates the response of a {@link TunnelConnection}.
+ * Encapsulate the response of a {@link TunnelConnection}.
  *
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 3/31/2020

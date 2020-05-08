@@ -110,7 +110,7 @@ class ConnectionPoolingManager implements AutoCloseable {
     }
 
     /**
-     * If not started it marks this manager as started, does nothing otherwise.
+     * If not started mark this manager as started, does nothing otherwise.
      */
     synchronized void start() {
         if (!started) {
@@ -161,7 +161,7 @@ class ConnectionPoolingManager implements AutoCloseable {
     }
 
     /**
-     * It creates a generic {@link PoolingHttpClientConnectionManager}
+     * Create a generic {@link PoolingHttpClientConnectionManager}
      *
      * @param socketFactoryRegistry the {@link Registry} instance used to configure the {@link PoolingHttpClientConnectionManager}.
      * @return the new {@link PoolingHttpClientConnectionManager} instance.
@@ -184,7 +184,7 @@ class ConnectionPoolingManager implements AutoCloseable {
     }
 
     /**
-     * It creates a SOCKS {@link PoolingHttpClientConnectionManager}
+     * Create a SOCKS {@link PoolingHttpClientConnectionManager}
      *
      * @param isSocks4 whether the SOCKS version is {@code 4} or not.
      * @return the new {@link PoolingHttpClientConnectionManager} instance.
@@ -202,7 +202,7 @@ class ConnectionPoolingManager implements AutoCloseable {
     }
 
     /**
-     * If started closes all active {@link PoolingHttpClientConnectionManager} instances then nullifies them,
+     * If started close all active {@link PoolingHttpClientConnectionManager} instances then nullifies them,
      * otherwise does nothing.
      *
      * @return {@code true} iff this manager is started.

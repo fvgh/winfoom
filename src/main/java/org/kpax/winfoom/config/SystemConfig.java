@@ -160,7 +160,7 @@ public class SystemConfig {
     }
 
     /**
-     * It automatically saves the current settings to the home application directory, if it isn't already saved.
+     * Save the current settings to the home application directory, if it isn't already saved.
      *
      * @throws ConfigurationException
      * @throws IOException

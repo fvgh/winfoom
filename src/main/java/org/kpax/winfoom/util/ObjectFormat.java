@@ -27,7 +27,7 @@ public final class ObjectFormat {
     }
 
     /**
-     * Calls the <code>input.toString()</code> and appends CRLF.
+     * Call the <code>input.toString()</code> and appends CRLF.
      *
      * @param input   The object to be formatted (not null).
      * @param charset The charset to be used (not null).
