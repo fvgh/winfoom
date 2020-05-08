@@ -61,7 +61,8 @@ public final class HttpUtils {
         int index = uri.indexOf("?");
         if (index > -1) {
             URIBuilder uriBuilder = new URIBuilder(uri.substring(0, index));
-            List<NameValuePair> nameValuePairs = URLEncodedUtils.parse(uri.substring(index + 1), StandardCharsets.UTF_8);
+            List<NameValuePair> nameValuePairs = URLEncodedUtils.parse(uri.substring(index + 1),
+                    StandardCharsets.UTF_8);
             uriBuilder.addParameters(nameValuePairs);
             return uriBuilder.build();
         }

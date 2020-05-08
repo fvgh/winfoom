@@ -257,7 +257,8 @@ public class AppFrame extends JFrame {
             proxyConfig.setProxyPacFileLocation(pacFileJTextField.getText());
         });
         pacFileJTextField.setToolTipText(HttpUtils.toHtml("The location of the Proxy Auto-Config file." +
-                "<br>It can be a local location (like <i>C:/pac/proxy.pac</i>) or a HTTP(s) address (like <i>http://pacserver:80/proxy.pac</i>)"));
+                "<br>It can be a local location (like <i>C:/pac/proxy.pac</i>) or a HTTP(s) address (like " +
+                "<i>http://pacserver:80/proxy.pac</i>)"));
         return pacFileJTextField;
     }
 
@@ -658,8 +659,10 @@ public class AppFrame extends JFrame {
         if (proxyConfig.getProxyType().isSocks5()) {
             if (StringUtils.isNotEmpty(proxyConfig.getProxyUsername())
                     && StringUtils.isEmpty(proxyConfig.getProxyPassword())) {
-                int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide any password." +
-                        "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+                int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide " +
+                        "any password." +
+                        "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
                 if (option != JOptionPane.OK_OPTION) {
                     return;
                 }

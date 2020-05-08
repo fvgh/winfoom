@@ -13,7 +13,8 @@
 package org.kpax.winfoom.exception;
 
 /**
- * Signal an invalid Proxy Auto Config file (wrong syntax, {@code findProxyForURL} function is invalid or non-existent etc.)
+ * Signal an invalid Proxy Auto Config file (wrong syntax, {@code findProxyForURL} function is invalid or
+ * non-existent etc.)
  */
 public class InvalidPacFileException extends Exception {
     public InvalidPacFileException() {

@@ -57,7 +57,8 @@ public class FoomApplication {
         } catch (Exception e) {
             logger.error("Failed to verify app version", e);
             SwingUtils.showErrorMessage(null, "Failed to verify application version." +
-                    "\nRemove the system.properties and proxy.properties files from <USERDIR>/.winfoom directory then try again.");
+                    "\nRemove the system.properties and proxy.properties files from <USERDIR>/.winfoom directory then" +
+                    " try again.");
             System.exit(1);
         }
 

@@ -114,10 +114,12 @@ class ClientConnectionHandler {
                         logger.debug("Connection error", e);
 
                         if (itr.hasNext()) {
-                            logger.debug("Failed to process connection with proxy: {}, retry with the next one", proxyInfo);
+                            logger.debug("Failed to process connection with proxy: {}, retry with the next one",
+                                    proxyInfo);
                             proxyBlacklist.blacklist(proxyInfo);
                         } else {
-                            logger.debug("Failed to process connection with proxy: {}, send the error response", proxyInfo);
+                            logger.debug("Failed to process connection with proxy: {}, send the error response",
+                                    proxyInfo);
 
                             // Cannot connect to the remote proxy
                             clientConnection.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);

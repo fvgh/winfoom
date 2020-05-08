@@ -43,7 +43,8 @@ import java.util.Base64;
  * @author Eugen Covaci
  */
 @Component
-@PropertySource(value = "file:${user.home}/" + SystemConfig.APP_HOME_DIR_NAME + "/" + ProxyConfig.FILENAME, ignoreResourceNotFound = true)
+@PropertySource(value = "file:${user.home}/" + SystemConfig.APP_HOME_DIR_NAME + "/" + ProxyConfig.FILENAME,
+        ignoreResourceNotFound = true)
 public class ProxyConfig {
 
     public static final String FILENAME = "proxy.properties";

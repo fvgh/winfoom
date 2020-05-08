@@ -31,7 +31,8 @@ public class CommandExecutionException extends Exception {
         super(cause);
     }
 
-    public CommandExecutionException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public CommandExecutionException(String message, Throwable cause, boolean enableSuppression,
+                                     boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

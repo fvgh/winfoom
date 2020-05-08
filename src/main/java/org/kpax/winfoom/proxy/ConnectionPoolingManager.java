@@ -149,9 +149,11 @@ class ConnectionPoolingManager implements AutoCloseable {
             for (PoolingHttpClientConnectionManager connectionManager : getAllActiveConnectionManagers()) {
                 try {
                     connectionManager.closeExpiredConnections();
-                    connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(), TimeUnit.SECONDS);
+                    connectionManager.closeIdleConnections(systemConfig.getConnectionManagerIdleTimeout(),
+                            TimeUnit.SECONDS);
                     if (logger.isDebugEnabled()) {
-                        logger.debug("PoolingHttpClientConnectionManager statistics {}", connectionManager.getTotalStats());
+                        logger.debug("PoolingHttpClientConnectionManager statistics {}",
+                                connectionManager.getTotalStats());
                     }
                 } catch (Exception e) {
                     logger.debug("Error on cleaning connection pool", e);
@@ -163,16 +165,19 @@ class ConnectionPoolingManager implements AutoCloseable {
     /**
      * Create a generic {@link PoolingHttpClientConnectionManager}
      *
-     * @param socketFactoryRegistry the {@link Registry} instance used to configure the {@link PoolingHttpClientConnectionManager}.
+     * @param socketFactoryRegistry the {@link Registry} instance used to configure the
+     * {@link PoolingHttpClientConnectionManager}.
      * @return the new {@link PoolingHttpClientConnectionManager} instance.
      * @throws IllegalStateException when this manager is not started.
      */
     private PoolingHttpClientConnectionManager createConnectionManager(Registry<ConnectionSocketFactory> socketFactoryRegistry) {
         if (!started) {
-            throw new IllegalStateException("Cannot create connectionManagers: ConnectionPoolingManager is not started");
+            throw new IllegalStateException("Cannot create connectionManagers: ConnectionPoolingManager is not " +
+                    "started");
         }
         PoolingHttpClientConnectionManager connectionManager = socketFactoryRegistry != null
-                ? new PoolingHttpClientConnectionManager(socketFactoryRegistry) : new PoolingHttpClientConnectionManager();
+                ? new PoolingHttpClientConnectionManager(socketFactoryRegistry) :
+                new PoolingHttpClientConnectionManager();
         logger.info("Configure connection manager");
         if (systemConfig.getMaxConnections() != null) {
             connectionManager.setMaxTotal(systemConfig.getMaxConnections());

@@ -146,7 +146,8 @@ public class ProxyValidator {
                     .register("https", connectionSocketFactory)
                     .build();
 
-            httpClientBuilder = HttpClients.custom().setConnectionManager(new PoolingHttpClientConnectionManager(factoryRegistry));
+            httpClientBuilder =
+                    HttpClients.custom().setConnectionManager(new PoolingHttpClientConnectionManager(factoryRegistry));
         } else {
             httpClientBuilder = WinHttpClients.custom();
         }
