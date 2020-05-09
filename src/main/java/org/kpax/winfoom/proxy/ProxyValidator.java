@@ -32,7 +32,7 @@ import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
-import org.kpax.winfoom.exception.InvalidPacFileException;
+import org.kpax.winfoom.exception.PacFileException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,11 +71,11 @@ public class ProxyValidator {
      *
      * @throws IOException
      * @throws CredentialException     the provided credentials are wrong
-     * @throws InvalidPacFileException the PAC script file is invalid
+     * @throws PacFileException the PAC script file is invalid
      * @throws URISyntaxException      there is something wrong with the test URL.
      */
     public void testProxyConfig()
-            throws IOException, CredentialException, InvalidPacFileException, URISyntaxException {
+            throws IOException, CredentialException, PacFileException, URISyntaxException {
         logger.info("Test proxy config {}", proxyConfig);
 
         ProxyType proxyType = proxyConfig.getProxyType();

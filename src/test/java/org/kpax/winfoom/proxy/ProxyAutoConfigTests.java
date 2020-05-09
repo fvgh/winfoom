@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.config.ProxyConfig;
-import org.kpax.winfoom.exception.InvalidPacFileException;
+import org.kpax.winfoom.exception.PacFileException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -65,13 +65,13 @@ class ProxyAutoConfigTests {
     }
 
     @Test
-    void loadPacFileContent_validLocalFile_NoError() throws IOException, InvalidPacFileException {
+    void loadPacFileContent_validLocalFile_NoError() throws IOException, PacFileException {
         when(proxyConfig.getProxyPacFileLocationAsURL()).thenReturn(getClass().getClassLoader().getResource("proxy-simple.pac"));
         proxyAutoconfig.loadScript();
     }
 
     @Test
-    void loadPacFileContent_validRemoteFile_NoError() throws IOException, InvalidPacFileException {
+    void loadPacFileContent_validRemoteFile_NoError() throws IOException, PacFileException {
         when(proxyConfig.getProxyPacFileLocationAsURL()).thenReturn(new URL("http://localhost:" + remoteServer.getLocalPort() + "/pacFile"));
         proxyAutoconfig.loadScript();
     }
@@ -80,7 +80,7 @@ class ProxyAutoConfigTests {
     @Test
     void loadPacFileContent_invalidLocalFile_InvalidPacFileException() throws IOException {
         when(proxyConfig.getProxyPacFileLocationAsURL()).thenReturn(getClass().getClassLoader().getResource("proxy-invalid.pac"));
-        Assertions.assertThrows(InvalidPacFileException.class, proxyAutoconfig::loadScript);
+        Assertions.assertThrows(PacFileException.class, proxyAutoconfig::loadScript);
     }
 
     @AfterAll

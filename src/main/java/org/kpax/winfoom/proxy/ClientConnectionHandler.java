@@ -18,7 +18,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.kpax.winfoom.config.ProxyConfig;
-import org.kpax.winfoom.exception.InvalidPacFileException;
+import org.kpax.winfoom.exception.PacFileException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
@@ -155,7 +155,7 @@ class ClientConnectionHandler {
                     HttpStatus.SC_BAD_REQUEST,
                     "Invalid request URI");
             logger.debug("Invalid URI", e);
-        } catch (InvalidPacFileException e) {
+        } catch (PacFileException e) {
             clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
                     HttpStatus.SC_INTERNAL_SERVER_ERROR,
                     "Invalid Proxy Auto Config file");

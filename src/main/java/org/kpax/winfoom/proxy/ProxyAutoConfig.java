@@ -14,7 +14,7 @@ package org.kpax.winfoom.proxy;
 
 import org.apache.commons.io.IOUtils;
 import org.kpax.winfoom.config.ProxyConfig;
-import org.kpax.winfoom.exception.InvalidPacFileException;
+import org.kpax.winfoom.exception.PacFileException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.netbeans.core.network.proxy.pac.impl.NbPacScriptEvaluator;
 import org.slf4j.Logger;
@@ -50,9 +50,9 @@ class ProxyAutoConfig {
      *
      * @return the {@link NbPacScriptEvaluator} instance.
      * @throws IOException
-     * @throws InvalidPacFileException
+     * @throws PacFileException
      */
-    synchronized NbPacScriptEvaluator loadScript() throws IOException, InvalidPacFileException {
+    synchronized NbPacScriptEvaluator loadScript() throws IOException, PacFileException {
         URL url = proxyConfig.getProxyPacFileLocationAsURL();
         if (url == null) {
             throw new IllegalStateException("No proxy PAC file location found");
@@ -64,7 +64,7 @@ class ProxyAutoConfig {
             try {
                 nbPacScriptEvaluator = new NbPacScriptEvaluator(content);
             } catch (Exception e) {
-                throw new InvalidPacFileException("The provided PAC file is not valid", e);
+                throw new PacFileException("The provided PAC file is not valid", e);
             }
         }
         return nbPacScriptEvaluator;
@@ -86,9 +86,9 @@ class ProxyAutoConfig {
      *
      * @param uri the request URI.
      * @return the list of {@link ProxyInfo}.
-     * @throws InvalidPacFileException
+     * @throws PacFileException
      */
-    List<ProxyInfo> findProxyForURL(URI uri) throws InvalidPacFileException {
+    List<ProxyInfo> findProxyForURL(URI uri) throws PacFileException {
         String proxyLine = getPacScriptEvaluator().callFindProxyForURL(uri);
         logger.debug("proxyLine [{}]", proxyLine);
         return HttpUtils.parsePacProxyLine(proxyLine);

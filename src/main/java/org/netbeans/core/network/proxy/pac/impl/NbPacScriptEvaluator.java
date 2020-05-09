@@ -18,7 +18,7 @@
  */
 package org.netbeans.core.network.proxy.pac.impl;
 
-import org.kpax.winfoom.exception.InvalidPacFileException;
+import org.kpax.winfoom.exception.PacFileException;
 import org.netbeans.api.scripting.Scripting;
 import org.netbeans.core.network.proxy.pac.*;
 import org.netbeans.core.network.utils.SimpleObjCache;
@@ -356,7 +356,7 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
     // -----------------------------------------
 
 
-    public String callFindProxyForURL(URI uri) throws InvalidPacFileException {
+    public String callFindProxyForURL(URI uri) throws PacFileException {
         try {
             Object proxyForURL = scriptEngine.findProxyForURL(PacUtils.toStrippedURLStr(uri), uri.getHost());
             return proxyForURL != null ? proxyForURL.toString() : null;
@@ -370,7 +370,7 @@ public class NbPacScriptEvaluator implements PacScriptEvaluator {
                 }
             }
             // other unforseen errors
-            throw new InvalidPacFileException("Error when executing PAC script function " + scriptEngine.getJsMainFunction().getJsFunctionName(), ex);
+            throw new PacFileException("Error when executing PAC script function " + scriptEngine.getJsMainFunction().getJsFunctionName(), ex);
         }
     }
 
