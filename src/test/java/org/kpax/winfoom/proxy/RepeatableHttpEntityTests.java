@@ -23,16 +23,11 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.TestConstants;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
@@ -50,9 +45,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Eugen Covaci {@literal eugen.covaci.q@gmail.com}
  * Created on 2/29/2020
  */
-@ExtendWith(SpringExtension.class)
-@ActiveProfiles("test")
-@SpringBootTest(classes = FoomApplicationTest.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Timeout(10)
@@ -62,7 +54,7 @@ class RepeatableHttpEntityTests {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final String echoContentHeader = "Echo-content";
-    private final String firstTryHeader = "First-try";
+    private final String streamingHeader = "Is-streaming";
     private final String tempFilenameHeader = "Temp-filename";
     private final String tempFileContentHeader = "Temp-file-content";
     private final String bufferedBytesHeader = "Buffered-bytes";
@@ -119,8 +111,8 @@ class RepeatableHttpEntityTests {
                                 // Read the entity
                                 HttpUtils.consumeEntity(requestEntity);
 
-                                boolean firstTry = (Boolean) ReflectionTestUtils.getField(requestEntity, "firstTry");
-                                clientConnection.write(HttpUtils.createHttpHeader(firstTryHeader, String.valueOf(firstTry)));
+                                boolean streaming = (Boolean) ReflectionTestUtils.getField(requestEntity, "streaming");
+                                clientConnection.write(HttpUtils.createHttpHeader(streamingHeader, String.valueOf(streaming)));
 
                                 Path tempFilepath = (Path) ReflectionTestUtils.getField(requestEntity, "tempFilepath");
                                 if (tempFilepath != null) {
@@ -166,8 +158,8 @@ class RepeatableHttpEntityTests {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
                 EntityUtils.consume(response.getEntity());
-                assertTrue(response.containsHeader(firstTryHeader));
-                assertEquals("false", response.getFirstHeader(firstTryHeader).getValue());
+                assertTrue(response.containsHeader(streamingHeader));
+                assertEquals("false", response.getFirstHeader(streamingHeader).getValue());
                 assertTrue(response.containsHeader(tempFilenameHeader));
                 assertEquals(content, response.getFirstHeader(tempFileContentHeader).getValue());
             }
@@ -186,7 +178,7 @@ class RepeatableHttpEntityTests {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
                 EntityUtils.consume(response.getEntity());
-                assertEquals("true", response.getFirstHeader(firstTryHeader).getValue());
+                assertEquals("true", response.getFirstHeader(streamingHeader).getValue());
                 assertFalse(response.containsHeader(tempFilenameHeader));
                 assertEquals(String.valueOf(content.getBytes().length),
                         response.getFirstHeader(bufferedBytesHeader).getValue());
@@ -206,7 +198,7 @@ class RepeatableHttpEntityTests {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
                 EntityUtils.consume(response.getEntity());
-                assertEquals("true", response.getFirstHeader(firstTryHeader).getValue());
+                assertEquals("true", response.getFirstHeader(streamingHeader).getValue());
                 assertFalse(response.containsHeader(tempFilenameHeader));
                 assertEquals(String.valueOf(content.getBytes().length),
                         response.getFirstHeader(bufferedBytesHeader).getValue());
@@ -237,7 +229,7 @@ class RepeatableHttpEntityTests {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
                 EntityUtils.consume(response.getEntity());
-                assertEquals("false", response.getFirstHeader(firstTryHeader).getValue());
+                assertEquals("false", response.getFirstHeader(streamingHeader).getValue());
                 assertTrue(response.containsHeader(tempFilenameHeader));
                 assertEquals(content, response.getFirstHeader(tempFileContentHeader).getValue());
             }
@@ -256,7 +248,7 @@ class RepeatableHttpEntityTests {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
                 EntityUtils.consume(response.getEntity());
-                assertEquals("false", response.getFirstHeader(firstTryHeader).getValue());
+                assertEquals("false", response.getFirstHeader(streamingHeader).getValue());
                 assertTrue(response.containsHeader(tempFilenameHeader));
                 assertEquals(content, response.getFirstHeader(tempFileContentHeader).getValue());
             }
@@ -274,7 +266,7 @@ class RepeatableHttpEntityTests {
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
                 assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
                 EntityUtils.consume(response.getEntity());
-                assertEquals("true", response.getFirstHeader(firstTryHeader).getValue());
+                assertEquals("true", response.getFirstHeader(streamingHeader).getValue());
                 assertFalse(response.containsHeader(tempFilenameHeader));
             }
         }

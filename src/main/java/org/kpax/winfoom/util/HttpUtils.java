@@ -285,6 +285,12 @@ public final class HttpUtils {
         return e instanceof SocketException && e.getMessage().startsWith("Connection refused");
     }
 
+    /**
+     * Check whether this exception signals an aborted client's connection.
+     *
+     * @param e the error to check on
+     * @return {@code true} iff the error signals an aborted client's connection.
+     */
     public static boolean isConnectionAborted(Exception e) {
         return e instanceof SocketException
                 && StringUtils.startsWithIgnoreCase(e.getMessage(), "Software caused connection abort");

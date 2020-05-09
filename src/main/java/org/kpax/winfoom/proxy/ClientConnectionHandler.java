@@ -77,6 +77,9 @@ class ClientConnectionHandler {
             List<ProxyInfo> proxyInfoList;
             if (proxyConfig.isAutoConfig()) {
 
+                // For CONNECT request, the request's URI looks like: host:port
+                // while for other request it looks like: http://host:port/path?params
+                // hence we parse it differently.
                 URI requestUri;
                 if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
                     HttpHost requestHost = HttpHost.create(requestLine.getUri());
