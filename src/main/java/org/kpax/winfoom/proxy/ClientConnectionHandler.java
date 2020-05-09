@@ -158,8 +158,8 @@ class ClientConnectionHandler {
         } catch (PacFileException e) {
             clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
                     HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                    "Invalid Proxy Auto Config file");
-            logger.debug("Invalid Proxy Auto Config file", e);
+                    "Proxy Auto Config file error");
+            logger.debug("Proxy Auto Config file error", e);
         } catch (Exception e) {
             clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
                     HttpStatus.SC_INTERNAL_SERVER_ERROR,
