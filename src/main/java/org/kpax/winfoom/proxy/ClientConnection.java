@@ -270,7 +270,7 @@ final class ClientConnection implements AutoCloseable {
     }
 
     /**
-     * Register an {@link AutoCloseable}
+     * Register an {@link AutoCloseable} for later closing.
      *
      * @param autoCloseable the {@link AutoCloseable} to be closed.
      * @return {@code true} if the specified element isn't already registered

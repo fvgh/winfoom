@@ -660,8 +660,8 @@ public class AppFrame extends JFrame {
             if (StringUtils.isNotEmpty(proxyConfig.getProxyUsername())
                     && StringUtils.isEmpty(proxyConfig.getProxyPassword())) {
                 int option = JOptionPane.showConfirmDialog(this, "The username is not empty, but you did not provide " +
-                        "any password." +
-                        "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION,
+                                "any password." +
+                                "\nDo you still want to proceed?", "Warning", JOptionPane.OK_CANCEL_OPTION,
                         JOptionPane.WARNING_MESSAGE);
                 if (option != JOptionPane.OK_OPTION) {
                     return;
