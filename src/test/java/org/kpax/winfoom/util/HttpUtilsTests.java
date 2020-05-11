@@ -12,8 +12,12 @@
 
 package org.kpax.winfoom.util;
 
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpVersion;
 import org.apache.http.entity.ContentType;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpRequest;
 import org.junit.jupiter.api.Test;
 import org.kpax.winfoom.proxy.ProxyInfo;
@@ -170,4 +174,18 @@ class HttpUtilsTests {
         assertEquals("bla", stripChunked);
     }
 
+    @Test
+    void createViaHeader_NonExisting_OneToken() {
+        Header viaHeader = HttpUtils.createViaHeader(HttpVersion.HTTP_1_1, null);
+        assertEquals(HttpHeaders.VIA, viaHeader.getName());
+        assertEquals("1.1 winfoom", viaHeader.getValue());
+    }
+
+
+    @Test
+    void createViaHeader_WithExisting_TwoTokens() {
+        Header viaHeader = HttpUtils.createViaHeader(HttpVersion.HTTP_1_1, new BasicHeader(HttpHeaders.VIA, "1.0 bla (bla)"));
+        assertEquals(HttpHeaders.VIA, viaHeader.getName());
+        assertEquals("1.1 winfoom, 1.0 bla (bla)", viaHeader.getValue());
+    }
 }

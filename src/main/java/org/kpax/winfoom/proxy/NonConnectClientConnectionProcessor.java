@@ -137,6 +137,14 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
                 }
             }
 
+            // Add a Via header and remove the existent one(s)
+            Header viaHeader = request.getFirstHeader(HttpHeaders.VIA);
+            request.removeHeaders(HttpHeaders.VIA);
+            request.setHeader(HttpUtils.createViaHeader(clientConnection.getRequestLine().getProtocolVersion(),
+                    viaHeader));
+
+            // Mark this request as prepared
+            // in case of multiple processing
             clientConnection.requestPrepared();
         }
 
@@ -180,8 +188,12 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
         }
         clientConnection.write(statusLine);
 
+        clientConnection.write(HttpUtils.createViaHeader(clientConnection.getRequestLine().getProtocolVersion(),
+                response.getFirstHeader(HttpHeaders.VIA)));
+        response.removeHeaders(HttpHeaders.VIA);
+
         for (Header header : response.getAllHeaders()) {
-            if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
+           if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
 
                 // Strip 'chunked' from Transfer-Encoding header's value
                 // since the response is not chunked

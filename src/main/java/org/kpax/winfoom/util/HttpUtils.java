@@ -296,4 +296,11 @@ public final class HttpUtils {
                 && StringUtils.startsWithIgnoreCase(e.getMessage(), "Software caused connection abort");
     }
 
+    public static Header createViaHeader(final ProtocolVersion version, final Header viaHeader) {
+        Validate.notNull(version, "version cannot be null");
+        String value = String.format("%s.%s winfoom", version.getMajor(), version.getMinor())
+                + (viaHeader != null ? ", " + viaHeader.getValue() : "");
+        return new BasicHeader(HttpHeaders.VIA, value);
+    }
+
 }
