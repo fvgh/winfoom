@@ -48,7 +48,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Timeout(10)
-@Disabled
 class RepeatableHttpEntityTests {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
