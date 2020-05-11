@@ -181,7 +181,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
      * @param response The Http response.
      */
     private void handleResponse(final CloseableHttpResponse response,
-                                ClientConnection clientConnection) throws IOException {
+                                final ClientConnection clientConnection) throws IOException {
         StatusLine statusLine = response.getStatusLine();
         if (logger.isDebugEnabled()) {
             logger.debug("Write status line: {}", statusLine);

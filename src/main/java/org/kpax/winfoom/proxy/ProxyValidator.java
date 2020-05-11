@@ -69,9 +69,9 @@ public class ProxyValidator {
      * Test the proxy settings.<br>
      * The errors it throws must be interpretable by the GUI into meaningful messages.
      *
-     * @throws IOException
-     * @throws CredentialException the provided credentials are wrong
-     * @throws PacFileException    the PAC script file is invalid
+     * @throws IOException something went wrong with the data stream.
+     * @throws CredentialException the provided credentials are wrong.
+     * @throws PacFileException    the PAC script file is invalid.
      * @throws URISyntaxException  there is something wrong with the test URL.
      */
     public void testProxyConfig()
