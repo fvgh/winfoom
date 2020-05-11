@@ -21,7 +21,6 @@ import org.kpax.winfoom.util.InputOutputs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +32,6 @@ import java.util.concurrent.TimeUnit;
  * It manages the HTTP connection pooling mechanism.<br>
  * Only used for non-CONNECT HTTP requests.
  */
-@EnableScheduling
 @Component
 class ConnectionPoolingManager implements AutoCloseable {
 
