@@ -1,8 +1,5 @@
 # winfoom
 ### Basic Proxy Facade for NTLM, Kerberos, SOCKS and Proxy Auto Config file proxies
-
-[![Build Status](https://travis-ci.com/ecovaci/winfoom.svg?branch=master)](https://travis-ci.com/github/ecovaci/winfoom)
-
 # Overview
 Winfoom is an HTTP(s) proxy server facade that allows applications to authenticate through the following proxies: 
 
