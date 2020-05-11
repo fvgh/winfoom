@@ -20,6 +20,9 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Log**
+Start the application in debug mode, perform the ncessary steps to reproduce the issue then attach the log file.
+
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
