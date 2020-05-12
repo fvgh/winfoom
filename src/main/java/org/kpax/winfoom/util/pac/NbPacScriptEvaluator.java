@@ -93,7 +93,7 @@ public class NbPacScriptEvaluator {
             engine.eval(pacSource);
 
             String helperJSScript = HelperScriptFactory.getPacHelperSource();
-            logger.debug("PAC Helper JavaScript :\n{0}", helperJSScript);
+            logger.debug("PAC Helper JavaScript :\n{}", helperJSScript);
 
             try {
                 ((Invocable) engine).invokeMethod(engine.eval(helperJSScript), "call", null, new NbPacHelperMethods());
@@ -102,7 +102,7 @@ public class NbPacScriptEvaluator {
             }
 
             // Do some minimal testing of the validity of the PAC Script.
-            PacJsEntryFunction jsMainFunction = testScriptEngine(engine, false);
+            PacJsEntryFunction jsMainFunction = testScriptEngine(engine);
 
             return new PacScriptEngine(engine, jsMainFunction);
         } catch (ScriptException ex) {
@@ -118,7 +118,7 @@ public class NbPacScriptEvaluator {
             if (ex.getCause() != null) {
                 if (ex.getCause() instanceof ClassNotFoundException) {
                     // Is someone trying to break out of the sandbox ?
-                    logger.warn("The downloaded PAC script is attempting to access Java class ''{0}'' " +
+                    logger.warn("The downloaded PAC script is attempting to access Java class ''{}'' " +
                             "which may be a sign of maliciousness. " +
                             "You should investigate this with your network administrator.", ex.getCause().getMessage());
                 }
@@ -133,11 +133,11 @@ public class NbPacScriptEvaluator {
      * Test if the main entry point, function FindProxyForURL()/FindProxyForURLEx(),
      * is available.
      */
-    private PacJsEntryFunction testScriptEngine(ScriptEngine eng, boolean doDeepTest) throws PacParsingException {
-        if (isJsFunctionAvailable(eng, PacJsEntryFunction.IPV6_AWARE.getJsFunctionName(), doDeepTest)) {
+    private PacJsEntryFunction testScriptEngine(ScriptEngine eng) throws PacParsingException {
+        if (isJsFunctionAvailable(eng, PacJsEntryFunction.IPV6_AWARE.getJsFunctionName(), false)) {
             return PacJsEntryFunction.IPV6_AWARE;
         }
-        if (isJsFunctionAvailable(eng, PacJsEntryFunction.STANDARD.getJsFunctionName(), doDeepTest)) {
+        if (isJsFunctionAvailable(eng, PacJsEntryFunction.STANDARD.getJsFunctionName(), false)) {
             return PacJsEntryFunction.STANDARD;
         }
         throw new PacParsingException("Function " + PacJsEntryFunction.STANDARD.getJsFunctionName() +
@@ -162,16 +162,16 @@ public class NbPacScriptEvaluator {
         private final Invocable invocable;
         private final PacJsEntryFunction jsMainFunction;
 
-        public PacScriptEngine(ScriptEngine scriptEngine, PacJsEntryFunction jsMainFunction) {
+        PacScriptEngine(ScriptEngine scriptEngine, PacJsEntryFunction jsMainFunction) {
             this.invocable = (Invocable) scriptEngine;
             this.jsMainFunction = jsMainFunction;
         }
 
-        public PacJsEntryFunction getJsMainFunction() {
+        PacJsEntryFunction getJsMainFunction() {
             return jsMainFunction;
         }
 
-        public Object findProxyForURL(String url, String host) throws ScriptException, NoSuchMethodException {
+        Object findProxyForURL(String url, String host) throws ScriptException, NoSuchMethodException {
             return invocable.invokeFunction(jsMainFunction.getJsFunctionName(), url, host);
         }
     }
@@ -231,26 +231,25 @@ public class NbPacScriptEvaluator {
 
 
         private static void addFunctionDecls(StringBuilder sb, JsHelperFunction[] jsHelperFunctions) {
-            for (JsHelperFunction f : jsHelperFunctions) {
+            for (JsHelperFunction helperFunction : jsHelperFunctions) {
                 sb.append("this['");
-                sb.append(f.functionName);
+                sb.append(helperFunction.functionName);
                 sb.append("'] = function(");
-                addArgList(sb, f.argList);
+                addArgList(sb, helperFunction.argList);
                 sb.append(") {\n");
                 sb.append("    return ");
                 boolean encloseReturnValue = false;
-                if (Number.class.isAssignableFrom(f.getClass())) {
+                if (Number.class.isAssignableFrom(helperFunction.returnType)) {
                     encloseReturnValue = true;
                     sb.append("Number(");
-                }
-                if (f.returnType == String.class) {
+                } else if (helperFunction.returnType == String.class) {
                     encloseReturnValue = true;
                     sb.append("String(");
                 }
                 sb.append("self.");
-                sb.append(f.functionName);
+                sb.append(helperFunction.functionName);
                 sb.append('(');
-                addArgList(sb, f.argList);
+                addArgList(sb, helperFunction.argList);
                 sb.append(')');
                 if (encloseReturnValue) {
                     sb.append(')');
@@ -272,11 +271,11 @@ public class NbPacScriptEvaluator {
         }
 
         private static class JsHelperFunction {
-            String functionName;
-            String[] argList;
-            Class returnType;
+            final String functionName;
+            final String[] argList;
+            final Class returnType;
 
-            public JsHelperFunction(String functionName, String[] argList, Class returnType) {
+            JsHelperFunction(String functionName, String[] argList, Class returnType) {
                 this.functionName = functionName;
                 this.argList = argList;
                 this.returnType = returnType;

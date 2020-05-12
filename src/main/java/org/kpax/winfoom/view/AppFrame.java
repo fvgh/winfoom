@@ -245,17 +245,13 @@ public class AppFrame extends JFrame {
     private JTextField getProxyHostJTextField() {
         JTextField proxyHostJTextField = createTextField(proxyConfig.getProxyHost());
         proxyHostJTextField.setToolTipText("The ip or domain name of the remote proxy");
-        proxyHostJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-            proxyConfig.setProxyHost(proxyHostJTextField.getText());
-        });
+        proxyHostJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> proxyConfig.setProxyHost(proxyHostJTextField.getText()));
         return proxyHostJTextField;
     }
 
     private JTextField getPacFileJTextField() {
         JTextField pacFileJTextField = createTextField(proxyConfig.getProxyPacFileLocation());
-        pacFileJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-            proxyConfig.setProxyPacFileLocation(pacFileJTextField.getText());
-        });
+        pacFileJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> proxyConfig.setProxyPacFileLocation(pacFileJTextField.getText()));
         pacFileJTextField.setToolTipText(HttpUtils.toHtml("The location of the Proxy Auto-Config file." +
                 "<br>It can be a local location (like <i>C:/pac/proxy.pac</i>) or a HTTP(s) address (like " +
                 "<i>http://pacserver:80/proxy.pac</i>)"));
@@ -265,9 +261,7 @@ public class AppFrame extends JFrame {
     private JSpinner getProxyPortJSpinner() {
         JSpinner proxyPortJSpinner = createJSpinner(proxyConfig.getProxyPort());
         proxyPortJSpinner.setToolTipText("The remote proxy port, between 1 and 65535");
-        proxyPortJSpinner.addChangeListener(e -> {
-            proxyConfig.setProxyPort((Integer) proxyPortJSpinner.getValue());
-        });
+        proxyPortJSpinner.addChangeListener(e -> proxyConfig.setProxyPort((Integer) proxyPortJSpinner.getValue()));
         return proxyPortJSpinner;
     }
 
@@ -275,9 +269,7 @@ public class AppFrame extends JFrame {
         if (localPortJSpinner == null) {
             localPortJSpinner = createJSpinner(proxyConfig.getLocalPort());
             localPortJSpinner.setToolTipText("The port Winfoom will listen on, between 1 and 65535");
-            localPortJSpinner.addChangeListener(e -> {
-                proxyConfig.setLocalPort((Integer) localPortJSpinner.getValue());
-            });
+            localPortJSpinner.addChangeListener(e -> proxyConfig.setLocalPort((Integer) localPortJSpinner.getValue()));
         }
         return localPortJSpinner;
     }
@@ -286,9 +278,7 @@ public class AppFrame extends JFrame {
         if (testUrlJTextField == null) {
             testUrlJTextField = createTextField(proxyConfig.getProxyTestUrl());
             testUrlJTextField.setToolTipText("The URL used to test the current settings");
-            testUrlJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-                proxyConfig.setProxyTestUrl(testUrlJTextField.getText());
-            });
+            testUrlJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> proxyConfig.setProxyTestUrl(testUrlJTextField.getText()));
         }
         return testUrlJTextField;
     }
@@ -296,9 +286,7 @@ public class AppFrame extends JFrame {
     private JTextField getUsernameJTextField() {
         JTextField usernameJTextField = createTextField(proxyConfig.getProxyUsername());
         usernameJTextField.setToolTipText("The optional username if the SOCKS5 proxy requires authentication.");
-        usernameJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-            proxyConfig.setProxyUsername(usernameJTextField.getText());
-        });
+        usernameJTextField.getDocument().addDocumentListener((TextChangeListener) (e) -> proxyConfig.setProxyUsername(usernameJTextField.getText()));
         return usernameJTextField;
     }
 
@@ -306,9 +294,7 @@ public class AppFrame extends JFrame {
     private JPasswordField getPasswordField() {
         JPasswordField passwordField = new JPasswordField(proxyConfig.getProxyPassword());
         passwordField.setToolTipText("The optional password if the SOCKS5 proxy requires authentication.");
-        passwordField.getDocument().addDocumentListener((TextChangeListener) (e) -> {
-            proxyConfig.setProxyPassword(new String(passwordField.getPassword()));
-        });
+        passwordField.getDocument().addDocumentListener((TextChangeListener) (e) -> proxyConfig.setProxyPassword(new String(passwordField.getPassword())));
         return passwordField;
     }
 
@@ -338,9 +324,7 @@ public class AppFrame extends JFrame {
 
     private JSpinner getBlacklistTimeoutJSpinner() {
         JSpinner proxyPortJSpinner = createJSpinner(proxyConfig.getBlacklistTimeout());
-        proxyPortJSpinner.addChangeListener(e -> {
-            proxyConfig.setBlacklistTimeout((Integer) proxyPortJSpinner.getValue());
-        });
+        proxyPortJSpinner.addChangeListener(e -> proxyConfig.setBlacklistTimeout((Integer) proxyPortJSpinner.getValue()));
         proxyPortJSpinner.setToolTipText(HttpUtils.toHtml("If a proxy doesn't responds it is blacklisted"
                 + "<br> which means it will not be used again until the blacklist timeout (in minutes) happens."
                 + "<br>A value of zero or negative would disable the blacklisting mechanism."));

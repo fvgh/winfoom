@@ -84,9 +84,7 @@ public class ProxyBlacklist {
         if (proxyConfig.getBlacklistTimeout() < 1) {
             return false;
         }
-        Instant timeoutInstant = blacklistMap.computeIfPresent(proxyInfo, (key, value) -> {
-            return value.isBefore(Instant.now()) ? null : value;
-        });
+        Instant timeoutInstant = blacklistMap.computeIfPresent(proxyInfo, (key, value) -> value.isBefore(Instant.now()) ? null : value);
         return timeoutInstant != null;
     }
 

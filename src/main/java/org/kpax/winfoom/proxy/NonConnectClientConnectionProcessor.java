@@ -55,6 +55,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
             HttpHeaders.CONTENT_TYPE,
             HttpHeaders.CONTENT_ENCODING,
             HttpHeaders.PROXY_AUTHORIZATION);
+
     /**
      * These headers will be removed from client's response if there is no enclosing
      * entity (it means the request has no body).

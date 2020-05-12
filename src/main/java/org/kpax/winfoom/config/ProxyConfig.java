@@ -258,7 +258,7 @@ public class ProxyConfig {
         config.setProperty("local.port", localPort);
         config.setProperty("proxy.test.url", proxyTestUrl);
         config.setProperty("proxy.username", proxyType.isSocks5() ? proxyUsername : null);
-        config.setProperty("proxy.storePassword", proxyType.isSocks5() ? proxyStorePassword : false);
+        config.setProperty("proxy.storePassword", proxyType.isSocks5() && proxyStorePassword);
         config.setProperty("proxy.pac.fileLocation", proxyType.isPac() ? proxyPacFileLocation : null);
 
         if (proxyType.isPac()) {
