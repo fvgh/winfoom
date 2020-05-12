@@ -194,7 +194,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
         response.removeHeaders(HttpHeaders.VIA);
 
         for (Header header : response.getAllHeaders()) {
-           if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
+            if (HttpHeaders.TRANSFER_ENCODING.equals(header.getName())) {
 
                 // Strip 'chunked' from Transfer-Encoding header's value
                 // since the response is not chunked
