@@ -16,7 +16,7 @@ import org.apache.commons.io.IOUtils;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.exception.PacFileException;
 import org.kpax.winfoom.util.HttpUtils;
-import org.netbeans.core.network.proxy.pac.impl.NbPacScriptEvaluator;
+import org.kpax.winfoom.util.pac.NbPacScriptEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,7 +89,7 @@ class ProxyAutoConfig {
      * @throws PacFileException
      */
     List<ProxyInfo> findProxyForURL(URI uri) throws PacFileException {
-        String proxyLine = getPacScriptEvaluator().callFindProxyForURL(uri);
+        String proxyLine = getPacScriptEvaluator().findProxyForURL(uri);
         logger.debug("proxyLine [{}]", proxyLine);
         return HttpUtils.parsePacProxyLine(proxyLine);
     }

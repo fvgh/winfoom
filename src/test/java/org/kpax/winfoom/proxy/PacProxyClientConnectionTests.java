@@ -35,9 +35,9 @@ import org.kpax.winfoom.FoomApplicationTest;
 import org.kpax.winfoom.TestConstants;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.util.pac.NbPacScriptEvaluator;
 import org.mockserver.integration.ClientAndServer;
 import org.netbeans.core.network.proxy.pac.PacParsingException;
-import org.netbeans.core.network.proxy.pac.impl.NbPacScriptEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +63,6 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(classes = FoomApplicationTest.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-//@Timeout(10)
 public class PacProxyClientConnectionTests {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
