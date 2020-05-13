@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
@@ -80,6 +82,8 @@ final class ClientConnection implements AutoCloseable {
      */
     private final RequestLine requestLine;
 
+    private final URI requestUri;
+
     /**
      * Whether the request is prepared (it means the request headers are set, also the request entity - if any)<br>
      * Only makes sense for non-CONNECT HTTP requests.
@@ -113,6 +117,11 @@ final class ClientConnection implements AutoCloseable {
         this.sessionInputBuffer.bind(this.inputStream);
         this.httpRequest = new DefaultHttpRequestParser(this.sessionInputBuffer).parse();
         this.requestLine = httpRequest.getRequestLine();
+        try {
+            this.requestUri = HttpUtils.parseRequestUri(this.requestLine);
+        } catch (URISyntaxException e) {
+            throw new HttpException("Invalid request uri", e);
+        }
     }
 
     /**
@@ -141,6 +150,10 @@ final class ClientConnection implements AutoCloseable {
      */
     HttpRequest getHttpRequest() {
         return httpRequest;
+    }
+
+    URI getRequestUri() {
+        return requestUri;
     }
 
     /**

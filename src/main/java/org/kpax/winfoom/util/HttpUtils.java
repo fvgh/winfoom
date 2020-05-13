@@ -70,19 +70,6 @@ public final class HttpUtils {
     }
 
     /**
-     * Parse a {@link String} value into an {@link URI} instance, ignoring the query string.
-     *
-     * @param uri the input value.
-     * @return the {@link URI} instance.
-     * @throws URISyntaxException
-     */
-    public static URI toStrippedUri(String uri) throws URISyntaxException {
-        int index = uri.indexOf("?");
-        String strippedUri = index > -1 ? uri.substring(0, index) : uri;
-        return new URIBuilder(strippedUri).build();
-    }
-
-    /**
      * Extract an {@link URI} instance from a {@link RequestLine}.<br>
      * For CONNECT request, the request's URI looks like: <i>host:port</i>
      * while for other requests it looks like: <i>http://host:port/path?params</i>
@@ -97,7 +84,7 @@ public final class HttpUtils {
             HttpHost requestHost = HttpHost.create(requestLine.getUri());
             return new URI(requestHost.toURI());
         } else {
-            return toStrippedUri(requestLine.getUri());
+            return toUri(requestLine.getUri());
         }
     }
 

@@ -151,8 +151,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
 
         try (CloseableHttpClient httpClient = clientBuilderFactory.createClientBuilder(proxyInfo).build()) {
 
-            // Extract URI
-            URI uri = HttpUtils.toUri(clientConnection.getRequestLine().getUri());
+            URI uri = clientConnection.getRequestUri();
             HttpHost target = new HttpHost(uri.getHost(),
                     uri.getPort(),
                     uri.getScheme());

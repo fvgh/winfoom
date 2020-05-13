@@ -70,30 +70,6 @@ class HttpUtilsTests {
     }
 
     @Test
-    void toStrippedUri_noQueryParams_ParseOk() throws URISyntaxException {
-        String uri = "http://happy/people";
-        URI result = HttpUtils.toStrippedUri(uri);
-        assertEquals(uri, result.toString());
-        assertEquals("/people", result.getPath());
-    }
-
-    @Test
-    void toStrippedUri_withQueryParams_StripQueryParams() throws URISyntaxException {
-        String uri = "http://happy/people?x=y";
-        URI result = HttpUtils.toStrippedUri(uri);
-        assertEquals("http://happy/people", result.toString());
-        assertEquals("/people", result.getPath());
-    }
-
-    @Test
-    void toStrippedUri_noQueryParamQuestionMark_StripQueryParams() throws URISyntaxException {
-        String uri = "http://happy/people?";
-        URI result = HttpUtils.toStrippedUri(uri);
-        assertEquals("http://happy/people", result.toString());
-        assertEquals("/people", result.getPath());
-    }
-
-    @Test
     void parseContentType_withCharset_NoError() {
         HttpRequest request = new BasicHttpRequest("GET", "/");
         request.addHeader("Content-Type", "text/plain; charset=ISO-8859-1");

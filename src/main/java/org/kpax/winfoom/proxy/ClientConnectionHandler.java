@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
@@ -76,7 +75,7 @@ class ClientConnectionHandler {
         } catch (HttpException e) {
             // Most likely a bad request
             // even though might not always be the case
-            // Still, we give something to the client
+            // Still, we give something back to the client
             socket.getOutputStream().write(
                     ObjectFormat.toCrlf(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()),
                             StandardCharsets.UTF_8));
@@ -89,7 +88,7 @@ class ClientConnectionHandler {
         try {
             List<ProxyInfo> proxyInfoList;
             if (proxyConfig.isAutoConfig()) {
-                URI requestUri = HttpUtils.parseRequestUri(requestLine);
+                URI requestUri = clientConnection.getRequestUri();
                 logger.debug("Extracted URI from request {}", requestUri);
                 proxyInfoList = proxyAutoconfig.findProxyForURL(requestUri);
             } else {
@@ -156,11 +155,6 @@ class ClientConnectionHandler {
                     }
                 }
             }
-        } catch (URISyntaxException e) {
-            clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
-                    HttpStatus.SC_BAD_REQUEST,
-                    "Invalid request URI");
-            logger.debug("Invalid URI", e);
         } catch (PacFileException e) {
             clientConnection.writeErrorResponse(requestLine.getProtocolVersion(),
                     HttpStatus.SC_INTERNAL_SERVER_ERROR,
