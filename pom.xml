@@ -192,6 +192,10 @@
                     <artifactId>org-openide-nodes</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.netbeans.api</groupId>
+                    <artifactId>org-openide-filesystems</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.netbeans.modules</groupId>
                     <artifactId>org-netbeans-core-startup</artifactId>
                 </exclusion>
