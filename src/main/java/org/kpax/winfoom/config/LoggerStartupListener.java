@@ -42,6 +42,7 @@ public class LoggerStartupListener extends ContextAwareBase implements LoggerCon
             try {
                 Files.createDirectories(logDirPath);
             } catch (IOException e) {
+                System.err.println(e);
                 return;
             }
         }
