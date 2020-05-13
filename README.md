@@ -1,4 +1,4 @@
-# winfoom
+# winfoom [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ecovaci/winfoom/blob/master/LICENSE)
 ### Basic Proxy Facade for NTLM, Kerberos, SOCKS and Proxy Auto Config file proxies
 # Overview
 Winfoom is an HTTP(s) proxy server facade that allows applications to authenticate through the following proxies: 
