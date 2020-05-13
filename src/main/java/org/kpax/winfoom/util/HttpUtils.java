@@ -226,7 +226,7 @@ public final class HttpUtils {
 
 
     /**
-     * Wrap the text inside <html></html>.
+     * Wrap the text inside {@code <html></html>} tag.
      *
      * @param text the text to wrap.
      * @return the wrapped text.

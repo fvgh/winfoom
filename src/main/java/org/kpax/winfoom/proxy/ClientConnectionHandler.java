@@ -21,6 +21,7 @@ import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.exception.PacFileException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
+import org.kpax.winfoom.util.ObjectFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -68,7 +70,15 @@ class ClientConnectionHandler {
      */
     void handleConnection(final Socket socket) throws IOException, HttpException {
 
-        final ClientConnection clientConnection = new ClientConnection(socket);
+        final ClientConnection clientConnection;
+        try {
+            clientConnection = new ClientConnection(socket);
+        } catch (HttpException e) {
+            socket.getOutputStream().write(
+                    ObjectFormat.toCrlf(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()),
+                            StandardCharsets.UTF_8));
+            throw e;
+        }
 
         RequestLine requestLine = clientConnection.getRequestLine();
         logger.debug("Handle request: {}", requestLine);
@@ -78,7 +88,7 @@ class ClientConnectionHandler {
             if (proxyConfig.isAutoConfig()) {
 
                 // For CONNECT request, the request's URI looks like: host:port
-                // while for other request it looks like: http://host:port/path?params
+                // while for other requests it looks like: http://host:port/path?params
                 // hence we parse it differently.
                 URI requestUri;
                 if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {

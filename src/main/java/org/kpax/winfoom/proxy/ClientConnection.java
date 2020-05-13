@@ -93,7 +93,8 @@ final class ClientConnection implements AutoCloseable {
     private boolean lastResort;
 
     /**
-     * Constructor.
+     * Constructor.<br>
+     * Has the responsibility of parsing the request.
      *
      * @param socket the underlying socket.
      * @throws IOException
