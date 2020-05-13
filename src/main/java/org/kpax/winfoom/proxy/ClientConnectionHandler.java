@@ -74,6 +74,9 @@ class ClientConnectionHandler {
         try {
             clientConnection = new ClientConnection(socket);
         } catch (HttpException e) {
+            // Most likely a bad request
+            // even though might not always be the case
+            // Still, we give something to the client
             socket.getOutputStream().write(
                     ObjectFormat.toCrlf(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()),
                             StandardCharsets.UTF_8));
@@ -86,25 +89,15 @@ class ClientConnectionHandler {
         try {
             List<ProxyInfo> proxyInfoList;
             if (proxyConfig.isAutoConfig()) {
-
-                // For CONNECT request, the request's URI looks like: host:port
-                // while for other requests it looks like: http://host:port/path?params
-                // hence we parse it differently.
-                URI requestUri;
-                if (HttpUtils.HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
-                    HttpHost requestHost = HttpHost.create(requestLine.getUri());
-                    requestUri = new URI(requestHost.toURI());
-                } else {
-                    requestUri = HttpUtils.toStrippedUri(requestLine.getUri());
-                }
-
+                URI requestUri = HttpUtils.parseRequestUri(requestLine);
+                logger.debug("Extracted URI from request {}", requestUri);
                 proxyInfoList = proxyAutoconfig.findProxyForURL(requestUri);
             } else {
 
                 // Manual proxy case
                 HttpHost proxyHost = proxyConfig.getProxyType().isDirect() ? null :
                         new HttpHost(proxyConfig.getProxyHost(), proxyConfig.getProxyPort());
-
+                logger.debug("Manual case, proxy host: {}", proxyHost);
                 proxyInfoList = Collections.singletonList(new ProxyInfo(proxyConfig.getProxyType(), proxyHost));
             }
 

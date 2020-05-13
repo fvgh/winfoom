@@ -83,6 +83,25 @@ public final class HttpUtils {
     }
 
     /**
+     * Extract an {@link URI} instance from a {@link RequestLine}.<br>
+     * For CONNECT request, the request's URI looks like: <i>host:port</i>
+     * while for other requests it looks like: <i>http://host:port/path?params</i>
+     * hence we parse it differently.
+     *
+     * @param requestLine the request line.
+     * @return the extracted {@link URI} instance.
+     * @throws URISyntaxException
+     */
+    public static URI parseRequestUri(RequestLine requestLine) throws URISyntaxException {
+        if (HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
+            HttpHost requestHost = HttpHost.create(requestLine.getUri());
+            return new URI(requestHost.toURI());
+        } else {
+            return toStrippedUri(requestLine.getUri());
+        }
+    }
+
+    /**
      * Remove the {@code chunked} word from a comma separated sequence of words.
      *
      * @param value a comma separated sequence of words.
