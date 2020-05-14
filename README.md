@@ -69,7 +69,7 @@ Then fill in the required fields. You can use the field's tooltip to get more in
 ### System settings
 The system settings configuration file is `<user.home.dir>/.winfoom/system.properties`.
 
-_Please do not modify this file unless absolutely necessary. It is adviceable to post your issue in [Issues Section](https://github.com/ecovaci/winfoom/issues) first._
+_Please do not modify this file unless absolutely necessary. It is advisable to post your issue in [Issues Section](https://github.com/ecovaci/winfoom/issues) first._
 
 The available settings:
 
