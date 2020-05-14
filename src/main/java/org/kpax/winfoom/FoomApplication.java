@@ -12,8 +12,12 @@
 
 package org.kpax.winfoom;
 
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.util.InputOutputs;
 import org.kpax.winfoom.util.SwingUtils;
 import org.kpax.winfoom.view.AppFrame;
 import org.slf4j.Logger;
@@ -88,7 +92,7 @@ public class FoomApplication {
      *
      * @throws IOException
      */
-    private static void checkAppVersion() throws IOException {
+    private static void checkAppVersion() throws IOException, ConfigurationException {
         logger.info("Check the application's version");
         Path appHomePath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);
         Path systemPropertiesPath = appHomePath.resolve(SystemConfig.FILENAME);
@@ -105,32 +109,33 @@ public class FoomApplication {
                 logger.info("Different versions found: existent = {} , actual = {}", existingVersion, actualVersion);
 
                 Path backupDirPath = appHomePath.resolve(existingVersion);
+                if (!Files.exists(backupDirPath)) {
+                    Files.createDirectory(backupDirPath);
+                }
 
-                int selection = JOptionPane.showConfirmDialog(null,
-                        "The configuration files found are from a different application version!\n" +
-                                "The existent ones will be overwritten.\n" +
-                                String.format("Press 'OK' if you want to save them to %s backup directory.",
-                                        backupDirPath.toString()),
-                        "Warning",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE);
+                logger.info("Move the existent system.properties files to: {} directory", backupDirPath);
+                Files.move(systemPropertiesPath, backupDirPath.resolve(SystemConfig.FILENAME),
+                        StandardCopyOption.REPLACE_EXISTING);
 
-                if (selection == JOptionPane.YES_OPTION) {
-                    if (!Files.exists(backupDirPath)) {
-                        Files.createDirectory(backupDirPath);
-                    }
+                boolean isCompatibleProxyConfig = true;
+                Path proxyConfigPath = appHomePath.resolve(ProxyConfig.FILENAME);
+                if (Files.exists(proxyConfigPath)) {
+                    Configuration proxyConfig = new Configurations()
+                            .propertiesBuilder(proxyConfigPath.toFile()).getConfiguration();
 
-                    logger.info("Move the existent config files to: {} directory", backupDirPath);
-                    Files.move(systemPropertiesPath, backupDirPath.resolve(SystemConfig.FILENAME),
+                    isCompatibleProxyConfig = InputOutputs.isProxyConfigCompatible(proxyConfig);
+                }
+                logger.info("The existent proxy config is compatible with the new one: {}", isCompatibleProxyConfig);
+
+                if (!isCompatibleProxyConfig) {
+                    SwingUtils.showWarningMessage(null,
+                            "The proxy configuration file found belongs to a different application version " +
+                                    "and is not compatible with the current version!\n" +
+                                    String.format("The existent one will be saved to %s backup directory then replaced.",
+                                            backupDirPath.toString()));
+                    logger.info("Move the existent proxy.properties file to: {} directory", backupDirPath);
+                    Files.move(proxyConfigPath, backupDirPath.resolve(ProxyConfig.FILENAME),
                             StandardCopyOption.REPLACE_EXISTING);
-                    Path userPropertiesPath = appHomePath.resolve(ProxyConfig.FILENAME);
-                    if (Files.exists(userPropertiesPath)) {
-                        Files.move(userPropertiesPath, backupDirPath.resolve(ProxyConfig.FILENAME),
-                                StandardCopyOption.REPLACE_EXISTING);
-                    }
-                } else {
-                    Files.delete(systemPropertiesPath);
-                    Files.deleteIfExists(appHomePath.resolve(ProxyConfig.FILENAME));
                 }
 
             }

@@ -12,18 +12,21 @@
 
 package org.kpax.winfoom.util;
 
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.kpax.winfoom.config.ProxyConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.net.SocketTimeoutException;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -156,6 +159,25 @@ public final class InputOutputs {
             deleteFile(file);
         }
         return files.length == 0;
+    }
+
+    public static boolean isProxyConfigCompatible(Configuration proxyConfig) {
+        List<String> keys = new ArrayList<>();
+        for (Field field : ProxyConfig.class.getDeclaredFields()) {
+            Value valueAnnotation = field.getAnnotation(Value.class);
+            if (valueAnnotation != null) {
+                keys.add(valueAnnotation.value().replaceAll("[${}]", "").split(":")[0]);
+            }
+        }
+
+        for (Iterator<String> itr = proxyConfig.getKeys(); itr.hasNext(); ) {
+            String key = itr.next();
+            if (!keys.contains(key)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 }
