@@ -61,9 +61,6 @@ public class AppFrame extends JFrame {
     private ProxyConfig proxyConfig;
 
     @Autowired
-    private SystemConfig systemConfig;
-
-    @Autowired
     private ProxyContext proxyContext;
 
     @Autowired
@@ -554,7 +551,7 @@ public class AppFrame extends JFrame {
             mntmAbout = new JMenuItem("About");
             mntmAbout.setIcon(new TunedImageIcon("dialog-information.png"));
             mntmAbout.addActionListener(e -> SwingUtils.showInfoMessage(this, "About", "Winfoom - Basic Proxy Facade" +
-                    "\nVersion: " + systemConfig.getAppVersion()
+                    "\nVersion: " + proxyConfig.getAppVersion()
                     + "\nProject home page: https://github.com/ecovaci/winfoom"
                     + "\nLicense: Apache 2.0"));
         }

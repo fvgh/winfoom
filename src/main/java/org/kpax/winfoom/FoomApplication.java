@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.swing.*;
@@ -36,7 +34,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Properties;
 
 /**
  * The entry point for Winfoom application.
@@ -87,60 +84,57 @@ public class FoomApplication {
 
     /**
      * Verify whether the existent system.properties file's releaseVersion property and
-     * the application version (extracted from the MANIFEST file) are the same.
+     * the application version (extracted from the MANIFEST file) are the same or backward compatible.
      * If not, the existent *.properties file are moved into a backup location.
      *
      * @throws IOException
+     * @throws ConfigurationException
      */
     private static void checkAppVersion() throws IOException, ConfigurationException {
         logger.info("Check the application's version");
         Path appHomePath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);
-        Path systemPropertiesPath = appHomePath.resolve(SystemConfig.FILENAME);
+        if (Files.exists(appHomePath)) {
+            Path proxyConfigPath = appHomePath.resolve(ProxyConfig.FILENAME);
+            if (Files.exists(proxyConfigPath)) {
+                Configuration proxyConfig = new Configurations()
+                        .propertiesBuilder(proxyConfigPath.toFile()).getConfiguration();
+                String existingVersion = proxyConfig.getString("app.version");
+                logger.info("existingVersion [{}]", existingVersion);
+                if (existingVersion != null) {
+                    String actualVersion = FoomApplication.class.getPackage().getImplementationVersion();
+                    logger.info("actualVersion [{}]", actualVersion);
 
-        if (Files.exists(systemPropertiesPath)) {
-            Properties systemProperties = PropertiesLoaderUtils.loadProperties(
-                    new FileSystemResource(systemPropertiesPath.toFile()));
-            String existingVersion = systemProperties.getProperty("app.version");
-            logger.info("existingVersion [{}]", existingVersion);
-            String actualVersion = FoomApplication.class.getPackage().getImplementationVersion();
-            logger.info("actualVersion [{}]", actualVersion);
+                    if (actualVersion != null && !actualVersion.equals(existingVersion)) {
+                        boolean isCompatibleProxyConfig = true;
+                        if (Files.exists(proxyConfigPath)) {
+                            isCompatibleProxyConfig = InputOutputs.isProxyConfigCompatible(proxyConfig);
+                        }
+                        logger.info("The existent proxy config is compatible with the new one: {}", isCompatibleProxyConfig);
 
-            if (actualVersion != null && !actualVersion.equals(existingVersion)) {
-                logger.info("Different versions found: existent = {} , actual = {}", existingVersion, actualVersion);
-
-                Path backupDirPath = appHomePath.resolve(existingVersion);
-                if (!Files.exists(backupDirPath)) {
-                    Files.createDirectory(backupDirPath);
-                }
-
-                logger.info("Move the existent system.properties files to: {} directory", backupDirPath);
-                Files.move(systemPropertiesPath, backupDirPath.resolve(SystemConfig.FILENAME),
-                        StandardCopyOption.REPLACE_EXISTING);
-
-                boolean isCompatibleProxyConfig = true;
-                Path proxyConfigPath = appHomePath.resolve(ProxyConfig.FILENAME);
-                if (Files.exists(proxyConfigPath)) {
-                    Configuration proxyConfig = new Configurations()
-                            .propertiesBuilder(proxyConfigPath.toFile()).getConfiguration();
-
-                    isCompatibleProxyConfig = InputOutputs.isProxyConfigCompatible(proxyConfig);
-                }
-                logger.info("The existent proxy config is compatible with the new one: {}", isCompatibleProxyConfig);
-
-                if (!isCompatibleProxyConfig) {
-                    SwingUtils.showWarningMessage(null,
-                            "The proxy configuration file found belongs to a different application version " +
-                                    "and is not compatible with the current version!\n" +
-                                    String.format("The existent one will be saved to %s backup directory then replaced.",
-                                            backupDirPath.toString()));
-                    logger.info("Move the existent proxy.properties file to: {} directory", backupDirPath);
-                    Files.move(proxyConfigPath, backupDirPath.resolve(ProxyConfig.FILENAME),
+                        if (!isCompatibleProxyConfig) {
+                            logger.info("Backup the existent proxy.properties file since is invalid" +
+                                    " (from a previous incompatible version)");
+                            InputOutputs.backupFile(proxyConfigPath,
+                                    true,
+                                    StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                } else {
+                    logger.info("Version not found within proxy.properties, " +
+                            "backup both config files since they are invalid (from a previous incompatible version)");
+                    InputOutputs.backupFile(proxyConfigPath, true, StandardCopyOption.REPLACE_EXISTING);
+                    InputOutputs.backupFile(appHomePath.resolve(SystemConfig.FILENAME),
+                            true,
                             StandardCopyOption.REPLACE_EXISTING);
                 }
-
+            } else {
+                logger.info("No proxy.properties found, backup the system.properties file " +
+                        "since is invalid (from a previous incompatible version)");
+                InputOutputs.backupFile(appHomePath.resolve(SystemConfig.FILENAME),
+                        true,
+                        StandardCopyOption.REPLACE_EXISTING);
             }
         }
-
     }
 
 }

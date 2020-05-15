@@ -76,7 +76,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
 
     @Override
     public void process(final ClientConnection clientConnection, final ProxyInfo proxyInfo)
-            throws IOException, URISyntaxException {
+            throws IOException {
         logger.debug("Handle non-connect request");
         HttpRequest request = clientConnection.getHttpRequest();
 

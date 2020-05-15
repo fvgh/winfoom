@@ -16,6 +16,7 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.impl.io.SessionInputBufferImpl;
 import org.kpax.winfoom.config.ProxyConfig;
+import org.kpax.winfoom.config.SystemConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.SocketTimeoutException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -178,6 +183,30 @@ public final class InputOutputs {
         }
 
         return true;
+    }
+
+    public static Path backupFile(Path path, boolean withWarning, CopyOption... options) throws IOException {
+        Validate.notNull(path, "path cannot be null");
+        if (Files.exists(path)) {
+            Path appHomePath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);
+            Path backupDirPath = appHomePath.resolve(SystemConfig.BACKUP_DIR_NAME);
+            if (!Files.exists(backupDirPath)) {
+                Files.createDirectories(backupDirPath);
+            }
+            if (withWarning) {
+                SwingUtils.showWarningMessage(null,
+                        String.format("The %s file found belongs to a different application version\n" +
+                                        "and is not compatible with the current version!\n" +
+                                        "The existent one will be moved to:\n" +
+                                        "%s directory.",
+                                path.getFileName(),
+                                backupDirPath.toString()));
+            }
+            logger.info("Move the file {} to: {} directory", path, backupDirPath);
+            return Files.move(path, backupDirPath.resolve(path.getFileName()), options);
+        }
+        logger.info("Cannot move file {} because it does not exist", path);
+        return null;
     }
 
 }

@@ -51,6 +51,9 @@ public class ProxyConfig {
 
     private final Logger logger = LoggerFactory.getLogger(ProxyConfig.class);
 
+    @Value("${app.version}")
+    private String appVersion;
+
     @Value("${local.port:3129}")
     private Integer localPort;
 
@@ -84,7 +87,21 @@ public class ProxyConfig {
     private Path tempDirectory;
 
     @PostConstruct
-    public void init() throws IOException {
+    public void init() throws IOException, ConfigurationException {
+        File userProperties = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME,
+                ProxyConfig.FILENAME).toFile();
+
+        // Make sure the file exists.
+        // If not, create a new one and write the app.version
+        if (!userProperties.exists()) {
+            userProperties.createNewFile();
+            FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder = new Configurations()
+                    .propertiesBuilder(userProperties);
+            Configuration config = propertiesBuilder.getConfiguration();
+            config.setProperty("app.version", appVersion);
+            propertiesBuilder.save();
+        }
+
         if (StringUtils.isEmpty(proxyHost)) {
             try {
                 CommandExecutor.getSystemProxy().ifPresent((s) -> {
@@ -122,6 +139,10 @@ public class ProxyConfig {
         } else {
             logger.info("Using temp directory {}", tempDirectory);
         }
+    }
+
+    public String getAppVersion() {
+        return appVersion;
     }
 
     public Integer getLocalPort() {
@@ -239,16 +260,11 @@ public class ProxyConfig {
     /**
      * Save the current settings to the home application directory, overwriting the existing values.
      *
-     * @throws IOException
      * @throws ConfigurationException
      */
-    public void save() throws IOException, ConfigurationException {
+    public void save() throws ConfigurationException {
         File userProperties = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME,
                 ProxyConfig.FILENAME).toFile();
-        if (!userProperties.exists()) {
-            userProperties.createNewFile();
-        }
-
         FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder = new Configurations()
                 .propertiesBuilder(userProperties);
         Configuration config = propertiesBuilder.getConfiguration();
@@ -291,8 +307,9 @@ public class ProxyConfig {
 
     @Override
     public String toString() {
-        return "UserConfig{" +
-                "localPort=" + localPort +
+        return "ProxyConfig{" +
+                "appVersion='" + appVersion + '\'' +
+                ", localPort=" + localPort +
                 ", proxyHost='" + proxyHost + '\'' +
                 ", proxyTestUrl='" + proxyTestUrl + '\'' +
                 ", proxyPort=" + proxyPort +
@@ -300,6 +317,7 @@ public class ProxyConfig {
                 ", proxyUsername='" + proxyUsername + '\'' +
                 ", proxyStorePassword=" + proxyStorePassword +
                 ", proxyPacFileLocation='" + proxyPacFileLocation + '\'' +
+                ", blacklistTimeout=" + blacklistTimeout +
                 ", tempDirectory=" + tempDirectory +
                 '}';
     }

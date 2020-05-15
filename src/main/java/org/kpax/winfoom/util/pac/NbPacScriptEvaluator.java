@@ -48,15 +48,12 @@ public class NbPacScriptEvaluator {
     }
 
     private PacScriptEngine getScriptEngine(String pacSource) throws PacParsingException {
-
         try {
             ScriptEngineManager manager = Scripting.newBuilder().build();
             ScriptEngine engine = manager.getEngineByName("Nashorn");
-
             if (engine == null) {
                 throw new PacParsingException("Nashorn engine not found");
             }
-
             String[] allowedGlobals =
                     ("Object,Function,Array,String,Date,Number,BigInt,"
                             + "Boolean,RegExp,Math,JSON,NaN,Infinity,undefined,"
@@ -83,27 +80,21 @@ public class NbPacScriptEvaluator {
                     + "     delete this[names[i]];\n"
                     + "   }\n"
                     + "})");
-
             try {
                 ((Invocable) engine).invokeMethod(cleaner, "call", null, allowedGlobals);
             } catch (NoSuchMethodException ex) {
                 throw new ScriptException(ex);
             }
-
             engine.eval(pacSource);
-
             String helperJSScript = HelperScriptFactory.getPacHelperSource();
             logger.debug("PAC Helper JavaScript :\n{}", helperJSScript);
-
             try {
                 ((Invocable) engine).invokeMethod(engine.eval(helperJSScript), "call", null, new NbPacHelperMethods());
             } catch (NoSuchMethodException ex) {
                 throw new ScriptException(ex);
             }
-
             // Do some minimal testing of the validity of the PAC Script.
             PacJsEntryFunction jsMainFunction = testScriptEngine(engine);
-
             return new PacScriptEngine(engine, jsMainFunction);
         } catch (ScriptException ex) {
             throw new PacParsingException(ex);
@@ -134,18 +125,17 @@ public class NbPacScriptEvaluator {
      * is available.
      */
     private PacJsEntryFunction testScriptEngine(ScriptEngine eng) throws PacParsingException {
-        if (isJsFunctionAvailable(eng, PacJsEntryFunction.IPV6_AWARE.getJsFunctionName(), false)) {
+        if (isJsFunctionAvailable(eng, PacJsEntryFunction.IPV6_AWARE.getJsFunctionName())) {
             return PacJsEntryFunction.IPV6_AWARE;
         }
-        if (isJsFunctionAvailable(eng, PacJsEntryFunction.STANDARD.getJsFunctionName(), false)) {
+        if (isJsFunctionAvailable(eng, PacJsEntryFunction.STANDARD.getJsFunctionName())) {
             return PacJsEntryFunction.STANDARD;
         }
         throw new PacParsingException("Function " + PacJsEntryFunction.STANDARD.getJsFunctionName() +
                 " or " + PacJsEntryFunction.IPV6_AWARE.getJsFunctionName() + " not found in PAC Script.");
     }
 
-    private boolean isJsFunctionAvailable(ScriptEngine eng, String functionName, boolean doDeepTest) {
-
+    private boolean isJsFunctionAvailable(ScriptEngine eng, String functionName) {
         // We want to test if the function is there, but without actually
         // invoking it.
         try {

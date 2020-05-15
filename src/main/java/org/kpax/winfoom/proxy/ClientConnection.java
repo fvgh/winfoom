@@ -91,12 +91,6 @@ final class ClientConnection implements AutoCloseable {
     private boolean requestPrepared;
 
     /**
-     * When multiple proxies are involved (Proxy Auto Config case only), this instance can be processed multiple times.
-     * This flag signals whether the current proxy used for processing is the last one.
-     */
-    private boolean lastResort;
-
-    /**
      * Constructor.<br>
      * Has the responsibility of parsing the request.
      *
@@ -254,19 +248,6 @@ final class ClientConnection implements AutoCloseable {
      */
     void requestPrepared() {
         this.requestPrepared = true;
-    }
-
-    void lastResort() {
-        this.lastResort = true;
-    }
-
-    /**
-     * Whether there are no more tries.
-     *
-     * @return <code>true</code> iff no more tries.
-     */
-    boolean isLastResort() {
-        return lastResort;
     }
 
     /**

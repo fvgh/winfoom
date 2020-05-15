@@ -12,11 +12,6 @@
 
 package org.kpax.winfoom.config;
 
-import org.apache.commons.configuration2.Configuration;
-import org.apache.commons.configuration2.PropertiesConfiguration;
-import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
-import org.apache.commons.configuration2.builder.fluent.Configurations;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,14 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * The proxy facade system configuration.<br>
@@ -48,6 +35,8 @@ public class SystemConfig {
     public static final String FILENAME = "system.properties";
 
     public static final String APP_HOME_DIR_NAME = ".winfoom";
+
+    public static final String BACKUP_DIR_NAME = "_backup";
 
     private final Logger logger = LoggerFactory.getLogger(SystemConfig.class);
 
@@ -111,19 +100,12 @@ public class SystemConfig {
     @Value("${useSystemProperties:false}")
     private boolean useSystemProperties;
 
-    @Value("${app.version}")
-    private String appVersion;
-
     public Integer getMaxConnectionsPerRoute() {
         return maxConnectionsPerRoute;
     }
 
     public Integer getMaxConnections() {
         return maxConnections;
-    }
-
-    public String getAppVersion() {
-        return appVersion;
     }
 
     public boolean isUseSystemProperties() {
@@ -158,39 +140,6 @@ public class SystemConfig {
         return configBuilder.setConnectTimeout(socketConnectTimeout * 1000)
                 .setConnectionRequestTimeout(socketSoTimeout * 1000)
                 .setSocketTimeout(socketSoTimeout * 1000);
-    }
-
-    /**
-     * Save the current settings to the home application directory, if it isn't already saved.
-     *
-     * @throws ConfigurationException
-     * @throws IOException
-     * @throws IllegalAccessException
-     */
-    @PostConstruct
-    public void save() throws ConfigurationException, IOException, IllegalAccessException {
-        Path appPath = Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME);
-        if (!Files.exists(appPath)) {
-            Files.createDirectory(appPath);
-        }
-        File systemProperties = appPath.resolve(SystemConfig.FILENAME).toFile();
-        if (!systemProperties.exists()) {
-            systemProperties.createNewFile();
-            FileBasedConfigurationBuilder<PropertiesConfiguration> propertiesBuilder = new Configurations()
-                    .propertiesBuilder(systemProperties);
-            Configuration config = propertiesBuilder.getConfiguration();
-
-            for (Field field : this.getClass().getDeclaredFields()) {
-                Value valueAnnotation = field.getAnnotation(Value.class);
-                if (valueAnnotation != null) {
-                    String propName = valueAnnotation.value().replaceAll("[${}]", "").split(":")[0];
-                    config.setProperty(propName, field.get(this));
-                }
-            }
-
-            propertiesBuilder.save();
-        }
-
     }
 
 }

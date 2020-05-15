@@ -111,8 +111,6 @@ class ClientConnectionHandler {
                         logger.debug("Blacklisted proxy {} - skip it", proxyInfo);
                         continue;
                     }
-                } else {
-                    clientConnection.lastResort();
                 }
 
                 connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
