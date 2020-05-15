@@ -54,6 +54,7 @@ The fastest way to run Winfoom is by double-click on `launch.bat` file.
 The application log file is placed under `<user.home.dir>/.winfoom/logs` directory.
 
 ## Configuration
+### User settings
 Winfoom has a graphical user interface that allows configuration.
  
 The first thing to select is the proxy type:
@@ -64,6 +65,25 @@ The first thing to select is the proxy type:
 5) `DIRECT` - no proxy, used for various testing environments
 
 Then fill in the required fields. You can use the field's tooltip to get more information.
+
+### System settings
+The system settings configuration file is `<user.home.dir>/.winfoom/system.properties`.
+
+_Please do not modify this file unless absolutely necessary. It is advisable to post your issue in [Issues Section](https://github.com/ecovaci/winfoom/issues) first._
+
+The available settings:
+
+| Key                |  Description      |  Type  |  Default value |
+|--------------------|:-----------------:|:------:|:-------------:|
+| maxConnections.perRoute |  Connection pool property:  max polled connections per route | Integer    | 20 |
+| maxConnections  | Connection pool property: max polled connections  | Integer |600|
+| internalBuffer.length |The max size of the entity buffer (bytes)|Integer |102400|
+|connectionManager.clean.interval|The frequency of running purge idle on the connection manager pool (seconds)|Integer|30|
+|connectionManager.idleTimeout|The connections idle timeout, to be purged by a scheduled task (seconds)|Integer|30|
+|serverSocket.backlog|The maximum number of pending connections|Integer|1000|
+|socket.soTimeout|The timeout for read/write through socket channel (seconds)|Integer|30|
+|socket.connectTimeout|The timeout for socket connect (seconds)|Integer|10|
+|useSystemProperties|Whether to use the environment properties when configuring a HTTP client builder|Boolean|false|
 
 ### Authentication
 * For HTTP proxy type, Winfoom uses the current Windows user credentials to authenticate to the remote proxy.
