@@ -146,7 +146,12 @@ public final class InputOutputs {
         return true;
     }
 
-
+    /**
+     * If it is a regular file, delete it. If it is a directory, delete recursively.
+     *
+     * @param file the regular file or directory to be deleted.
+     * @return {@code true} if the deletion takes place.
+     */
     public static boolean deleteFile(File file) {
         File[] files = file.listFiles();
         if (files != null) {
@@ -166,6 +171,13 @@ public final class InputOutputs {
         return files.length == 0;
     }
 
+    /**
+     * Check whether a {@link Configuration} instance is compatible with the current {@link ProxyConfig} structure.
+     *
+     * @param proxyConfig the {@link Configuration} instance
+     * @return {@code true} if each {@link Configuration} key is among
+     * the {@link ProxyConfig}'s {@link Value} annotated fields.
+     */
     public static boolean isProxyConfigCompatible(Configuration proxyConfig) {
         List<String> keys = new ArrayList<>();
         for (Field field : ProxyConfig.class.getDeclaredFields()) {

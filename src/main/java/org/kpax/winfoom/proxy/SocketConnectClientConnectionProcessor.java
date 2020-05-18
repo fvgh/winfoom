@@ -45,7 +45,7 @@ class SocketConnectClientConnectionProcessor implements ClientConnectionProcesso
     private ProxyContext proxyContext;
 
     @Override
-    public void process(ClientConnection clientConnection, ProxyInfo proxyInfo)
+    public void process(final ClientConnection clientConnection, final ProxyInfo proxyInfo)
             throws IOException {
         logger.debug("Handle socket connect request");
         RequestLine requestLine = clientConnection.getRequestLine();

@@ -36,7 +36,7 @@ public class SystemConfig {
 
     public static final String APP_HOME_DIR_NAME = ".winfoom";
 
-    public static final String BACKUP_DIR_NAME = "_backup";
+    public static final String BACKUP_DIR_NAME = "backup";
 
     private final Logger logger = LoggerFactory.getLogger(SystemConfig.class);
 

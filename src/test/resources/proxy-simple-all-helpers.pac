@@ -40,6 +40,10 @@ function FindProxyForURL(url, host) {
 
     }
 
+    var dnsDomainLvl = dnsDomainLevels("www");
+    if (!( typeof dnsDomainLvl === 'number')) {
+        throw new Error ("dnsDomainLevels: wrong result");
+    }
 
     var myIp = myIpAddress();
 

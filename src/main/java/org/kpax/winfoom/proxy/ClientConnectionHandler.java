@@ -99,22 +99,18 @@ class ClientConnectionHandler {
                 logger.debug("Manual case, proxy host: {}", proxyHost);
                 proxyInfoList = Collections.singletonList(new ProxyInfo(proxyConfig.getProxyType(), proxyHost));
             }
-
             logger.debug("proxyInfoList {}", proxyInfoList);
 
             ClientConnectionProcessor connectionProcessor;
             for (Iterator<ProxyInfo> itr = proxyInfoList.iterator(); itr.hasNext(); ) {
                 ProxyInfo proxyInfo = itr.next();
-
                 if (itr.hasNext()) {
                     if (proxyBlacklist.checkBlacklist(proxyInfo)) {
                         logger.debug("Blacklisted proxy {} - skip it", proxyInfo);
                         continue;
                     }
                 }
-
                 connectionProcessor = clientProcessorSelector.selectClientProcessor(requestLine, proxyInfo);
-
                 try {
                     logger.debug("Process connection with proxy: {}", proxyInfo);
                     connectionProcessor.process(clientConnection, proxyInfo);
@@ -122,10 +118,8 @@ class ClientConnectionHandler {
                     // Success, break the iteration
                     break;
                 } catch (Exception e) {
-
                     if (e instanceof ConnectException || e.getCause() instanceof ConnectException) {
                         logger.debug("Connection error", e);
-
                         if (itr.hasNext()) {
                             logger.debug("Failed to process connection with proxy: {}, retry with the next one",
                                     proxyInfo);
@@ -137,9 +131,7 @@ class ClientConnectionHandler {
                             // Cannot connect to the remote proxy
                             clientConnection.writeErrorResponse(HttpStatus.SC_BAD_GATEWAY, e);
                         }
-
                     } else {
-
                         if (HttpUtils.isConnectionAborted(e)) {
                             logger.debug("Client's connection aborted", e);
                         } else {
@@ -148,7 +140,6 @@ class ClientConnectionHandler {
                             // Any other error, including client errors
                             clientConnection.writeErrorResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
                         }
-
                         break;
                     }
                 }
