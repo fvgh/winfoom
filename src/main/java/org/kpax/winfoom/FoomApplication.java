@@ -58,7 +58,7 @@ public class FoomApplication {
         } catch (Exception e) {
             logger.error("Failed to verify app version", e);
             SwingUtils.showErrorMessage(null, String.format("Failed to verify application version.\n" +
-                    "Remove the %s directory then try again.",
+                            "Remove the %s directory then try again.",
                     Paths.get(System.getProperty("user.home"), SystemConfig.APP_HOME_DIR_NAME)));
             System.exit(1);
         }
@@ -109,7 +109,8 @@ public class FoomApplication {
                         if (Files.exists(proxyConfigPath)) {
                             isCompatibleProxyConfig = InputOutputs.isProxyConfigCompatible(proxyConfig);
                         }
-                        logger.info("The existent proxy config is compatible with the new one: {}", isCompatibleProxyConfig);
+                        logger.info("The existent proxy config is compatible with the new one: {}",
+                                isCompatibleProxyConfig);
 
                         if (!isCompatibleProxyConfig) {
                             logger.info("Backup the existent proxy.properties file since is invalid" +
@@ -122,7 +123,9 @@ public class FoomApplication {
                 } else {
                     logger.info("Version not found within proxy.properties, " +
                             "backup both config files since they are invalid (from a previous incompatible version)");
-                    InputOutputs.backupFile(proxyConfigPath, true, StandardCopyOption.REPLACE_EXISTING);
+                    InputOutputs.backupFile(proxyConfigPath,
+                            true,
+                            StandardCopyOption.REPLACE_EXISTING);
                     InputOutputs.backupFile(appHomePath.resolve(SystemConfig.FILENAME),
                             true,
                             StandardCopyOption.REPLACE_EXISTING);

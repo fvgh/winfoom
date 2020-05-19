@@ -13,10 +13,8 @@
 package org.kpax.winfoom.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.HttpHostConnectException;
 import org.kpax.winfoom.config.ProxyConfig;
-import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.exception.InvalidProxySettingsException;
 import org.kpax.winfoom.proxy.ProxyBlacklist;
 import org.kpax.winfoom.proxy.ProxyContext;
 import org.kpax.winfoom.proxy.ProxyValidator;
@@ -30,7 +28,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import javax.security.auth.login.CredentialException;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -40,7 +37,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.net.UnknownHostException;
 import java.util.Objects;
 
 @Profile("!test")
@@ -615,17 +611,8 @@ public class AppFrame extends JFrame {
         // Test the proxy configuration
         try {
             proxyValidator.testProxyConfig();
-        } catch (CredentialException e) {
-            SwingUtils.showErrorMessage(this, "Wrong user/password!");
-            return false;
-        } catch (UnknownHostException e) {
-            SwingUtils.showErrorMessage(this, "Wrong proxy host!");
-            return false;
-        } catch (HttpHostConnectException e) {
-            SwingUtils.showErrorMessage(this, "Wrong proxy port!");
-            return false;
-        } catch (ConnectTimeoutException e) {
-            SwingUtils.showErrorMessage(this, "Wrong proxy host/port!");
+        } catch (InvalidProxySettingsException e) {
+            SwingUtils.showErrorMessage(this, e.getMessage());
             return false;
         } catch (Exception e) {
             SwingUtils.showErrorMessage(this, "Validation error: "

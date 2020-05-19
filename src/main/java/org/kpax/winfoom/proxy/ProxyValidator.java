@@ -13,6 +13,7 @@
 package org.kpax.winfoom.proxy;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
@@ -32,6 +33,7 @@ import org.apache.http.impl.client.WinHttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kpax.winfoom.config.ProxyConfig;
 import org.kpax.winfoom.config.SystemConfig;
+import org.kpax.winfoom.exception.InvalidProxySettingsException;
 import org.kpax.winfoom.exception.PacFileException;
 import org.kpax.winfoom.util.HttpUtils;
 import org.slf4j.Logger;
@@ -69,22 +71,15 @@ public class ProxyValidator {
      * Test the proxy settings.<br>
      * The errors it throws must be interpretable by the GUI into meaningful messages.
      *
-     * @throws IOException         something went wrong with the data stream.
-     * @throws CredentialException the provided credentials are wrong.
-     * @throws PacFileException    the PAC script file is invalid.
-     * @throws URISyntaxException  there is something wrong with the test URL.
+     * @throws IOException something went wrong with the data stream.
      */
     public void testProxyConfig()
-            throws IOException, CredentialException, PacFileException, URISyntaxException {
+            throws IOException, InvalidProxySettingsException {
         logger.info("Test proxy config {}", proxyConfig);
-
         ProxyType proxyType = proxyConfig.getProxyType();
-
         try {
             if (proxyConfig.isAutoConfig()) {
-                proxyAutoconfig.loadScript();
-                HttpHost testHost = HttpHost.create(proxyConfig.getProxyTestUrl());
-                List<ProxyInfo> proxyInfos = proxyAutoconfig.findProxyForURL(new URI(testHost.toURI()));
+                List<ProxyInfo> proxyInfos = loadPacProxyInfos();
                 for (Iterator<ProxyInfo> itr = proxyInfos.iterator(); itr.hasNext(); ) {
                     ProxyInfo proxyInfo = itr.next();
                     logger.info("Validate {}", proxyInfo);
@@ -110,16 +105,29 @@ public class ProxyValidator {
                         proxyConfig.getProxyHost(),
                         proxyConfig.getProxyPort());
             }
-        } catch (Exception e) {
-            logger.error("Error on validation proxy config", e);
-            throw e;
+        } catch (HttpHostConnectException | ConnectTimeoutException e) {
+            throw new InvalidProxySettingsException("Wrong proxy host/port", e);
+        }
+    }
+
+    private List<ProxyInfo> loadPacProxyInfos() throws InvalidProxySettingsException {
+        try {
+            proxyAutoconfig.loadScript();
+            HttpHost testHost = HttpHost.create(proxyConfig.getProxyTestUrl());
+            return proxyAutoconfig.findProxyForURL(new URI(testHost.toURI()));
+        } catch (IOException e) {
+            throw new InvalidProxySettingsException("Cannot load and parse the PAC file", e);
+        } catch (PacFileException e) {
+            throw new InvalidProxySettingsException("Invalid PAC file", e);
+        } catch (URISyntaxException e) {
+            throw new InvalidProxySettingsException("Invalid test URL", e);
         }
     }
 
     private void testProxyConfig(ProxyType proxyType,
                                  String proxyHost,
                                  int proxyPort)
-            throws IOException, CredentialException {
+            throws InvalidProxySettingsException, HttpHostConnectException, ConnectTimeoutException {
 
         logger.info("Test proxy with proxyType={}, proxyHost={}, proxyPort={}",
                 proxyType,
@@ -176,12 +184,26 @@ public class ProxyValidator {
             try (CloseableHttpResponse response = httpClient.execute(target, request, context)) {
                 StatusLine statusLine = response.getStatusLine();
                 logger.info("Test response status {}", statusLine);
-                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+                if (statusLine.getStatusCode() < 300) {
                     logger.info("Test OK");
                 } else if (statusLine.getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
-                    throw new CredentialException(statusLine.getReasonPhrase());
+                    throw new InvalidProxySettingsException("Wrong user/password", new CredentialException(statusLine.toString()));
+                } else if (statusLine.getStatusCode() == HttpStatus.SC_GATEWAY_TIMEOUT) {
+                    throw new InvalidProxySettingsException("Cannot connect to the provided test URL", new HttpException(statusLine.toString()));
+                } else {
+                    throw new InvalidProxySettingsException("Something is wrong with the provided test URL", new HttpException(statusLine.toString()));
+                }
+            } catch (UnknownHostException e) {
+                if (proxyType.isHttp()) {
+                    throw new InvalidProxySettingsException("Wrong proxy host", e);
+                } else {
+                    throw new InvalidProxySettingsException("Cannot connect to the provided test URL", e);
                 }
             }
+        } catch (HttpHostConnectException | ConnectTimeoutException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new InvalidProxySettingsException("Error on validation proxy settings", e);
         }
     }
 }
