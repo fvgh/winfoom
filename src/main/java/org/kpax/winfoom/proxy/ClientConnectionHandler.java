@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.URI;
@@ -76,9 +77,11 @@ class ClientConnectionHandler {
             // Most likely a bad request
             // even though might not always be the case
             // Still, we give something back to the client
-            socket.getOutputStream().write(
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(
                     ObjectFormat.toCrlf(HttpUtils.toStatusLine(HttpStatus.SC_BAD_REQUEST, e.getMessage()),
                             StandardCharsets.UTF_8));
+            outputStream.write(ObjectFormat.CRLF.getBytes());
             throw e;
         }
 

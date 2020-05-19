@@ -81,7 +81,12 @@ public final class HttpUtils {
      */
     public static URI parseRequestUri(RequestLine requestLine) throws URISyntaxException {
         if (HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
-            HttpHost requestHost = HttpHost.create(requestLine.getUri());
+            HttpHost requestHost;
+            try {
+                requestHost = HttpHost.create(requestLine.getUri());
+            } catch (IllegalArgumentException e) {
+               throw new URISyntaxException(requestLine.getUri(), e.getMessage());
+            }
             return new URI(requestHost.toURI());
         } else {
             return toUri(requestLine.getUri());

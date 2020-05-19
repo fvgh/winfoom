@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,7 +69,7 @@ import static org.mockito.Mockito.when;
 @Timeout(10)
 class HttpProxyClientConnectionTests {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(HttpProxyClientConnectionTests.class);
 
     private final int socketTimeout = 3; // seconds
 
@@ -85,7 +86,7 @@ class HttpProxyClientConnectionTests {
 
     private HttpServer remoteServer;
 
-    private HttpProxyServer remoteProxyServer;
+    private static HttpProxyServer remoteProxyServer;
 
     @BeforeEach
     void beforeEach() {
@@ -194,8 +195,8 @@ class HttpProxyClientConnectionTests {
             HttpHost target = HttpHost.create("http://localhost:" + remoteServer.getLocalPort());
             HttpRequest request = new BasicHttpRequest("CONNECT", "/");
             try (CloseableHttpResponse response = httpClient.execute(target, request)) {
-                assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, response.getStatusLine().getStatusCode());
-                assertTrue(response.getStatusLine().getReasonPhrase().startsWith("Invalid HTTP host"));
+                assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
+                assertTrue(response.getStatusLine().getReasonPhrase().startsWith("Invalid request uri"));
             }
         }
     }
