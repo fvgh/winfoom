@@ -1,3 +1,3 @@
 function FindProxyForURL(url, host) {
-      return "PROXY localhost:80";
+      return "PROXY 192.168.0.103:80";
 }

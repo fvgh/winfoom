@@ -84,7 +84,7 @@ public final class HttpUtils {
             HttpHost requestHost;
             try {
                 requestHost = HttpHost.create(requestLine.getUri());
-            } catch (IllegalArgumentException e) {
+            } catch (Exception e) {
                throw new URISyntaxException(requestLine.getUri(), e.getMessage());
             }
             return new URI(requestHost.toURI());
