@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-**Describe the bug**
+**Bug description**
 A clear and concise description of what the bug is.
 
 **To Reproduce**
@@ -26,7 +26,7 @@ Start the application in debug mode, perform the ncessary steps to reproduce the
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
+**Context information:**
  - Browser [e.g. chrome, safari]
  - Application version [e.g. 2.0.2]
  - JRE version
