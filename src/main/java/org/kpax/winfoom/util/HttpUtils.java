@@ -80,16 +80,17 @@ public final class HttpUtils {
      * @throws URISyntaxException
      */
     public static URI parseRequestUri(RequestLine requestLine) throws URISyntaxException {
-        if (HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
-            HttpHost requestHost;
-            try {
-                requestHost = HttpHost.create(requestLine.getUri());
-            } catch (Exception e) {
-               throw new URISyntaxException(requestLine.getUri(), e.getMessage());
+        try {
+            if (HTTP_CONNECT.equalsIgnoreCase(requestLine.getMethod())) {
+                return new URI(HttpHost.create(requestLine.getUri()).toURI());
+            } else {
+                return toUri(requestLine.getUri());
             }
-            return new URI(requestHost.toURI());
-        } else {
-            return toUri(requestLine.getUri());
+        } catch (Exception e) {
+            if (e instanceof URISyntaxException) {
+                throw e;
+            }
+            throw new URISyntaxException(requestLine.getUri(), e.getMessage());
         }
     }
 
