@@ -69,12 +69,11 @@ public class ProxyValidator {
 
     /**
      * Test the proxy settings.<br>
-     * The errors it throws must be interpretable by the GUI into meaningful messages.
      *
-     * @throws IOException something went wrong with the data stream.
+     * @throws InvalidProxySettingsException
      */
     public void testProxyConfig()
-            throws IOException, InvalidProxySettingsException {
+            throws InvalidProxySettingsException {
         logger.info("Test proxy config {}", proxyConfig);
         ProxyType proxyType = proxyConfig.getProxyType();
         try {
