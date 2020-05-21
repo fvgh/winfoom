@@ -172,7 +172,7 @@ public class TunnelConnection {
         final int status = response.getStatusLine().getStatusCode();
         logger.debug("Tunnel final status code: {}", status);
 
-        if (status > 299) { // Error case
+        if (status >= HttpUtils.MIN_HTTP_ERROR_CODE) { // Error case
 
             // Buffer response content
             final HttpEntity entity = response.getEntity();

@@ -34,11 +34,16 @@ public final class Tunnel implements Closeable {
     private final ManagedHttpClientConnection connection;
     private final HttpResponse response;
 
-    Tunnel(ManagedHttpClientConnection connection, HttpResponse response) {
+    private final InputStream inputStream;
+    private final OutputStream outputStream;
+
+    Tunnel(ManagedHttpClientConnection connection, HttpResponse response) throws IOException {
         Validate.notNull(connection, "connection cannot be null");
         Validate.notNull(response, "response cannot be null");
         this.connection = connection;
         this.response = response;
+        this.inputStream = connection.getSocket().getInputStream();
+        this.outputStream = connection.getSocket().getOutputStream();
     }
 
     ManagedHttpClientConnection getConnection() {
@@ -46,11 +51,11 @@ public final class Tunnel implements Closeable {
     }
 
     public InputStream getInputStream() throws IOException {
-        return connection.getSocket().getInputStream();
+        return this.inputStream;
     }
 
     public OutputStream getOutputStream() throws IOException {
-        return connection.getSocket().getOutputStream();
+        return this.outputStream;
     }
 
     public HttpResponse getResponse() {

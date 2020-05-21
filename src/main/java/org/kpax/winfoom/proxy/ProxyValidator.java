@@ -183,7 +183,7 @@ public class ProxyValidator {
             try (CloseableHttpResponse response = httpClient.execute(target, request, context)) {
                 StatusLine statusLine = response.getStatusLine();
                 logger.info("Test response status {}", statusLine);
-                if (statusLine.getStatusCode() < 300) {
+                if (statusLine.getStatusCode() < HttpUtils.MIN_HTTP_ERROR_CODE) {
                     logger.info("Test OK");
                 } else if (statusLine.getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
                     throw new InvalidProxySettingsException("Wrong user/password", new CredentialException(statusLine.toString()));
