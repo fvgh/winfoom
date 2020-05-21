@@ -141,7 +141,7 @@ public class TunnelConnection {
 
             final int status = response.getStatusLine().getStatusCode();
             logger.debug("Tunnel status code: {}", status);
-            if (status < 200) {
+            if (status < HttpStatus.SC_OK) {
                 throw new HttpException("Unexpected response to CONNECT request: " + response.getStatusLine());
             }
 
@@ -172,7 +172,7 @@ public class TunnelConnection {
         final int status = response.getStatusLine().getStatusCode();
         logger.debug("Tunnel final status code: {}", status);
 
-        if (status >= HttpUtils.MIN_HTTP_ERROR_CODE) { // Error case
+        if (status > HttpUtils.MAX_HTTP_SUCCESS_CODE) { // Error case
 
             // Buffer response content
             final HttpEntity entity = response.getEntity();

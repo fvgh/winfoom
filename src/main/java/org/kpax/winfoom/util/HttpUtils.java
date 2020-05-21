@@ -47,7 +47,7 @@ public final class HttpUtils {
 
     public static final String SOCKS_ADDRESS = "socks.address";
 
-    public static final int MIN_HTTP_ERROR_CODE = 300;
+    public static final int MAX_HTTP_SUCCESS_CODE = 299;
 
     private HttpUtils() {
     }
