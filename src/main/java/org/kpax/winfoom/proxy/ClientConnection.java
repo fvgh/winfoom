@@ -18,7 +18,9 @@ import org.apache.http.config.MessageConstraints;
 import org.apache.http.impl.io.DefaultHttpRequestParser;
 import org.apache.http.impl.io.HttpTransportMetricsImpl;
 import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import org.kpax.winfoom.util.HeaderDateGenerator;
 import org.kpax.winfoom.util.HttpUtils;
 import org.kpax.winfoom.util.InputOutputs;
 import org.kpax.winfoom.util.ObjectFormat;
@@ -157,7 +159,7 @@ final class ClientConnection implements AutoCloseable {
      * @throws IOException
      */
     void write(Object obj) throws IOException {
-        outputStream.write(ObjectFormat.toCrlf(obj, StandardCharsets.UTF_8));
+        outputStream.write(ObjectFormat.toCrlf(obj));
     }
 
     /**
@@ -189,6 +191,7 @@ final class ClientConnection implements AutoCloseable {
     void writeErrorResponse(ProtocolVersion protocolVersion, int statusCode, String reasonPhrase) {
         try {
             write(HttpUtils.toStatusLine(protocolVersion, statusCode, reasonPhrase));
+            write(HttpUtils.createHttpHeader(HTTP.DATE_HEADER, new HeaderDateGenerator().getCurrentDate()));
             writeln();
         } catch (Exception ex) {
             logger.debug("Error on writing error response", ex);

@@ -182,9 +182,7 @@ class NonConnectClientConnectionProcessor implements ClientConnectionProcessor {
     private void handleResponse(final CloseableHttpResponse response,
                                 final ClientConnection clientConnection) throws IOException {
         StatusLine statusLine = response.getStatusLine();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Write status line: {}", statusLine);
-        }
+        logger.debug("Write status line: {}", statusLine);
         clientConnection.write(statusLine);
 
         clientConnection.write(HttpUtils.createViaHeader(clientConnection.getRequestLine().getProtocolVersion(),

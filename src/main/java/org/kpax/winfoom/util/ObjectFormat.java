@@ -15,6 +15,7 @@ package org.kpax.winfoom.util;
 import org.apache.commons.lang3.Validate;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author Eugen Covaci
@@ -36,6 +37,17 @@ public final class ObjectFormat {
     public static byte[] toCrlf(Object input, Charset charset) {
         Validate.notNull(input, "input cannot be null");
         return (input + CRLF).getBytes(charset);
+    }
+
+    /**
+     * Call the {@link #toCrlf(Object, Charset)} method with {@link StandardCharsets#UTF_8} as argument.
+     *
+     * @param input The object to be formatted (not null).
+     * @return The resulted string as bytes.
+     * @see #toCrlf(Object, Charset)
+     */
+    public static byte[] toCrlf(Object input) {
+        return toCrlf(input, StandardCharsets.UTF_8);
     }
 
 }

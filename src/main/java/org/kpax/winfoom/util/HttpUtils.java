@@ -134,11 +134,11 @@ public final class HttpUtils {
     }
 
     /**
-     * Create a {@link Header} instance.
+     * Create a {@link BasicHeader} instance.
      *
      * @param name  the header's name.
      * @param value the header's value.
-     * @return a new {@link Header} instance.
+     * @return a new {@link BasicHeader} instance.
      */
     public static Header createHttpHeader(String name, String value) {
         return new BasicHeader(name, value);
