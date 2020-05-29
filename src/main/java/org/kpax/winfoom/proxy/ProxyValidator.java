@@ -153,8 +153,8 @@ public class ProxyValidator {
                     .register("https", connectionSocketFactory)
                     .build();
 
-            httpClientBuilder =
-                    HttpClients.custom().setConnectionManager(new PoolingHttpClientConnectionManager(factoryRegistry));
+            httpClientBuilder = HttpClients.custom().
+                    setConnectionManager(new PoolingHttpClientConnectionManager(factoryRegistry));
         } else {
             httpClientBuilder = WinHttpClients.custom();
         }
@@ -186,11 +186,14 @@ public class ProxyValidator {
                 if (statusLine.getStatusCode() <= HttpUtils.MAX_HTTP_SUCCESS_CODE) {
                     logger.info("Test OK");
                 } else if (statusLine.getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
-                    throw new InvalidProxySettingsException("Wrong user/password", new CredentialException(statusLine.toString()));
+                    throw new InvalidProxySettingsException("Wrong user/password",
+                            new CredentialException(statusLine.toString()));
                 } else if (statusLine.getStatusCode() == HttpStatus.SC_GATEWAY_TIMEOUT) {
-                    throw new InvalidProxySettingsException("Cannot connect to the provided test URL", new HttpException(statusLine.toString()));
+                    throw new InvalidProxySettingsException("Cannot connect to the provided test URL",
+                            new HttpException(statusLine.toString()));
                 } else {
-                    throw new InvalidProxySettingsException("Something is wrong with the provided test URL", new HttpException(statusLine.toString()));
+                    throw new InvalidProxySettingsException("Something is wrong with the provided test URL",
+                            new HttpException(statusLine.toString()));
                 }
             } catch (UnknownHostException e) {
                 if (proxyType.isHttp()) {
