@@ -4,7 +4,7 @@
 ![Downloads](https://img.shields.io/github/downloads/ecovaci/winfoom/total)
 
 ### Basic Proxy Facade for NTLM, Kerberos, SOCKS and Proxy Auto Config file proxies
-### Notice: _This project is in search for a new maintainer. Until then, the development and bug fixing is freezed._
+### Notice: _This project is searching for a new maintainer. Until then, the development and bug fixing is freezed._
 
 # Overview
 Winfoom is an HTTP(s) proxy server facade that allows applications to authenticate through the following proxies: 
@@ -31,7 +31,7 @@ so you don't have to install anything.
 ### Build from source code
 If you decide to build the executable *jar* file from the source code, you would need these prerequisites:
 * Java JDK 11(+)
-* Maven 3.x version
+* Maven 3.x version (optional)
 
 First download  the source code from [releases](https://github.com/ecovaci/winfoom/releases) and unzip it.
 
@@ -39,6 +39,12 @@ Then open a terminal and execute this command inside the `winfoom-x.x.x` directo
 
 ```
  mvn clean package
+```
+
+or, if you did not install Maven, use the Maven Wrapper:
+
+```
+ .\mvnw clean package
 ```
 
 Now you should have the generated executable *jar* file under the *target* directory.
