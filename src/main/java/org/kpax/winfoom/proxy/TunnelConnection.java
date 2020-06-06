@@ -181,6 +181,7 @@ public class TunnelConnection {
             }
             logger.debug("Close tunnel connection");
             InputOutputs.close(connection);
+            this.proxyAuthState = new AuthState(); //Work-around to recover after 407 response
             throw new TunnelRefusedException("CONNECT refused by proxy: " + response.getStatusLine(), response);
         }
 
