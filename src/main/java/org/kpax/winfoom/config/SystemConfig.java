@@ -99,6 +99,12 @@ public class SystemConfig {
      */
     @Value("${useSystemProperties:false}")
     private boolean useSystemProperties;
+    
+    /**
+     * Whether to start automatically in background
+     */
+    @Value("${startingInBackground:false}")
+    private boolean startingInBackground;    
 
     public Integer getMaxConnectionsPerRoute() {
         return maxConnectionsPerRoute;
@@ -136,6 +142,10 @@ public class SystemConfig {
         return socketConnectTimeout;
     }
 
+    public boolean isStartingInBackgound() {
+        return startingInBackground;
+    }
+    
     public RequestConfig.Builder applyConfig(final RequestConfig.Builder configBuilder) {
         return configBuilder.setConnectTimeout(socketConnectTimeout * 1000)
                 .setConnectionRequestTimeout(socketSoTimeout * 1000)

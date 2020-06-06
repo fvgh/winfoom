@@ -70,10 +70,7 @@ public class FoomApplication {
         final AppFrame frame = applicationContext.getBean(AppFrame.class);
         EventQueue.invokeLater(() -> {
             try {
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-                frame.focusOnStartButton();
+                frame.activate();
             } catch (Exception e) {
                 logger.error("GUI error", e);
                 SwingUtils.showErrorMessage(null, "Failed to load the graphical interface." +

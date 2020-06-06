@@ -14,6 +14,7 @@ package org.kpax.winfoom.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.kpax.winfoom.config.ProxyConfig;
+import org.kpax.winfoom.config.SystemConfig;
 import org.kpax.winfoom.exception.InvalidProxySettingsException;
 import org.kpax.winfoom.proxy.ProxyBlacklist;
 import org.kpax.winfoom.proxy.ProxyContext;
@@ -49,6 +50,9 @@ public class AppFrame extends JFrame {
     private static final int ICON_SIZE = 16;
 
     private static final int TOOLTIP_TIMEOUT = 10;
+    
+    @Autowired
+    private SystemConfig systemConfig;    
 
     @Autowired
     private ConfigurableApplicationContext applicationContext;
@@ -114,6 +118,7 @@ public class AppFrame extends JFrame {
             trayIcon.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
+                    tray.remove(trayIcon);
                     setVisible(true);
                     setState(Frame.NORMAL);
                 }
@@ -127,6 +132,7 @@ public class AppFrame extends JFrame {
                         logger.error("Cannot add icon to tray", ex);
                     }
                     setVisible(false);
+                    setState(Frame.ICONIFIED);
                 }
 
                 @Override
@@ -134,9 +140,10 @@ public class AppFrame extends JFrame {
                     tray.remove(trayIcon);
                     setExtendedState(getExtendedState() & ~Frame.ICONIFIED);
                     setVisible(true);
+                    setState(Frame.NORMAL);
                 }
             });
-        }
+           }
         //
         setTitle("WinFoom");
         setJMenuBar(getMainMenuBar());
@@ -145,11 +152,20 @@ public class AppFrame extends JFrame {
         ToolTipManager.sharedInstance().setDismissDelay(TOOLTIP_TIMEOUT * 1000);
 
         getProxyTypeCombo().setSelectedItem(proxyConfig.getProxyType());
-
     }
-
-    public void focusOnStartButton() {
-        getBtnStart().requestFocus();
+    
+    public void activate() {
+        pack();
+        setLocationRelativeTo(null);
+        if(systemConfig.isStartingInBackgound()) {
+        	getBtnStart().doClick();
+        	dispatchEvent(new WindowEvent(
+        	        this, WindowEvent.WINDOW_ICONIFIED));
+        }
+        else {
+            getBtnStart().requestFocus();
+            setVisible(true);
+        }
     }
 
     // ---------- Labels
@@ -348,7 +364,7 @@ public class AppFrame extends JFrame {
             btnStop.setMargin(new Insets(2, 6, 2, 6));
             btnStop.addActionListener(e -> {
                 stopServer();
-                focusOnStartButton();
+                getBtnStart().requestFocus();
                 if (proxyConfig.isAutoConfig()) {
                     getBtnCancelBlacklist().setEnabled(false);
                 }
@@ -581,30 +597,30 @@ public class AppFrame extends JFrame {
 
         if ((proxyConfig.getProxyType().isSocks() || proxyConfig.getProxyType().isHttp())
                 && StringUtils.isBlank(proxyConfig.getProxyHost())) {
-            SwingUtils.showErrorMessage(this, "Fill in the proxy host");
+        	showErrorMessage("Fill in the proxy host");
             return false;
         }
 
         if ((proxyConfig.getProxyType().isSocks() || proxyConfig.getProxyType().isHttp())) {
             if (proxyConfig.getProxyPort() == null || !HttpUtils.isValidPort(proxyConfig.getProxyPort())) {
-                SwingUtils.showErrorMessage(this, "Fill in a valid proxy port, between 1 and 65535");
+            	showErrorMessage("Fill in a valid proxy port, between 1 and 65535");
                 return false;
             }
         }
 
         if (proxyConfig.isAutoConfig() && StringUtils.isBlank(proxyConfig.getProxyPacFileLocation())) {
-            SwingUtils.showErrorMessage(this, "Fill in a valid Pac file location");
+        	showErrorMessage("Fill in a valid Pac file location");
             return false;
         }
 
         Integer localPort = (Integer) localPortJSpinner.getValue();
         if (localPort == null || !HttpUtils.isValidPort(localPort)) {
-            SwingUtils.showErrorMessage(this, "Fill in a valid local proxy port, between 1 and 65535");
+        	showErrorMessage("Fill in a valid local proxy port, between 1 and 65535");
             return false;
         }
 
         if (StringUtils.isBlank(testUrlJTextField.getText())) {
-            SwingUtils.showErrorMessage(this, "Fill in the proxy test URL");
+            showErrorMessage("Fill in the proxy test URL");
             return false;
         }
 
@@ -612,10 +628,10 @@ public class AppFrame extends JFrame {
         try {
             proxyValidator.testProxyConfig();
         } catch (InvalidProxySettingsException e) {
-            SwingUtils.showErrorMessage(this, e.getMessage());
+        	showErrorMessage(e.getMessage());
             return false;
         } catch (Exception e) {
-            SwingUtils.showErrorMessage(this, "Validation error: "
+        	showErrorMessage("Validation error: "
                     + (e.getMessage() != null ? e.getMessage() : "See the log file for details!"));
             return false;
         }
@@ -648,14 +664,21 @@ public class AppFrame extends JFrame {
                 } catch (Exception e) {
                     logger.error("Error on starting proxy server", e);
                     enableInput();
-                    SwingUtils.showErrorMessage(AppFrame.this,
-                            "Error on starting proxy server.\nSee the application's log for details.");
+                    showErrorMessage("Error on starting proxy server.\nSee the application's log for details.");
                 }
             } else {
                 enableInput();
             }
         }, this);
 
+    }
+    
+    private void showErrorMessage(String message) {
+    	if(getState() == Frame.ICONIFIED) {
+        	dispatchEvent(new WindowEvent(
+        	        this, WindowEvent.WINDOW_DEICONIFIED));
+    	}
+    	SwingUtils.showErrorMessage(this, message);
     }
 
     private void stopServer() {

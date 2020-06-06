@@ -96,6 +96,7 @@ The available settings:
 |socket.soTimeout|The timeout for read/write through socket channel (seconds)|Integer|30|
 |socket.connectTimeout|The timeout for socket connect (seconds)|Integer|10|
 |useSystemProperties|Whether to use the environment properties when configuring a HTTP client builder|Boolean|false|
+|startingInBackground|Whether to start proxy automatically and put application top the background on startup|Boolean|false|
 
 ### Authentication
 * For HTTP proxy type, Winfoom uses the current Windows user credentials to authenticate to the remote proxy.
