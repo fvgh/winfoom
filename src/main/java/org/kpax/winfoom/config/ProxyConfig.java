@@ -269,27 +269,31 @@ public class ProxyConfig {
                 .propertiesBuilder(userProperties);
         Configuration config = propertiesBuilder.getConfiguration();
         config.setProperty("proxy.type", proxyType);
-        config.setProperty("proxy.host", proxyType.isHttp() || proxyType.isSocks() ? proxyHost : null);
-        config.setProperty("proxy.port", proxyType.isHttp() || proxyType.isSocks() ? proxyPort : 0);
+        
+        if( proxyType.isHttp()  || proxyType.isSocks() ) {
+            config.setProperty("proxy.host", proxyHost);
+            config.setProperty("proxy.port", proxyPort);
+        }
         config.setProperty("local.port", localPort);
         config.setProperty("proxy.test.url", proxyTestUrl);
-        config.setProperty("proxy.username", proxyType.isSocks5() ? proxyUsername : null);
-        config.setProperty("proxy.storePassword", proxyType.isSocks5() && proxyStorePassword);
-        config.setProperty("proxy.pac.fileLocation", proxyType.isPac() ? proxyPacFileLocation : null);
-
-        if (proxyType.isPac()) {
-            config.setProperty("blacklist.timeout", blacklistTimeout);
+        
+        if( proxyType.isSocks5() ) {
+            config.setProperty("proxy.username", proxyUsername);
+            config.setProperty("proxy.storePassword", proxyStorePassword);
+            if (proxyStorePassword) {
+                config.setProperty("proxy.password", proxyPassword);
+            } else {
+                // Clear the stored password
+                if (StringUtils.isNotEmpty(proxyPassword)) {
+                    config.setProperty("proxy.password", null);
+                    proxyPassword = null;
+                }
+            }
         }
 
-        if (proxyType.isSocks5() && proxyStorePassword) {
-            config.setProperty("proxy.password", proxyPassword);
-        } else {
-
-            // Clear the stored password
-            if (StringUtils.isNotEmpty(proxyPassword)) {
-                config.setProperty("proxy.password", null);
-                proxyPassword = null;
-            }
+        if (proxyType.isPac()) {
+            config.setProperty("proxy.pac.fileLocation", proxyPacFileLocation);
+            config.setProperty("blacklist.timeout", blacklistTimeout);
         }
 
         propertiesBuilder.save();
